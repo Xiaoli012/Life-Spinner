@@ -151,6 +151,16 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 .today-item.ti-done{opacity:.5}
 .today-empty{text-align:center;padding:12px;color:var(--text2);font-size:13px}
 .today-kids{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(6,182,212,.08);border-radius:8px;font-size:11px;color:var(--accent3);margin-top:4px}
+.today-item{cursor:pointer}
+.today-detail{padding:10px 12px;background:rgba(0,0,0,.15);border-radius:8px;margin-top:4px;font-size:11px;line-height:1.6;animation:su .3s ease}
+.today-detail .td-row{display:flex;gap:6px;padding:2px 0;color:var(--text2)}
+.today-detail .td-icon{flex-shrink:0;width:16px;text-align:center}
+.today-detail .td-val{color:var(--text)}
+.today-detail .td-links{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.today-detail .td-links a,.today-detail .td-links button{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:all .2s}
+.today-detail .td-map{background:rgba(6,182,212,.12);color:var(--accent3)}
+.today-detail .td-call{background:rgba(34,197,94,.12);color:var(--success)}
+.today-detail .td-search{background:rgba(255,255,255,.06);color:var(--text2)}
 .today-weather{padding:8px 10px;background:rgba(245,158,11,.08);border-radius:8px;font-size:11px;color:var(--accent);margin-top:8px;line-height:1.4}
 .today-seasonal{padding:8px 10px;background:rgba(139,92,246,.1);border-radius:8px;font-size:11px;color:var(--accent2);margin-top:6px;line-height:1.4;font-weight:500}
 .today-deals{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
@@ -1360,15 +1370,15 @@ function renderToday() {
       return ta - tb;
     });
 
-    sorted.forEach(item => {
+    sorted.forEach((item, idx) => {
       const [h,m] = item.time.split(':').map(Number);
       const itemMin = h * 60 + m;
-      const isNow = nowTime >= itemMin && nowTime < itemMin + 90; // within 1.5h window
+      const isNow = nowTime >= itemMin && nowTime < itemMin + 90;
       const isDone = nowTime > itemMin + 90;
       const cls = isNow ? 'today-item ti-now' : isDone ? 'today-item ti-done' : 'today-item';
       const status = isNow ? '⬅️ 进行中' : isDone ? '✅' : '⏳';
 
-      html += `<div class="${cls}">
+      html += `<div class="${cls}" onclick="toggleTodayDetail(this,'${item.act.replace(/'/g,"\\'")}')">
         <span class="ti-time">${item.time}</span>
         <span class="ti-emoji">${item.emoji}</span>
         <span class="ti-name">${item.act}</span>
@@ -1440,6 +1450,59 @@ function getSeasonalAlert() {
     }
   }
   return null;
+}
+
+// Look up activity details from spinner database by name
+function findActByName(name) {
+  const all = [...famActs, ...couActs];
+  return all.find(a => a.name === name || name.includes(a.name) || a.name.includes(name));
+}
+
+function toggleTodayDetail(el, actName) {
+  // If detail already open, close it
+  const existing = el.nextElementSibling;
+  if (existing && existing.classList.contains('today-detail')) {
+    existing.remove();
+    return;
+  }
+  // Close any other open details
+  document.querySelectorAll('.today-detail').forEach(d => d.remove());
+
+  // Find matching activity in database
+  const act = findActByName(actName);
+  let detailHtml = '';
+
+  if (act && act.info) {
+    const info = act.info;
+    detailHtml += `<div class="today-detail">`;
+    if (info.loc && info.loc !== '待补充') detailHtml += `<div class="td-row"><span class="td-icon">📍</span><span class="td-val">${info.loc}</span></div>`;
+    if (info.addr) detailHtml += `<div class="td-row"><span class="td-icon">🏠</span><span class="td-val">${info.addr}</span></div>`;
+    if (info.cost && info.cost !== '待补充') detailHtml += `<div class="td-row"><span class="td-icon">💰</span><span class="td-val">${info.cost}</span></div>`;
+    if (info.hours) detailHtml += `<div class="td-row"><span class="td-icon">🕐</span><span class="td-val">${info.hours}</span></div>`;
+    if (info.phone) detailHtml += `<div class="td-row"><span class="td-icon">📞</span><span class="td-val">${info.phone}</span></div>`;
+    if (info.tip) detailHtml += `<div class="td-row"><span class="td-icon">💡</span><span class="td-val">${info.tip}</span></div>`;
+    // Fazaa check
+    let fazaa = info.fazaa || '';
+    if (!fazaa && typeof VENUES !== 'undefined') {
+      Object.values(VENUES).forEach(cat => (cat.items||[]).forEach(v => { if (v.name === act.name && v.fazaa) fazaa = v.fazaa; }));
+    }
+    if (fazaa) detailHtml += `<div class="td-row"><span class="td-icon">🏷️</span><span class="td-val" style="color:#00e676">${fazaa}</span></div>`;
+    // Links
+    detailHtml += `<div class="td-links">`;
+    if (info.mapQ) detailHtml += `<a class="td-map" href="https://www.google.com/maps/search/${info.mapQ}" target="_blank">📍 导航</a>`;
+    if (info.phone) detailHtml += `<a class="td-call" href="tel:${info.phone}">📞 拨打</a>`;
+    if (info.bookUrl) detailHtml += `<a class="td-map" href="${info.bookUrl}" target="_blank">🎫 预订</a>`;
+    detailHtml += `<a class="td-search" href="https://www.google.com/search?q=${encodeURIComponent(act.name+' Dubai')}" target="_blank">🔍 搜索</a>`;
+    detailHtml += `</div></div>`;
+  } else {
+    // No detail found in database
+    detailHtml = `<div class="today-detail">
+      <div class="td-row"><span class="td-icon">💡</span><span class="td-val">该活动暂无详情，可在转盘中找到后查看</span></div>
+      <div class="td-links"><a class="td-search" href="https://www.google.com/search?q=${encodeURIComponent(actName+' Dubai')}" target="_blank">🔍 搜索一下</a></div>
+    </div>`;
+  }
+
+  el.insertAdjacentHTML('afterend', detailHtml);
 }
 
 function renderPlanner(){
