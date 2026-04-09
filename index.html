@@ -49,23 +49,20 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 
 /* === CAT FILTER === */
 .cat-filter{display:flex;gap:5px;margin:6px 16px;flex-wrap:wrap}
-.cf-btn{padding:6px 11px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:var(--card);color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
+.cf-btn{padding:8px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:var(--card);color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
 .cf-btn:hover{border-color:rgba(245,158,11,.3);color:var(--accent)}
 .cf-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
 .cf-count{font-size:9px;opacity:.7;margin-left:2px}
 
 /* === WHEEL === */
 .wheel-section{display:flex;flex-direction:column;align-items:center;padding:12px}
-.wheel-wrapper{position:relative;width:360px;height:360px;margin-bottom:12px}
+.wheel-wrapper{position:relative;width:min(360px,90vw);height:min(360px,90vw);margin-bottom:12px}
 .wheel-pointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);z-index:10;font-size:32px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));animation:pp 2s infinite}
 @keyframes pp{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.15)}}
-canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shadow:0 0 30px rgba(245,158,11,.2)}
+canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;cursor:pointer;box-shadow:0 0 30px rgba(245,158,11,.2)}
 .spin-btn{width:280px;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,var(--accent),#d97706);color:#000;font-size:18px;font-weight:900;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 20px rgba(245,158,11,.3);transition:all .3s}
 .spin-btn:hover{transform:scale(1.05)}
 .spin-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.shuffle-btn{width:44px;height:44px;border:none;border-radius:50%;background:var(--card);color:var(--accent);font-size:18px;cursor:pointer;transition:all .3s;box-shadow:0 2px 10px rgba(0,0,0,.3);margin-top:6px}
-.shuffle-btn:hover{transform:rotate(180deg) scale(1.1);background:rgba(245,158,11,.15)}
-.shuffle-btn:active{transform:rotate(360deg) scale(.95)}
 .wheel-info{text-align:center;font-size:11px;color:var(--text2);margin:0 16px 2px;line-height:1.4}
 
 /* === RESULT CARD === */
@@ -91,9 +88,9 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 /* Rating Section */
 .rating-section{padding:10px 16px;border-top:1px solid rgba(255,255,255,.05)}
 .rating-row{display:flex;align-items:center;gap:8px;padding:4px 0}
-.rating-label{font-size:11px;color:var(--text2);min-width:50px}
+.rating-label{font-size:12px;color:var(--text2);min-width:50px}
 .rating-stars{display:flex;gap:2px}
-.rate-star{font-size:24px;cursor:pointer;color:rgba(255,255,255,.2);transition:all .15s;user-select:none}
+.rate-star{font-size:32px;cursor:pointer;color:rgba(255,255,255,.2);transition:all .15s;user-select:none}
 .rate-star:hover{transform:scale(1.2)}
 .rate-star.filled{color:var(--accent)}
 .status-btn{padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit}
@@ -124,7 +121,7 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 .visited-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border-radius:8px;margin:3px 0;font-size:12px}
 .visited-item .vi-date{color:var(--text2);font-size:10px;min-width:60px}
 .visited-item .vi-stars{color:var(--accent);font-size:11px;margin-left:auto}
-.visited-item .vi-remove{width:22px;height:22px;border:none;background:transparent;color:rgba(255,255,255,.15);border-radius:6px;cursor:pointer;font-size:10px}
+.visited-item .vi-remove{width:32px;height:32px;border:none;background:transparent;color:rgba(255,255,255,.15);border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
 .visited-item .vi-remove:hover{color:var(--danger);background:rgba(239,68,68,.1)}
 
 /* === SECTION CARD === */
@@ -239,7 +236,7 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 /* === HISTORY === */
 .hi{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px}
 .hi:last-child{border-bottom:none}
-.hi .hd{color:var(--text2);font-size:11px;min-width:72px}
+.hi .hd{color:var(--text2);font-size:12px;min-width:72px}
 
 /* === ACTIVITY MANAGER === */
 .ai{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:3px 0;background:var(--card2);border-radius:8px;font-size:13px}
@@ -796,7 +793,7 @@ const DEFAULT_PLANNER = [
   {day:'日',time:'19:30',act:'家庭电影夜（JLT）',emoji:'🎬'},
 ];
 const DAYS = ['一','二','三','四','五','六','日'];
-const CAT_LABELS = {sports:'运动',learning:'学习',food:'美食',culture:'文化',entertainment:'娱乐',leisure:'休闲',nature:'自然',nightlife:'夜生活',daytrip:'短途'};
+const CAT_LABELS = {sports:'运动',learning:'学习',food:'美食',culture:'文化',entertainment:'娱乐',leisure:'休闲',nature:'自然',nightlife:'夜生活',daytrip:'短途',jlt_food:'JLT美食',marina_food:'Marina美食',cafes:'咖啡',kids_venues:'亲子',budget_food:'平价美食',asian_food:'亚洲美食',fine_dining:'高端',michelin_chinese:'米其林/中餐',unique:'特色体验',trending:'热门'};
 
 // ==================== STATE ====================
 let mode = 'family';
@@ -2187,10 +2184,19 @@ function getVenueDist(item) {
   return haversine(userLat, userLng, lat, lng);
 }
 
-function fmtDist(km) {
+function fmtDist(km, matched) {
+  if (!matched) return '距离未知';
   if (km < 1) return `${Math.round(km*1000)}m`;
   if (km < 10) return `${km.toFixed(1)}km`;
   return `${Math.round(km)}km`;
+}
+
+function getVenueCoordsMatched(item) {
+  const text = ((item.addr||'')+' '+(item.name||'')+' '+(item.desc||'')).toLowerCase();
+  for (const [area, coords] of Object.entries(AREA_COORDS)) {
+    if (text.includes(area)) return { coords, matched: true };
+  }
+  return { coords: [25.0766, 55.1442], matched: false };
 }
 
 function renderDistFilter() {
@@ -2221,7 +2227,7 @@ function buildMergedCats() {
     if (!mergedCats[typeName]) mergedCats[typeName] = [];
     (cat.items||[]).forEach(it => {
       // Deduplicate by name
-      if (!mergedCats[typeName].find(x => x.name === it.name)) {
+      if (!mergedCats[typeName].find(x => x.name.trim().toLowerCase() === it.name.trim().toLowerCase())) {
         mergedCats[typeName].push({...it, _srcCat: key});
       }
     });
@@ -2283,8 +2289,9 @@ function renderDC(){
   }
   document.getElementById('dcGrid').innerHTML=items.map((it,i)=>{
     const added=existing.has(it.name);
-    const km = getVenueDist(it);
-    const distBadge = `<span class="dc-dist">📍 ${fmtDist(km)}</span>`;
+    const {coords: vCoords, matched: vMatched} = getVenueCoordsMatched(it);
+    const km = haversine(userLat, userLng, vCoords[0], vCoords[1]);
+    const distBadge = `<span class="dc-dist">📍 ${fmtDist(km, vMatched)}</span>`;
     const stars=it.rating>0?'⭐'.repeat(Math.round(it.rating))+` ${it.rating}`:'🆕 新推荐';
     let details='';
     if(it.addr)details+=`<div class="vd"><span class="vd-icon">📍</span>${it.addr}</div>`;
