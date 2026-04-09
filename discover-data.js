@@ -307,5 +307,39 @@ fine_dining: {
   ]
 },
 
+// ==================== 📚 学习内容（书/播客/纪录片/课程） ====================
+learning_content: {
+  label: '📚 学习内容', color: 'var(--accent3)',
+  items: [
+    // 📖 热门书籍 - 中文
+    {emoji:'📖',name:'《世上为什么要有图书馆》',desc:'豆瓣2024年度第一！讲述一个图书馆建设项目的亲历故事',addr:'Kindle/京东/当当',phone:'',hours:'随时阅读',cost:'约50 AED',rating:4.8,tags:['豆瓣年度','中文','真实故事','已核实✓'],outdoor:false,mapQ:'世上为什么要有图书馆+杨素秋+豆瓣',bookUrl:'https://book.douban.com',tip:'在建一座图书馆时她做了什么，值得深思'},
+    {emoji:'📖',name:'《不被大风吹倒》',desc:'莫言70岁新作，讲成长故事、生活态度和人生智慧',addr:'Kindle/实体书',phone:'',hours:'随时',cost:'约40 AED',rating:4.7,tags:['诺奖作家','成长','人生','已核实✓'],outdoor:false,mapQ:'不被大风吹倒+莫言',bookUrl:'',tip:'短小精悍，适合通勤碎片时间读'},
+    {emoji:'📖',name:'《早安，怪物》',desc:'豆瓣9.0心理书！心理治疗师20年职业生涯中最难忘的5位来访者',addr:'Kindle/书店',phone:'',hours:'随时',cost:'约55 AED',rating:4.7,tags:['心理学','豆瓣9分','纪实','已核实✓'],outdoor:false,mapQ:'早安怪物+心理治疗+豆瓣',bookUrl:'',tip:'每个人都能从中看到自己'},
+    {emoji:'📖',name:'《我的母亲做保洁》',desc:'讲述两个打工人在不同阶层中的痛苦、挣扎、迷茫',addr:'Kindle/实体书',phone:'',hours:'随时',cost:'约45 AED',rating:4.6,tags:['纪实','社会','中文','已核实✓'],outdoor:false,mapQ:'我的母亲做保洁+豆瓣',bookUrl:'',tip:'真实的当代中国打工人故事'},
+    // 📖 经典商业/思维书
+    {emoji:'📖',name:'《思考，快与慢》',desc:'诺贝尔奖得主卡尼曼经典！系统1和系统2思维决策',addr:'Kindle/实体书',phone:'',hours:'随时',cost:'约60 AED',rating:4.8,tags:['诺奖','思维','经典','已核实✓'],outdoor:false,mapQ:'Thinking+Fast+and+Slow+Kahneman',bookUrl:'',tip:'改变你对决策的认知'},
+    {emoji:'📖',name:'《人性的弱点》',desc:'戴尔·卡耐基永恒经典，提升社交与沟通',addr:'Kindle/实体书',phone:'',hours:'随时',cost:'约35 AED',rating:4.5,tags:['沟通','经典','成长','已核实✓'],outdoor:false,mapQ:'How+to+Win+Friends+Influence+People',bookUrl:'',tip:'每个章节都有实用技巧'},
+    // 📖 亲子书单 - 给7-9岁女儿
+    {emoji:'📚',name:'《猜猜我有多爱你》',desc:'经典绘本，亲子共读首选，表达爱的方式',addr:'MBR图书馆/Kindle Kids',phone:'',hours:'15分钟一本',cost:'免费-50 AED',rating:4.9,tags:['绘本','亲子','经典','已核实✓'],outdoor:false,mapQ:'Guess+How+Much+I+Love+You',bookUrl:'',tip:'睡前读，孩子超爱'},
+    {emoji:'📚',name:'《窗边的小豆豆》',desc:'黑柳彻子经典儿童文学，适合7-12岁独立阅读',addr:'Kindle/书店',phone:'',hours:'每天1章',cost:'约40 AED',rating:4.8,tags:['儿童文学','成长','日本','已核实✓'],outdoor:false,mapQ:'窗边的小豆豆+黑柳彻子',bookUrl:'',tip:'讲巴学园的故事，很温暖'},
+    {emoji:'📚',name:'《神奇树屋》系列',desc:'Magic Tree House - 适合英文启蒙，时空冒险',addr:'Kindle/书店',phone:'',hours:'每本45分钟',cost:'30 AED/本',rating:4.7,tags:['英文启蒙','冒险','系列','已核实✓'],outdoor:false,mapQ:'Magic+Tree+House+books',bookUrl:'',tip:'孩子会一本接一本停不下来'},
+    // 🎙️ 播客
+    {emoji:'🎙️',name:'《得到·罗胖60秒》',desc:'每天60秒知识，适合通勤收听',addr:'得到App/小宇宙',phone:'',hours:'60秒/天',cost:'免费',rating:4.5,tags:['播客','免费','中文','碎片时间','已核实✓'],outdoor:false,mapQ:'罗振宇+得到+60秒',bookUrl:'',tip:'每天一个知识点，坚持很有收获'},
+    {emoji:'🎙️',name:'《日谈公园》播客',desc:'聊电影、音乐、生活的高质量中文播客',addr:'小宇宙/Apple Podcasts',phone:'',hours:'每期1-2h',cost:'免费',rating:4.7,tags:['播客','中文','文化','已核实✓'],outdoor:false,mapQ:'日谈公园+播客',bookUrl:'',tip:'周末散步/开车听'},
+    {emoji:'🎙️',name:'《The Daily》NYT播客',desc:'纽约时报每日新闻深度解读，20分钟',addr:'Apple Podcasts/Spotify',phone:'',hours:'20分钟/天',cost:'免费',rating:4.8,tags:['播客','英文','新闻','已核实✓'],outdoor:false,mapQ:'The+Daily+NYT+podcast',bookUrl:'',tip:'提升英文听力和时事了解'},
+    // 🎬 纪录片
+    {emoji:'🎬',name:'BBC《Planet Earth III》',desc:'BBC地球脉动系列最新！震撼自然纪录片，全家一起看',addr:'Netflix/iQiyi',phone:'',hours:'每集60分钟',cost:'订阅费',rating:4.9,tags:['纪录片','BBC','亲子','自然','已核实✓'],outdoor:false,mapQ:'Planet+Earth+III+BBC',bookUrl:'',tip:'4K画质绝美，女儿会爱'},
+    {emoji:'🎬',name:'《蓝色星球II》',desc:'海洋纪录片天花板，适合全家观看',addr:'Netflix',phone:'',hours:'7集',cost:'订阅费',rating:4.9,tags:['纪录片','海洋','亲子','已核实✓'],outdoor:false,mapQ:'Blue+Planet+II+BBC',bookUrl:'',tip:'讲完一集聊聊海洋生物'},
+    {emoji:'🎬',name:'《舌尖上的中国》',desc:'中国美食纪录片经典，解馋又长知识',addr:'腾讯视频/B站',phone:'',hours:'每集50分钟',cost:'会员',rating:4.8,tags:['美食','纪录片','中文','已核实✓'],outdoor:false,mapQ:'舌尖上的中国',bookUrl:'',tip:'吃饭时配着看很香'},
+    // 💻 在线学习
+    {emoji:'💻',name:'Duolingo学语言',desc:'游戏化学语言App，每天15分钟，支持多语种',addr:'App Store/Google Play',phone:'',hours:'15分钟/天',cost:'免费',rating:4.7,tags:['App','语言','免费','亲子','已核实✓'],outdoor:false,mapQ:'Duolingo+app',bookUrl:'https://www.duolingo.com',tip:'和孩子一起学阿拉伯语或西班牙语'},
+    {emoji:'💻',name:'Khan Academy Kids',desc:'免费儿童学习App，数学/阅读/艺术，覆盖2-8岁',addr:'App Store/Google Play',phone:'',hours:'灵活',cost:'完全免费',rating:4.8,tags:['App','儿童','免费','教育','已核实✓'],outdoor:false,mapQ:'Khan+Academy+Kids+app',bookUrl:'https://www.khanacademy.org/kids',tip:'完全免费，质量超高'},
+    {emoji:'💻',name:'Coursera在线课程',desc:'全球顶尖大学免费课程，想学什么都有',addr:'coursera.org',phone:'',hours:'按课程',cost:'免费-200 AED',rating:4.6,tags:['在线课','大学','成长','已核实✓'],outdoor:false,mapQ:'Coursera+courses',bookUrl:'https://www.coursera.org',tip:'审核状态免费看课程视频'},
+    // ✍️ 写作/记录
+    {emoji:'✍️',name:'家庭日记/孩子成长记录',desc:'每天写几句，记录孩子说的趣事、家庭小事',addr:'笔记本/Notion/备忘录',phone:'',hours:'5分钟/天',cost:'免费',rating:5,tags:['亲子','记录','免费','长期','已核实✓'],outdoor:false,mapQ:'family+diary+app',bookUrl:'',tip:'坚持一年回头看会非常感动'},
+    {emoji:'✍️',name:'和女儿一起读绘本写感想',desc:'每周选一本绘本，读完一起画画/写几句',addr:'在家',phone:'',hours:'30分钟',cost:'绘本成本',rating:4.8,tags:['亲子','创作','阅读','已核实✓'],outdoor:false,mapQ:'kids+book+activity',bookUrl:'',tip:'培养阅读习惯和表达能力'},
+  ]
+},
+
 };
 // ============ END OF DATA ============
