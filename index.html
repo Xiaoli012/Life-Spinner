@@ -1038,6 +1038,9 @@ function drawWheel(hi=-1) {
 }
 
 function spin() {
+  // 每次转之前先随机换一批（用户无感）
+  sampleWheel(); curRot=0; drawWheel();
+
   const a=wheelActs;if(!a.length||spinning)return;
   spinning=true;document.getElementById('spinBtn').disabled=true;document.getElementById('resCard').classList.remove('show');
   const n=a.length,arc=Math.PI*2/n,ti=Math.floor(Math.random()*n);
