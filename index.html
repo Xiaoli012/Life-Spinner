@@ -43,8 +43,9 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);co
 .mode-toggle{display:flex;margin:10px 16px;background:var(--card);border-radius:12px;overflow:hidden;position:relative}
 .mode-btn{flex:1;padding:12px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;position:relative;z-index:1;color:var(--text2);border:none;background:transparent;transition:color .3s}
 .mode-btn.active{color:#fff}
-.mode-slider{position:absolute;top:4px;bottom:4px;width:calc(50% - 4px);left:4px;background:linear-gradient(135deg,var(--accent),#d97706);border-radius:10px;transition:transform .35s cubic-bezier(.4,0,.2,1);z-index:0}
-.mode-slider.couple{transform:translateX(100%)}
+.mode-slider{position:absolute;top:4px;bottom:4px;width:calc(33.33% - 4px);left:4px;background:linear-gradient(135deg,var(--accent),#d97706);border-radius:10px;transition:transform .35s cubic-bezier(.4,0,.2,1);z-index:0}
+.mode-slider.couple{transform:translateX(calc(100% + 2px))}
+.mode-slider.friend{transform:translateX(calc(200% + 4px))}
 
 /* === CAT FILTER === */
 .cat-filter{display:flex;gap:5px;margin:6px 16px;flex-wrap:wrap}
@@ -137,10 +138,10 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 .sec-h .badge{background:var(--accent);color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px}
 
 /* === TODAY CARD === */
-.today-card{margin:0 16px 12px;background:linear-gradient(135deg,rgba(245,158,11,.1),rgba(139,92,246,.1));border:1px solid rgba(245,158,11,.2);border-radius:var(--radius);padding:16px;animation:su .4s ease}
+.today-full{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(139,92,246,.08));padding:16px 12px 12px;min-height:180px}
 .today-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.today-header h3{font-size:15px;font-weight:900;color:var(--accent);display:flex;align-items:center;gap:6px}
-.today-date{font-size:11px;color:var(--text2)}
+.today-header h3{font-size:18px;font-weight:900;color:var(--accent);display:flex;align-items:center;gap:6px}
+.today-date{font-size:12px;color:var(--text2)}
 .today-items{display:flex;flex-direction:column;gap:6px}
 .today-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:10px}
 .today-item .ti-time{font-size:13px;font-weight:700;color:var(--accent);min-width:48px}
@@ -204,7 +205,9 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 .pl-emoji{font-size:13px;cursor:pointer;padding:2px;border-radius:4px;min-width:22px;text-align:center}
 .pl-del{width:22px;height:22px;border:none;background:transparent;color:rgba(255,255,255,.12);border-radius:6px;cursor:pointer;font-size:11px}
 .pl-del:hover{background:rgba(239,68,68,.15);color:var(--danger)}
-.pl-day:hover,.pl-time:hover,.pl-act:hover,.pl-emoji:hover{background:rgba(255,255,255,.07)}
+.pl-day:hover,.pl-time:hover,.pl-act:hover{background:rgba(255,255,255,.07)}
+.pl-row-wrap{margin:3px 0}
+.pl-detail-hint{font-size:10px;color:var(--text2);padding:2px 10px 4px 36px;line-height:1.3}
 .pl-input{background:rgba(255,255,255,.1);border:1px solid var(--accent2);border-radius:4px;color:var(--text);font-size:inherit;font-family:inherit;padding:2px 5px;outline:none;width:100%}
 .pl-actions{display:flex;gap:6px;margin-bottom:8px}
 .pl-ab{padding:5px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s}
@@ -386,7 +389,7 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 <div class="page active" id="pageSpinner">
   <div class="header"><h1>🎰 Life Spinner</h1><div class="sub">JLT Cluster S | 随时转一转，生活不无聊</div></div>
   <div class="weather-bar"><span class="wi" id="wI">⏳</span><span class="temp" id="wT">--°</span><div class="wd" id="wD">加载天气...</div><span class="ww" id="wW"></span></div>
-  <div class="mode-toggle"><div class="mode-slider" id="mSlider"></div><button class="mode-btn active" id="famBtn" onclick="setMode('family')">👨‍👩‍👧‍👧 全家</button><button class="mode-btn" id="couBtn" onclick="setMode('couple')">💑 夫妻</button></div>
+  <div class="mode-toggle"><div class="mode-slider" id="mSlider"></div><button class="mode-btn active" id="famBtn" onclick="setMode('family')">👨‍👩‍👧‍👧 全家</button><button class="mode-btn" id="couBtn" onclick="setMode('couple')">💑 夫妻</button><button class="mode-btn" id="friBtn" onclick="setMode('friend')">🍻 朋友</button></div>
   <!-- Category Filter -->
   <div class="cat-filter" id="catFilter"></div>
   <div class="wheel-info" id="wheelInfo"></div>
@@ -399,13 +402,11 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 
 <!-- ========== PAGE 2: WEEKLY PLAN ========== -->
 <div class="page" id="pagePlan">
-  <div class="header"><h1>📅 本周安排</h1><div class="sub">自动保存 · 点击编辑</div></div>
+  <!-- 今日活动（铺满，无边距） -->
+  <div class="today-full" id="todayCard"></div>
 
-  <!-- 1. 今日活动（最大，始终展开） -->
-  <div class="today-card" id="todayCard"></div>
-
-  <!-- 2. 已安排活动（收起） -->
-  <div class="sec">
+  <!-- 已安排活动（收起） -->
+  <div class="sec" style="margin:8px 12px">
     <div class="sec-h" onclick="toggleSec('pl')"><h3 style="color:var(--accent)">📋 已安排活动</h3><span class="arrow" id="pl-arrow">▼</span></div>
     <div class="sec-body" id="pl-body">
       <div class="pl-actions"><button class="pl-ab add" onclick="addPRow()">+ 添加</button><button class="pl-ab reset" onclick="resetPlan()">↺ 重置</button></div>
@@ -414,7 +415,7 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
   </div>
 
   <!-- 3. 孩子课表（收起） -->
-  <div class="sec">
+  <div class="sec" style="margin:8px 12px">
     <div class="sec-h" onclick="toggleSec('ks')"><h3 style="color:var(--accent3)">🎒 孩子课表 <span class="badge" style="background:var(--accent3)">影响排期</span></h3><span class="arrow" id="ks-arrow">▼</span></div>
     <div class="sec-body" id="ks-body">
       <div id="ksList"></div>
@@ -431,7 +432,7 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
   </div>
 
   <!-- 4. 转盘历史（收起） -->
-  <div class="sec" id="histSec" style="display:none">
+  <div class="sec" id="histSec" style="display:none;margin:8px 12px">
     <div class="sec-h" onclick="toggleSec('hist')"><h3 style="color:var(--accent2)">🕐 转盘历史</h3><span class="arrow" id="hist-arrow">▼</span></div>
     <div class="sec-body" id="hist-body"><div id="histList"></div></div>
   </div>
@@ -621,47 +622,9 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
   </div>
 </div>
 
-<!-- ========== PAGE 4: MANAGE ========== -->
-<div class="page" id="pageManage">
-  <div class="header"><h1>⚙️ 管理</h1><div class="sub">活动清单 · 评价 · 数据管理</div></div>
-
-  <!-- 推荐 & 黑名单 -->
-  <div class="sec">
-    <div class="sec-h" onclick="toggleSec('mgRate')"><h3 style="color:#f472b6">❤️ 推荐 / 🚫 黑名单 <span class="badge" style="background:#f472b6" id="mgRateCount">0</span></h3><span class="arrow" id="mgRate-arrow">▼</span></div>
-    <div class="sec-body" id="mgRate-body"><div id="mgRateList"></div></div>
-  </div>
-
-  <div class="sec">
-    <div class="sec-h" onclick="toggleSec('mgF')"><h3>👨‍👩‍👧‍👧 全家活动 <span class="badge" id="mgFCount">0</span></h3><span class="arrow" id="mgF-arrow">▼</span></div>
-    <div class="sec-body" id="mgF-body"><div id="mgFList"></div><div class="af" id="afF">
-      <input class="ei" id="addEmojiF" placeholder="🎯" maxlength="2"><input class="ni" id="addNameF" placeholder="活动名称"><select id="addTypeF"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('family')">+ 添加</button>
-    </div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-h" onclick="toggleSec('mgC')"><h3>💑 夫妻活动 <span class="badge" id="mgCCount" style="background:var(--accent2)">0</span></h3><span class="arrow" id="mgC-arrow">▼</span></div>
-    <div class="sec-body" id="mgC-body"><div id="mgCList"></div><div class="af" id="afC">
-      <input class="ei" id="addEmojiC" placeholder="🎯" maxlength="2"><input class="ni" id="addNameC" placeholder="活动名称"><select id="addTypeC"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('couple')">+ 添加</button>
-    </div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-h"><h3>📱 手机安装</h3></div>
-    <div class="sec-body show" style="font-size:12px;color:var(--text2);line-height:1.8">
-      <b style="color:var(--text)">iPhone:</b> Safari打开 → 点底部分享 → 添加到主屏幕<br>
-      <b style="color:var(--text)">Android:</b> Chrome打开 → 菜单 → 添加到主屏幕<br>
-      <b style="color:var(--text)">部署地址:</b> 用 GitHub Pages 免费托管<br>
-      <div style="margin-top:8px;padding:8px;background:var(--card2);border-radius:8px;font-size:11px">
-        1. 注册 github.com → 新建仓库<br>
-        2. 上传全部文件 → Settings → Pages → 启用<br>
-        3. 得到网址如 https://你的名字.github.io/spinner/<br>
-        4. 手机打开该网址 → 添加到主屏幕 → 像App一样使用
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========== PAGE 5: MY PROFILE ========== -->
+<!-- ========== PAGE 4: MY (merged manage + profile) ========== -->
 <div class="page" id="pageMe">
-  <div class="header"><h1>👤 我的</h1><div class="sub">个人信息 · 活动记录 · 黑名单</div></div>
+  <div class="header"><h1>👤 我的</h1><div class="sub">个人信息 · 统计 · 管理</div></div>
 
   <!-- 个人信息 -->
   <div class="sec">
@@ -672,12 +635,8 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
         <div class="pf-row"><span class="pf-label">住址</span><input id="pf_addr" placeholder="如: JLT Cluster S" onblur="saveProfile()"></div>
         <div class="pf-row"><span class="pf-label">家庭</span><input id="pf_family" placeholder="如: 夫妻+2女儿(7岁/9岁)" onblur="saveProfile()"></div>
         <div class="pf-row"><span class="pf-label">兴趣</span><input id="pf_interests" placeholder="如: 网球,美食,户外" onblur="saveProfile()"></div>
-        <div class="pf-row"><span class="pf-label">Fazaa</span>
-          <select id="pf_fazaa" onchange="saveProfile()"><option value="">没有</option><option value="yes">有Fazaa卡</option></select>
-        </div>
-        <div class="pf-row"><span class="pf-label">Entertainer</span>
-          <select id="pf_entertainer" onchange="saveProfile()"><option value="">没有</option><option value="yes">有Entertainer</option></select>
-        </div>
+        <div class="pf-row"><span class="pf-label">Fazaa</span><select id="pf_fazaa" onchange="saveProfile()"><option value="">没有</option><option value="yes">有Fazaa卡</option></select></div>
+        <div class="pf-row"><span class="pf-label">Entertainer</span><select id="pf_entertainer" onchange="saveProfile()"><option value="">没有</option><option value="yes">有Entertainer</option></select></div>
       </div>
     </div>
   </div>
@@ -690,13 +649,13 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 
   <!-- 参加过的活动 -->
   <div class="sec">
-    <div class="sec-h" onclick="toggleSec('visited')"><h3 style="color:var(--success)">✅ 参加过的活动 <span class="badge" style="background:var(--success)" id="visitedCount">0</span></h3><span class="arrow" id="visited-arrow">▼</span></div>
+    <div class="sec-h" onclick="toggleSec('visited')"><h3 style="color:var(--success)">✅ 参加过 <span class="badge" style="background:var(--success)" id="visitedCount">0</span></h3><span class="arrow" id="visited-arrow">▼</span></div>
     <div class="sec-body" id="visited-body"><div id="visitedList"></div></div>
   </div>
 
-  <!-- 推荐列表 -->
+  <!-- 推荐 -->
   <div class="sec">
-    <div class="sec-h" onclick="toggleSec('myRec')"><h3 style="color:#f472b6">❤️ 我推荐的 <span class="badge" style="background:#f472b6" id="recCount">0</span></h3><span class="arrow" id="myRec-arrow">▼</span></div>
+    <div class="sec-h" onclick="toggleSec('myRec')"><h3 style="color:#f472b6">❤️ 推荐 <span class="badge" style="background:#f472b6" id="recCount">0</span></h3><span class="arrow" id="myRec-arrow">▼</span></div>
     <div class="sec-body" id="myRec-body"><div id="recList"></div></div>
   </div>
 
@@ -706,25 +665,43 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
     <div class="sec-body" id="myBlk-body"><div id="blkList"></div></div>
   </div>
 
+  <!-- 活动库管理 -->
+  <div class="sec">
+    <div class="sec-h" onclick="toggleSec('mgF')"><h3>👨‍👩‍👧‍👧 全家活动 <span class="badge" id="mgFCount">0</span></h3><span class="arrow" id="mgF-arrow">▼</span></div>
+    <div class="sec-body" id="mgF-body"><div id="mgFList" style="max-height:300px;overflow-y:auto"></div><div class="af">
+      <input class="ei" id="addEmojiF" placeholder="🎯" maxlength="2"><input class="ni" id="addNameF" placeholder="活动名称"><select id="addTypeF"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('family')">+</button>
+    </div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-h" onclick="toggleSec('mgC')"><h3>💑 夫妻活动 <span class="badge" id="mgCCount" style="background:var(--accent2)">0</span></h3><span class="arrow" id="mgC-arrow">▼</span></div>
+    <div class="sec-body" id="mgC-body"><div id="mgCList" style="max-height:300px;overflow-y:auto"></div><div class="af">
+      <input class="ei" id="addEmojiC" placeholder="🎯" maxlength="2"><input class="ni" id="addNameC" placeholder="活动名称"><select id="addTypeC"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('couple')">+</button>
+    </div></div>
+  </div>
+  <div class="sec">
+    <div class="sec-h" onclick="toggleSec('mgR')"><h3>🍻 朋友活动 <span class="badge" id="mgRCount" style="background:var(--accent3)">0</span></h3><span class="arrow" id="mgR-arrow">▼</span></div>
+    <div class="sec-body" id="mgR-body"><div id="mgRList" style="max-height:300px;overflow-y:auto"></div><div class="af">
+      <input class="ei" id="addEmojiR" placeholder="🎯" maxlength="2"><input class="ni" id="addNameR" placeholder="活动名称"><select id="addTypeR"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('friend')">+</button>
+    </div></div>
+  </div>
+
   <!-- 数据管理 -->
   <div class="sec">
     <div class="sec-h" onclick="toggleSec('dataM')"><h3>💾 数据管理</h3><span class="arrow" id="dataM-arrow">▼</span></div>
     <div class="sec-body" id="dataM-body">
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="pl-ab add" onclick="exportData()">📤 导出数据</button>
-        <button class="pl-ab reset" onclick="clearAllData()">🗑️ 清除全部数据</button>
+        <button class="pl-ab reset" onclick="clearAllData()">🗑️ 清除全部</button>
       </div>
-      <div style="font-size:10px;color:var(--text2);margin-top:6px">导出的数据包含个人信息、评价、活动记录等</div>
     </div>
   </div>
 </div>
 
-<!-- NAV -->
+<!-- NAV (4 tabs) -->
 <div class="nav">
   <button class="nav-btn active" onclick="showPage('pageSpinner',this)"><span class="nav-icon">🎰</span>转盘</button>
   <button class="nav-btn" onclick="showPage('pagePlan',this)"><span class="nav-icon">📅</span>安排</button>
   <button class="nav-btn" onclick="showPage('pageDiscover',this)"><span class="nav-icon">🔍</span>发现</button>
-  <button class="nav-btn" onclick="showPage('pageManage',this)"><span class="nav-icon">⚙️</span>管理</button>
   <button class="nav-btn" onclick="showPage('pageMe',this)"><span class="nav-icon">👤</span>我的</button>
 </div>
 
@@ -825,6 +802,7 @@ const CAT_LABELS = {sports:'运动',learning:'学习',food:'美食',culture:'文
 let mode = 'family';
 let famActs = JSON.parse(localStorage.getItem('s_fam')) || JSON.parse(JSON.stringify(DB_FAMILY));
 let couActs = JSON.parse(localStorage.getItem('s_cou')) || JSON.parse(JSON.stringify(DB_COUPLE));
+let friActs = JSON.parse(localStorage.getItem('s_fri')) || JSON.parse(JSON.stringify([...DB_COUPLE, ...DB_FAMILY.filter(a=>['sports','food','entertainment','leisure','nightlife'].includes(a.cat))]));
 let history = JSON.parse(localStorage.getItem('s_hist')) || [];
 let planner = JSON.parse(localStorage.getItem('s_plan')) || JSON.parse(JSON.stringify(DEFAULT_PLANNER));
 let kidsSchedule = JSON.parse(localStorage.getItem('s_kids')) || [];
@@ -849,8 +827,7 @@ const WHEEL_MAX = 8; // 转盘最多显示数量，8个看得最清楚
 let wheelActs = []; // 当前转盘上显示的活动
 
 function actsPool() {
-  // 全部符合筛选条件的活动池
-  const base = mode === 'family' ? famActs : couActs;
+  const base = mode === 'family' ? famActs : mode === 'couple' ? couActs : friActs;
   if (catFilter === 'all') return base;
   return base.filter(a => a.cat === catFilter);
 }
@@ -915,6 +892,7 @@ function acts() { return actsPool(); }
 function save() {
   localStorage.setItem('s_fam', JSON.stringify(famActs));
   localStorage.setItem('s_cou', JSON.stringify(couActs));
+  localStorage.setItem('s_fri', JSON.stringify(friActs));
   localStorage.setItem('s_hist', JSON.stringify(history));
   localStorage.setItem('s_plan', JSON.stringify(planner));
   localStorage.setItem('s_kids', JSON.stringify(kidsSchedule));
@@ -928,8 +906,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   if (id === 'pageDiscover' && !document.getElementById('catTabs').innerHTML) initDiscover();
-  if (id === 'pageManage') renderManage();
-  if (id === 'pageMe') renderMyPage();
+  if (id === 'pageMe') { renderManage(); renderMyPage(); }
   if (id === 'pagePlan') { renderToday(); renderPlanner(); renderKids(); renderHist(); }
 }
 function toggleSec(id) {
@@ -956,15 +933,16 @@ async function fetchWeather() {
 // ==================== MODE ====================
 function setMode(m) {
   mode=m;
-  document.getElementById('mSlider').className='mode-slider'+(m==='couple'?' couple':'');
+  document.getElementById('mSlider').className='mode-slider'+(m==='couple'?' couple':m==='friend'?' friend':'');
   document.getElementById('famBtn').classList.toggle('active',m==='family');
   document.getElementById('couBtn').classList.toggle('active',m==='couple');
+  document.getElementById('friBtn').classList.toggle('active',m==='friend');
   curRot=0; renderCatFilter(); sampleWheel(); drawWheel();
 }
 
 // ==================== CATEGORY FILTER ====================
 function renderCatFilter() {
-  const base = mode === 'family' ? famActs : couActs;
+  const base = mode === 'family' ? famActs : mode === 'couple' ? couActs : friActs;
   const el = document.getElementById('catFilter');
   el.innerHTML = CAT_FILTERS.map(c => {
     const count = c.id === 'all' ? base.length : base.filter(a => a.cat === c.id).length;
@@ -1509,7 +1487,22 @@ function toggleTodayDetail(el, actName) {
 
 function renderPlanner(){
   const g=document.getElementById('plGrid');
-  g.innerHTML=planner.map((r,i)=>`<div class="pl-row" id="pr${i}"><span class="pl-day" onclick="editPF(${i},'day')" id="pd${i}">${r.day}</span><span class="pl-time" onclick="editPF(${i},'time')" id="pt${i}">${r.time}</span><span class="pl-act" onclick="editPF(${i},'act')" id="pa${i}">${r.act}</span><span class="pl-emoji" onclick="editPF(${i},'emoji')" id="pe${i}">${r.emoji}</span><button class="pl-del" onclick="delPRow(${i})">✕</button></div>`).join('');
+  g.innerHTML=planner.map((r,i)=>{
+    const act = findActByName(r.act);
+    const hasDetail = act && act.info;
+    const loc = hasDetail ? (act.info.addr || act.info.loc || '') : '';
+    const cost = hasDetail ? (act.info.cost || '') : '';
+    const detailHint = (loc || cost) ? `<div class="pl-detail-hint">${loc?'📍'+loc.slice(0,20):''}${loc&&cost?' · ':''}${cost?'💰'+cost:''}</div>` : '';
+    return `<div class="pl-row-wrap">
+      <div class="pl-row" id="pr${i}">
+        <span class="pl-day" onclick="event.stopPropagation();editPF(${i},'day')" id="pd${i}">${r.day}</span>
+        <span class="pl-time" onclick="event.stopPropagation();editPF(${i},'time')" id="pt${i}">${r.time}</span>
+        <span class="pl-act" onclick="event.stopPropagation();toggleTodayDetail(this.parentNode,'${r.act.replace(/'/g,"\\'")}')" id="pa${i}">${r.emoji} ${r.act}</span>
+        <button class="pl-del" onclick="event.stopPropagation();delPRow(${i})">✕</button>
+      </div>
+      ${detailHint}
+    </div>`;
+  }).join('');
 }
 function editPF(i,f){
   const r=planner[i],el=document.getElementById(f==='day'?`pd${i}`:f==='time'?`pt${i}`:f==='act'?`pa${i}`:`pe${i}`);
@@ -2283,7 +2276,7 @@ function renderDC(){
     const maxKm = DIST_RANGES[distFilter].max;
     items = items.filter(it => getVenueDist(it) <= maxKm);
   }
-  const existing=new Set([...famActs.map(a=>a.name),...couActs.map(a=>a.name)]);
+  const existing=new Set([...famActs.map(a=>a.name),...couActs.map(a=>a.name),...friActs.map(a=>a.name)]);
   if (!items.length) {
     document.getElementById('dcGrid').innerHTML = `<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">该距离范围内暂无此分类的店铺</div>`;
     return;
@@ -2317,7 +2310,7 @@ function renderDC(){
 function addVenue(catKey,idx){
   const cat=VENUES[catKey];if(!cat)return;
   const it=cat.items[idx];
-  const existing=new Set([...famActs.map(a=>a.name),...couActs.map(a=>a.name)]);
+  const existing=new Set([...famActs.map(a=>a.name),...couActs.map(a=>a.name),...friActs.map(a=>a.name)]);
   if(existing.has(it.name))return;
   const spinnerCat=catKey.includes('food')||catKey==='cafes'?'food':catKey.includes('sport')?'sports':catKey==='learning'?'learning':catKey==='nature'?'nature':catKey==='daytrips'?'daytrip':catKey==='nightlife'?'nightlife':'entertainment';
   const newAct={emoji:it.emoji,name:it.name,outdoor:it.outdoor||false,cat:spinnerCat,
@@ -2453,8 +2446,8 @@ function clearAllData() {
 function renderManage(){
   document.getElementById('mgFCount').textContent=famActs.length;
   document.getElementById('mgCCount').textContent=couActs.length;
-  renderMgList('F',famActs);renderMgList('C',couActs);
-  renderRatingsList();
+  document.getElementById('mgRCount').textContent=friActs.length;
+  renderMgList('F',famActs);renderMgList('C',couActs);renderMgList('R',friActs);
 }
 function renderRatingsList(){
   const entries = Object.entries(userRatings).filter(([n,r]) => r.status !== 'normal' || r.stars > 0);
@@ -2500,14 +2493,14 @@ function clearRating(name) {
 function renderMgList(t,arr){
   document.getElementById('mg'+t+'List').innerHTML=arr.map((a,i)=>`<div class="ai"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span><span class="ao ${a.outdoor?'out':'in'}">${a.outdoor?'户外':'室内'}</span><span class="ao" style="background:rgba(255,255,255,.05)">${CAT_LABELS[a.cat]||''}</span><button class="ad" onclick="delAct('${t}',${i})">✕</button></div>`).join('');
 }
-function delAct(t,i){(t==='F'?famActs:couActs).splice(i,1);save();renderManage();drawWheel();}
+function delAct(t,i){(t==='F'?famActs:t==='C'?couActs:friActs).splice(i,1);save();renderManage();drawWheel();}
 function addAct(m){
   const sfx=m==='family'?'F':'C';
   const emoji=document.getElementById('addEmoji'+sfx).value.trim()||'🎯';
   const name=document.getElementById('addName'+sfx).value.trim();
   const type=document.getElementById('addType'+sfx).value;
   if(!name)return;
-  const arr=m==='family'?famActs:couActs;
+  const arr=m==='family'?famActs:m==='couple'?couActs:friActs;
   arr.push({emoji,name,outdoor:type==='outdoor',cat:'leisure',info:{loc:'待补充',addr:'',dist:'待补充',cost:'待补充',age:m==='family'?'适合全家':'两人',time:'灵活',hours:'',phone:'',tip:'新添加',mapQ:encodeURIComponent(name+' Dubai'),bookUrl:''}});
   save();renderManage();drawWheel();document.getElementById('addEmoji'+sfx).value='';document.getElementById('addName'+sfx).value='';toast('✅ 已添加');
 }
@@ -2517,7 +2510,9 @@ function syncVenuesToSpinner() {
   if (typeof VENUES === 'undefined') return 0;
   const famNames = new Set(famActs.map(a => a.name));
   const couNames = new Set(couActs.map(a => a.name));
+  const friNames = new Set(friActs.map(a => a.name));
   const coupleCategories = new Set(['nightlife', 'cafes']);
+  const friendCategories = new Set(['sports','food','entertainment','leisure','nightlife']);
   let added = 0;
 
   Object.keys(VENUES).forEach(catKey => {
@@ -2542,6 +2537,10 @@ function syncVenuesToSpinner() {
         if (['food','leisure','culture','daytrip'].includes(spinCat) && !couNames.has(it.name)) {
           couActs.push({...newAct, info:{...newAct.info, age:'两人'}}); couNames.add(it.name); added++;
         }
+      }
+      // Friend pool: sports, food, entertainment, leisure, nightlife
+      if (friendCategories.has(spinCat) && !friNames.has(it.name)) {
+        friActs.push({...newAct, info:{...newAct.info, age:'朋友'}}); friNames.add(it.name); added++;
       }
     });
   });
