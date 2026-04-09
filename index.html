@@ -102,6 +102,8 @@ canvas#wheel{width:360px;height:360px;border-radius:50%;cursor:pointer;box-shado
 .rating-note{width:100%;padding:8px 10px;background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;outline:none}
 .rating-note:focus{border-color:var(--accent)}
 .rating-note::placeholder{color:var(--text2)}
+.visit-btn{padding:8px 14px;border:none;border-radius:8px;background:var(--success);color:#000;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+.visit-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
 
 /* Profile */
 .prof-form{display:flex;flex-direction:column;gap:6px}
@@ -1037,7 +1039,7 @@ function spin() {
     else{spinning=false;document.getElementById('spinBtn').disabled=false;showResAct(a[ti]);drawWheel(ti);confetti();
       const d=new Date();history.unshift({emoji:a[ti].emoji,name:a[ti].name,mode,date:d.toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'})});
       if(history.length>20)history.pop();save();renderHist();
-      markVisited(a[ti].name, a[ti].emoji, a[ti].cat);}}
+      }}
   requestAnimationFrame(anim);
 }
 
@@ -1079,7 +1081,7 @@ function showResAct(act) {
     ${info.phone?`<div class="ir"><span class="ii">📞</span><span class="il">电话</span><span>${info.phone}</span></div>`:''}
     <div class="ir"><span class="ii">💡</span><span class="il">贴士</span><span>${info.tip}</span></div>
   </div>
-  ${renderRatingSection(act.name)}
+  ${renderRatingSection(act.name, act.emoji, act.cat)}
   <div class="rl">${lk}</div>`;
   card.classList.add('show');card.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
@@ -1139,21 +1141,40 @@ function renderStatusBtnsHTML(name) {
     + `<button class="status-btn ${r.status==='blacklist'?'active-blk':''}" onclick="setUserStatus('${esc}','${r.status==='blacklist'?'normal':'blacklist'}')">🚫 拉黑</button>`;
 }
 
-function renderRatingSection(name) {
+function renderRatingSection(name, emoji, cat) {
   const r = getUserRating(name);
+  const esc = name.replace(/'/g,"\\'");
+  const isVisited = visitedActs.some(v => v.name === name);
+  const visitBtn = isVisited
+    ? `<span style="font-size:11px;color:var(--success)">✅ 已参加</span>`
+    : `<button class="visit-btn" onclick="confirmVisit('${esc}','${emoji||'🎯'}','${cat||''}')">✅ 确认参加</button>`;
   return `<div class="rating-section">
-    <div class="rating-row">
-      <span class="rating-label">我的评分</span>
-      <span id="ratingStars" class="rating-stars">${renderStarsHTML(name)}</span>
+    <div class="rating-row" style="justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="rating-label">评分</span>
+        <span id="ratingStars" class="rating-stars">${renderStarsHTML(name)}</span>
+      </div>
+      ${visitBtn}
     </div>
     <div class="rating-row">
       <span class="rating-label">标记</span>
       <span id="ratingBtns">${renderStatusBtnsHTML(name)}</span>
     </div>
     <div class="rating-row">
-      <input id="ratingNote" class="rating-note" placeholder="写个备注..." value="${(r.note||'').replace(/"/g,'&quot;')}" onblur="saveUserNote('${name.replace(/'/g,"\\'")}')">
+      <input id="ratingNote" class="rating-note" placeholder="写个备注..." value="${(r.note||'').replace(/"/g,'&quot;')}" onblur="saveUserNote('${esc}')">
     </div>
   </div>`;
+}
+
+function confirmVisit(name, emoji, cat) {
+  markVisited(name, emoji, cat);
+  toast('✅ 已记录参加「' + name.slice(0,15) + '」');
+  // Re-render the button to show "已参加"
+  const card = document.getElementById('resCard');
+  if (card) {
+    const btns = card.querySelectorAll('.visit-btn');
+    btns.forEach(b => { b.outerHTML = '<span style="font-size:11px;color:var(--success)">✅ 已参加</span>'; });
+  }
 }
 
 // ==================== CONFETTI ====================
