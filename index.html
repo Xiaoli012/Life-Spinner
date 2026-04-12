@@ -211,6 +211,8 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
 .gen-item .gi-swap{width:24px;height:24px;border:none;background:rgba(245,158,11,.15);color:var(--accent);border-radius:6px;cursor:pointer;font-size:12px}
 .gen-item .gi-swap:hover{background:rgba(245,158,11,.3)}
 .gen-save{margin-top:12px;width:100%;padding:12px;border:none;border-radius:10px;background:var(--success);color:#000;font-size:14px;font-weight:700;cursor:pointer}
+.gen-week-header{font-size:14px;font-weight:900;color:var(--accent2);padding:12px 0 4px;margin-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px}
+.gen-week-header:first-child{border-top:none;margin-top:0}
 
 /* === EDITABLE PLANNER === */
 .pl-row{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--card2);border-radius:8px;margin:3px 0;font-size:12px;transition:all .2s}
@@ -455,7 +457,7 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
 
   <!-- 5. 一键生成（最下面） -->
   <div style="margin:12px 16px">
-    <button class="gen-btn" onclick="generateWeeklyPlan()">⚡ 一键生成本周活动安排</button>
+    <button class="gen-btn" onclick="generateMonthlyPlan()">⚡ 一键生成本月活动安排</button>
     <div class="gen-result" id="genResult"></div>
   </div>
 </div>
@@ -866,21 +868,58 @@ function sampleWheel() {
   if (pool.length <= WHEEL_MAX) {
     wheelActs = [...pool];
   } else {
-    // Priority tiers: 1.recommended 2.fazaa 3.normal
+    const now = new Date();
+    const dow = now.getDay(); // 0=Sun, 6=Sat
+    const isWeekendNow = dow === 0 || dow === 5 || dow === 6;
+
     const recommended = pool.filter(a => getUserRating(a.name).status === 'recommend');
-    const fazaaOnly = pool.filter(a => hasFazaa(a) && getUserRating(a.name).status !== 'recommend');
-    const normal = pool.filter(a => !hasFazaa(a) && getUserRating(a.name).status !== 'recommend');
+    const others = pool.filter(a => getUserRating(a.name).status !== 'recommend');
+
     const picks = [];
-    // Guarantee up to 3 recommended
+    const pickNames = new Set();
+    const addPick = (a) => { if (a && !pickNames.has(a.name)) { picks.push(a); pickNames.add(a.name); }};
+
+    // 1. 推荐活动（最多2个）
     const shuffledR = [...recommended].sort(() => Math.random() - 0.5);
-    picks.push(...shuffledR.slice(0, Math.min(3, shuffledR.length)));
-    // Then up to 2 Fazaa
-    const shuffledF = [...fazaaOnly].sort(() => Math.random() - 0.5);
-    picks.push(...shuffledF.slice(0, Math.min(2, shuffledF.length)));
-    // Fill rest from normal
-    const remaining = WHEEL_MAX - picks.length;
-    const shuffledN = [...normal].sort(() => Math.random() - 0.5);
-    picks.push(...shuffledN.slice(0, remaining));
+    shuffledR.slice(0, 2).forEach(addPick);
+
+    // 2. Fazaa优惠（最多1个）
+    const fazaaPool = others.filter(a => hasFazaa(a) && !pickNames.has(a.name)).sort(() => Math.random() - 0.5);
+    if (fazaaPool.length) addPick(fazaaPool[0]);
+
+    // 3. 智能填充：室内外搭配 + 远近搭配
+    const rest = others.filter(a => !pickNames.has(a.name));
+    const nearOut = rest.filter(a => isNearby(a) && isOutdoor(a)).sort(() => Math.random() - 0.5);
+    const nearIn = rest.filter(a => isNearby(a) && !isOutdoor(a)).sort(() => Math.random() - 0.5);
+    const farOut = rest.filter(a => !isNearby(a) && isOutdoor(a)).sort(() => Math.random() - 0.5);
+    const farIn = rest.filter(a => !isNearby(a) && !isOutdoor(a)).sort(() => Math.random() - 0.5);
+
+    if (isWeekendNow) {
+      // 周末：均匀搭配四种组合
+      const groups = [farOut, nearOut, farIn, nearIn];
+      let gi = 0, safety = 0;
+      while (picks.length < WHEEL_MAX && safety < 32) {
+        const g = groups[gi % groups.length];
+        if (g.length) addPick(g.shift());
+        gi++; safety++;
+      }
+    } else {
+      // 工作日：偏近(~70%)，室内外各半
+      const groups = [nearOut, nearIn, nearOut, nearIn, farOut, farIn];
+      let gi = 0, safety = 0;
+      while (picks.length < WHEEL_MAX && safety < 32) {
+        const g = groups[gi % groups.length];
+        if (g.length) addPick(g.shift());
+        gi++; safety++;
+      }
+    }
+
+    // 如果还没填满，从剩余随机补
+    if (picks.length < WHEEL_MAX) {
+      const leftover = rest.filter(a => !pickNames.has(a.name)).sort(() => Math.random() - 0.5);
+      leftover.slice(0, WHEEL_MAX - picks.length).forEach(addPick);
+    }
+
     wheelActs = picks.sort(() => Math.random() - 0.5);
   }
   updateWheelInfo();
@@ -1199,35 +1238,36 @@ function addKidsClass(){
 }
 function delKid(i){kidsSchedule.splice(i,1);save();renderKids();}
 
-// ==================== WEEKLY GENERATOR ====================
+// ==================== MONTHLY GENERATOR ====================
 // 规则：周中(一-四)孩子只能在JLT内活动；周末(五-日)可以安排外出
+// 智能规则：a.运动每周同一时间 b.工作日附近/周末可远 c.户外户内搭配 d.远近搭配
 const JLT_ACTIVITIES = [
-  {emoji:'🚶',name:'JLT湖边全家散步',cat:'leisure'},
-  {emoji:'🏃',name:'JLT湖边跑步（自己）',cat:'sports'},
-  {emoji:'🚴',name:'JLT湖边骑车/滑板车',cat:'sports'},
-  {emoji:'📖',name:'家庭阅读时间',cat:'learning'},
-  {emoji:'🎲',name:'家庭桌游/卡牌',cat:'entertainment'},
-  {emoji:'🎬',name:'家庭电影夜',cat:'entertainment'},
-  {emoji:'🧩',name:'拼图/乐高时间',cat:'learning'},
-  {emoji:'🎨',name:'画画/手工时间',cat:'learning'},
-  {emoji:'🎹',name:'乐器练习',cat:'learning'},
-  {emoji:'💻',name:'亲子编程/学习',cat:'learning'},
-  {emoji:'🧘',name:'JLT湖边瑜伽/拉伸',cat:'sports'},
-  {emoji:'⚽',name:'JLT楼下踢球/运动',cat:'sports'},
-  {emoji:'🍳',name:'全家一起做饭',cat:'food'},
-  {emoji:'📝',name:'日记/写作时间',cat:'learning'},
-  {emoji:'🌙',name:'JLT湖边夜散步+聊天',cat:'leisure'},
-  {emoji:'♟️',name:'国际象棋/围棋',cat:'learning'},
-  {emoji:'🎤',name:'家庭KTV/唱歌',cat:'entertainment'},
-  {emoji:'📺',name:'纪录片之夜',cat:'learning'},
+  {emoji:'🚶',name:'JLT湖边全家散步',cat:'leisure',outdoor:true},
+  {emoji:'🏃',name:'JLT湖边跑步（自己）',cat:'sports',outdoor:true},
+  {emoji:'🚴',name:'JLT湖边骑车/滑板车',cat:'sports',outdoor:true},
+  {emoji:'📖',name:'家庭阅读时间',cat:'learning',outdoor:false},
+  {emoji:'🎲',name:'家庭桌游/卡牌',cat:'entertainment',outdoor:false},
+  {emoji:'🎬',name:'家庭电影夜',cat:'entertainment',outdoor:false},
+  {emoji:'🧩',name:'拼图/乐高时间',cat:'learning',outdoor:false},
+  {emoji:'🎨',name:'画画/手工时间',cat:'learning',outdoor:false},
+  {emoji:'🎹',name:'乐器练习',cat:'learning',outdoor:false},
+  {emoji:'💻',name:'亲子编程/学习',cat:'learning',outdoor:false},
+  {emoji:'🧘',name:'JLT湖边瑜伽/拉伸',cat:'sports',outdoor:true},
+  {emoji:'⚽',name:'JLT楼下踢球/运动',cat:'sports',outdoor:true},
+  {emoji:'🍳',name:'全家一起做饭',cat:'food',outdoor:false},
+  {emoji:'📝',name:'日记/写作时间',cat:'learning',outdoor:false},
+  {emoji:'🌙',name:'JLT湖边夜散步+聊天',cat:'leisure',outdoor:true},
+  {emoji:'♟️',name:'国际象棋/围棋',cat:'learning',outdoor:false},
+  {emoji:'🎤',name:'家庭KTV/唱歌',cat:'entertainment',outdoor:false},
+  {emoji:'📺',name:'纪录片之夜',cat:'learning',outdoor:false},
 ];
 const JLT_COUPLE = [
-  {emoji:'🚶',name:'JLT湖边夫妻散步',cat:'leisure'},
-  {emoji:'☕',name:'楼下咖啡聊天',cat:'food'},
-  {emoji:'🎬',name:'两人电影时间',cat:'entertainment'},
-  {emoji:'📖',name:'各自阅读+分享',cat:'learning'},
-  {emoji:'🧘',name:'一起做瑜伽',cat:'sports'},
-  {emoji:'🍷',name:'阳台小酌聊天',cat:'leisure'},
+  {emoji:'🚶',name:'JLT湖边夫妻散步',cat:'leisure',outdoor:true},
+  {emoji:'☕',name:'楼下咖啡聊天',cat:'food',outdoor:false},
+  {emoji:'🎬',name:'两人电影时间',cat:'entertainment',outdoor:false},
+  {emoji:'📖',name:'各自阅读+分享',cat:'learning',outdoor:false},
+  {emoji:'🧘',name:'一起做瑜伽',cat:'sports',outdoor:true},
+  {emoji:'🍷',name:'阳台小酌聊天',cat:'leisure',outdoor:false},
 ];
 
 const WEEKDAYS = ['一','二','三','四']; // 周中
@@ -1235,14 +1275,50 @@ const WEEKEND = ['五','六','日'];        // 周末
 
 function isWeekday(day) { return WEEKDAYS.includes(day); }
 
+// === 距离和室内外辅助函数 ===
+function getDistMin(act) {
+  if (!act) return 0;
+  const d = act.info && act.info.dist;
+  if (!d) return 0;
+  if (typeof d === 'number') return [0, 10, 20, 30, 60][d] || 0;
+  const m = String(d).match(/(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+function isNearby(act) { return getDistMin(act) <= 15; }
+function isOutdoor(act) { return !!act.outdoor; }
+
 function pickRand(arr, cat, exclude) {
   let pool = cat ? arr.filter(a => a.cat === cat) : [...arr];
-  if (exclude) pool = pool.filter(a => a.name !== exclude.name);
+  if (exclude) {
+    const exNames = Array.isArray(exclude) ? exclude.map(e => e.name) : [exclude.name];
+    pool = pool.filter(a => !exNames.includes(a.name));
+  }
   if (!pool.length) pool = arr;
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-function generateWeeklyPlan() {
+// 智能选择：考虑室内外和远近搭配
+function pickBalanced(arr, cat, exclude, preferOutdoor, preferFar) {
+  let pool = cat ? arr.filter(a => a.cat === cat) : [...arr];
+  if (exclude) {
+    const exNames = Array.isArray(exclude) ? exclude.map(e => e.name) : [exclude.name];
+    pool = pool.filter(a => !exNames.includes(a.name));
+  }
+  if (!pool.length) pool = arr;
+  // 优先匹配偏好
+  let preferred = pool;
+  if (preferOutdoor !== undefined) {
+    const filtered = pool.filter(a => isOutdoor(a) === preferOutdoor);
+    if (filtered.length) preferred = filtered;
+  }
+  if (preferFar !== undefined) {
+    const filtered = preferred.filter(a => isNearby(a) !== preferFar);
+    if (filtered.length) preferred = filtered;
+  }
+  return preferred[Math.floor(Math.random() * preferred.length)];
+}
+
+function generateMonthlyPlan() {
   const container = document.getElementById('genResult');
   const allFam = [...famActs];
   const allCou = [...couActs];
@@ -1250,40 +1326,80 @@ function generateWeeklyPlan() {
   const kidBusy = {};
   kidsSchedule.forEach(k => { if(!kidBusy[k.day])kidBusy[k.day]=[]; kidBusy[k.day].push({start:k.start,end:k.end,name:k.name}); });
 
-  const plan = {};
+  // 计算未来4周的日期
+  const today = new Date();
+  // 找到下一个周一（如果今天是周一则从今天开始）
+  const dayOfWeek = today.getDay(); // 0=Sun
+  const daysToMon = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : (8 - dayOfWeek);
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() + daysToMon);
 
-  // === 周中：只安排JLT内活动 ===
-  // 周一：运动类
-  plan['一'] = [{time:'19:30',act:pickRand(JLT_ACTIVITIES,'sports'),note:'JLT运动',jlt:true}];
-  // 周二：学习类
-  plan['二'] = [{time:'19:30',act:pickRand(JLT_ACTIVITIES,'learning'),note:'JLT学习',jlt:true}];
-  // 周三：运动类（换一个）
-  plan['三'] = [{time:'19:30',act:pickRand(JLT_ACTIVITIES,'sports',plan['一'][0].act),note:'JLT运动',jlt:true}];
-  // 周四：娱乐/休闲
-  const thuCats = ['entertainment','leisure','food'];
-  plan['四'] = [{time:'19:30',act:pickRand(JLT_ACTIVITIES,thuCats[Math.floor(Math.random()*thuCats.length)]),note:'JLT休闲',jlt:true}];
+  // a. 运动每周固定：选2个运动，整月不变
+  const jltSports = JLT_ACTIVITIES.filter(a => a.cat === 'sports');
+  const shuffledSports = [...jltSports].sort(() => Math.random() - 0.5);
+  const monSport = shuffledSports[0]; // 周一固定运动
+  const wedSport = shuffledSports[1] || shuffledSports[0]; // 周三固定运动
 
-  // === 周末：可以外出 ===
-  // 周五：网球（固定）+ 夫妻晚餐
-  plan['五'] = [
-    {time:'20:00',act:{emoji:'🎾',name:'网球 + 夫妻晚餐'},note:'固定',jlt:false},
-  ];
-  // 周六：全天出行
-  const satMorning = pickRand(allFam);
-  const satAfternoon = pickRand(allFam, null, satMorning);
-  plan['六'] = [
-    {time:'08:00',act:satMorning,note:'全家出行',jlt:false},
-    {time:'14:00',act:satAfternoon,note:'下午活动',jlt:false},
-    {time:'21:30',act:pickRand(allCou.length ? allCou : JLT_COUPLE),note:'夫妻时间',jlt:false},
-  ];
-  // 周日：上午出行 + 晚上JLT收尾
-  plan['日'] = [
-    {time:'09:00',act:pickRand(allFam, null, satMorning),note:'全家出行',jlt:false},
-    {time:'19:30',act:{emoji:'🎬',name:'家庭桌游/电影夜'},note:'JLT收尾',jlt:true},
-  ];
+  const weeks = [];
+  const usedWeekend = []; // 追踪已用的周末活动，避免重复
 
-  // Render
-  generatedPlan = plan;
+  for (let w = 0; w < 4; w++) {
+    const plan = {};
+    const weekStart = new Date(startDate);
+    weekStart.setDate(startDate.getDate() + w * 7);
+
+    // 计算本周日期
+    const weekDates = {};
+    DAYS.forEach((day, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      weekDates[day] = `${d.getMonth()+1}/${d.getDate()}`;
+    });
+
+    // === 周中：JLT内活动 ===
+    // 周一：固定运动（每周同一个）
+    plan['一'] = [{time:'19:30',act:monSport,note:'JLT运动',jlt:true}];
+    // 周二：学习类，室内外交替
+    const tuePrefOutdoor = w % 2 === 0;
+    plan['二'] = [{time:'19:30',act:pickBalanced(JLT_ACTIVITIES,'learning',null,tuePrefOutdoor),note:'JLT学习',jlt:true}];
+    // 周三：固定运动（每周同一个，和周一不同）
+    plan['三'] = [{time:'19:30',act:wedSport,note:'JLT运动',jlt:true}];
+    // 周四：娱乐/休闲，室内外交替
+    const thuCats = ['entertainment','leisure','food'];
+    const thuPrefOutdoor = w % 2 === 1;
+    plan['四'] = [{time:'19:30',act:pickBalanced(JLT_ACTIVITIES,thuCats[Math.floor(Math.random()*thuCats.length)],null,thuPrefOutdoor),note:'JLT休闲',jlt:true}];
+
+    // === 周末：可以外出，远近搭配+室内外搭配 ===
+    // 周五：网球（固定）
+    plan['五'] = [
+      {time:'20:00',act:{emoji:'🎾',name:'网球 + 夫妻晚餐',outdoor:true},note:'固定',jlt:false},
+    ];
+
+    // 周六：全天出行 — 远近交替（奇数周远/偶数周近），室内外搭配
+    const satPreferFar = w % 2 === 0;
+    const satMorning = pickBalanced(allFam, null, usedWeekend, true, satPreferFar);
+    // 下午和上午互补：上午户外→下午室内，上午近→下午远
+    const satAfternoon = pickBalanced(allFam, null, [...usedWeekend, satMorning], !isOutdoor(satMorning), !satPreferFar);
+    usedWeekend.push(satMorning, satAfternoon);
+    plan['六'] = [
+      {time:'08:00',act:satMorning,note: isNearby(satMorning)?'附近出行':'远足出行',jlt:false},
+      {time:'14:00',act:satAfternoon,note: isNearby(satAfternoon)?'附近活动':'远处探索',jlt:false},
+      {time:'21:30',act:pickRand(allCou.length ? allCou : JLT_COUPLE),note:'夫妻时间',jlt:false},
+    ];
+
+    // 周日：上午出行（和周六互补远近）+ 晚上JLT收尾
+    const sunPreferFar = !satPreferFar;
+    const sunAct = pickBalanced(allFam, null, [...usedWeekend], undefined, sunPreferFar);
+    usedWeekend.push(sunAct);
+    plan['日'] = [
+      {time:'09:00',act:sunAct,note: isNearby(sunAct)?'附近出行':'远足出行',jlt:false},
+      {time:'19:30',act:{emoji:'🎬',name:'家庭桌游/电影夜',outdoor:false},note:'JLT收尾',jlt:true},
+    ];
+
+    weeks.push({ plan, dates: weekDates });
+  }
+
+  generatedPlan = weeks;
   renderGenPlan(kidBusy);
   container.scrollIntoView({behavior:'smooth'});
 }
@@ -1291,48 +1407,57 @@ function generateWeeklyPlan() {
 function renderGenPlan(kidBusy) {
   if(!kidBusy) { kidBusy={}; kidsSchedule.forEach(k=>{if(!kidBusy[k.day])kidBusy[k.day]=[];kidBusy[k.day].push({start:k.start,end:k.end,name:k.name});}); }
   const container = document.getElementById('genResult');
-  let html = '<div style="font-size:12px;color:var(--success);padding:4px 0;font-weight:700">✅ 已生成！点击 🔄 可换活动</div>';
-  html += '<div style="font-size:10px;color:var(--text2);padding:2px 0 8px">📌 周中只安排JLT内活动 · 周末可出行</div>';
+  if (!generatedPlan || !generatedPlan.length) { container.innerHTML = ''; return; }
 
-  DAYS.forEach(day => {
-    if(!generatedPlan[day]) return;
-    const busy = kidBusy[day];
-    const isWd = isWeekday(day);
-    html += `<div class="gen-day"><div class="gen-day-h">${isWd?'🏠':'🚗'} 周${day} <span style="font-size:10px;font-weight:400;color:${isWd?'var(--accent3)':'var(--success)'}">${isWd?'JLT内':'可出行'}</span>`;
-    if(busy) html += `<span style="font-size:10px;color:var(--danger);font-weight:400;margin-left:4px">🎒 ${busy.map(b=>b.start+' '+b.name).join(', ')}</span>`;
-    html += '</div>';
-    generatedPlan[day].forEach((item, idx) => {
-      const a = item.act;
-      const jltTag = item.jlt ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(6,182,212,.15);color:var(--accent3);margin-left:4px">JLT</span>' : '';
-      html += `<div class="gen-item"><span class="gi-time">${item.time}</span><span class="gi-emoji">${a.emoji||'🎯'}</span><span class="gi-name">${a.name||'待定'}${jltTag}</span><span class="gi-type">${item.note}</span><button class="gi-swap" onclick="swapGenItem('${day}',${idx})" title="换一个">🔄</button></div>`;
+  let html = '<div style="font-size:12px;color:var(--success);padding:4px 0;font-weight:700">✅ 已生成一个月计划！点击 🔄 可换活动</div>';
+  html += '<div style="font-size:10px;color:var(--text2);padding:2px 0 8px">📌 运动每周固定 · 周中JLT附近 · 周末远近搭配 · 室内外交替</div>';
+
+  generatedPlan.forEach((week, wi) => {
+    const firstDate = week.dates['一'];
+    const lastDate = week.dates['日'];
+    html += `<div class="gen-week-header">第${wi+1}周 <span style="font-weight:400;color:var(--text2)">${firstDate} - ${lastDate}</span></div>`;
+
+    DAYS.forEach(day => {
+      if(!week.plan[day]) return;
+      const busy = kidBusy[day];
+      const isWd = isWeekday(day);
+      html += `<div class="gen-day"><div class="gen-day-h">${isWd?'🏠':'🚗'} ${week.dates[day]} 周${day} <span style="font-size:10px;font-weight:400;color:${isWd?'var(--accent3)':'var(--success)'}">${isWd?'JLT内':'可出行'}</span>`;
+      if(busy) html += `<span style="font-size:10px;color:var(--danger);font-weight:400;margin-left:4px">🎒 ${busy.map(b=>b.start+' '+b.name).join(', ')}</span>`;
+      html += '</div>';
+      week.plan[day].forEach((item, idx) => {
+        const a = item.act;
+        const jltTag = item.jlt ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(6,182,212,.15);color:var(--accent3);margin-left:4px">JLT</span>' : '';
+        const outdoorTag = !item.jlt && a.outdoor !== undefined ? `<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:${a.outdoor?'rgba(34,197,94,.15)':'rgba(139,92,246,.15)'};color:${a.outdoor?'var(--success)':'var(--accent2)'};margin-left:4px">${a.outdoor?'户外':'室内'}</span>` : '';
+        const distTag = !item.jlt && a.info && a.info.dist ? `<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,.12);color:var(--accent);margin-left:3px">${a.info.dist}</span>` : '';
+        html += `<div class="gen-item"><span class="gi-time">${item.time}</span><span class="gi-emoji">${a.emoji||'🎯'}</span><span class="gi-name">${a.name||'待定'}${jltTag}${outdoorTag}${distTag}</span><span class="gi-type">${item.note}</span><button class="gi-swap" onclick="swapGenItem(${wi},'${day}',${idx})" title="换一个">🔄</button></div>`;
+      });
+      html += '</div>';
     });
-    html += '</div>';
   });
-  html += '<button class="gen-save" onclick="saveGenPlan()">💾 保存到固定节奏</button>';
+  html += '<button class="gen-save" onclick="saveGenPlan()">💾 保存第1周到固定节奏</button>';
   container.innerHTML = html;
 }
 
-function swapGenItem(day, idx) {
-  if(!generatedPlan||!generatedPlan[day])return;
-  const item = generatedPlan[day][idx];
+function swapGenItem(weekIdx, day, idx) {
+  if(!generatedPlan||!generatedPlan[weekIdx]||!generatedPlan[weekIdx].plan[day])return;
+  const item = generatedPlan[weekIdx].plan[day][idx];
   let newAct;
   if (isWeekday(day) || item.jlt) {
-    // 周中或标记为JLT的：只从JLT活动池中选
     newAct = pickRand(JLT_ACTIVITIES, null, item.act);
   } else {
-    // 周末出行：从完整活动库中选
     const pool = (item.note === '夫妻时间') ? (couActs.length ? couActs : JLT_COUPLE) : famActs;
-    newAct = pickRand(pool, null, item.act);
+    newAct = pickBalanced(pool, null, item.act, !isOutdoor(item.act), !isNearby(item.act));
   }
-  generatedPlan[day][idx].act = newAct;
+  generatedPlan[weekIdx].plan[day][idx].act = newAct;
   renderGenPlan();
 }
 function saveGenPlan() {
-  if(!generatedPlan)return;
+  if(!generatedPlan||!generatedPlan.length)return;
   planner=[];
-  DAYS.forEach(day=>{if(!generatedPlan[day])return;
-    generatedPlan[day].forEach(item=>{planner.push({day,time:item.time,act:item.act.name||'待定',emoji:item.act.emoji||'🎯'});});});
-  save();renderPlanner();toast('✅ 已保存到固定节奏');
+  const week = generatedPlan[0]; // 保存第1周
+  DAYS.forEach(day=>{if(!week.plan[day])return;
+    week.plan[day].forEach(item=>{planner.push({day,time:item.time,act:item.act.name||'待定',emoji:item.act.emoji||'🎯'});});});
+  save();renderPlanner();toast('✅ 已保存第1周到固定节奏');
 }
 
 // ==================== PLANNER ====================
