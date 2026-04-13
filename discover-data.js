@@ -1,12 +1,12 @@
 // ============================================================
-// 发现页数据库 — 最后更新: 2026-04-08
+// 发现页数据库 — 最后更新: 2026-04-13
 // 修改此文件即可更新推荐内容，无需改动主程序
 // 每个条目: emoji, name, desc, addr, phone, hours, cost,
 //           rating(1-5), tags[], outdoor, mapQ, bookUrl, tip,
 //           fazaa(可选): 'XX% off' 或 '特价XX AED' — Fazaa卡优惠
 //           dist(可选): 0=JLT内, 1=10分钟内, 2=20分钟内, 3=30分钟+, 4=短途1h+
 // ============================================================
-const DISCOVER_UPDATED = '2026-04-09';
+const DISCOVER_UPDATED = '2026-04-13';
 
 // 距离分区（从JLT Cluster S出发驾车估算）
 // 0: JLT内步行可达
@@ -36,6 +36,7 @@ jlt_food: {
     {emoji:'🥙',name:'Operation:Falafel',desc:'中东快餐连锁JLT店，Shawarma和Falafel超实惠',addr:'Cluster E, JLT',phone:'+971 600 530 006',hours:'10am-12am',cost:'20-40 AED/人',rating:4.1,tags:['中东','快餐','超平价','已核实✓'],outdoor:false,mapQ:'Operation+Falafel+JLT+Dubai',bookUrl:'',tip:'全家吃饱不到100 AED'},
     {emoji:'🍜',name:'Hawkerboi亚洲街食',desc:'米其林指南上榜！亚洲街头美食，咖喱/饺子/沙嗲',addr:'The Park, JLT',phone:'+971 50 427 5217',hours:'12pm-11pm',cost:'50-80 AED/人',rating:4.2,tags:['亚洲','米其林','街食','已核实✓'],outdoor:false,mapQ:'Hawkerboi+JLT+Dubai',bookUrl:'',tip:'Laksa和Satay很正宗'},
     {emoji:'🍲',name:'海底捞火锅',desc:'正宗川味火锅，拉面表演孩子爱看，等位有免费零食美甲',addr:'Dubai Mall Chinatown / Festival City',phone:'+971 4 221 7445',hours:'10am-2am',cost:'100-180 AED/人',rating:4.3,tags:['火锅','中餐','亲子','已核实✓'],outdoor:false,mapQ:'Haidilao+Hot+Pot+Dubai+Mall',bookUrl:'',tip:'提前App订位，4岁以下免费（非JLT，最近分店）'},
+    {emoji:'🍕',name:'Franky\'s Pizzeria屋顶',desc:'JLT The Park顶层意大利披萨馆！Neapolitan木柴炉披萨俯瞰JLT全景湖景',addr:'The Park, JLT, Dubai',phone:'',hours:'5pm-late',cost:'80-150 AED/人',rating:4.4,tags:['披萨','意大利','屋顶','JLT','亲子','已核实✓'],outdoor:true,mapQ:'Frankys+Pizzeria+JLT+Dubai',bookUrl:'',tip:'平日4-7pm Aperitivo Hour优惠，周六Brunch适合全家',dist:0},
   ]
 },
 
@@ -230,6 +231,7 @@ michelin_chinese: {
     {emoji:'🇨🇳',name:'Maiden Shanghai',desc:'1920年代上海主题，粤川京沪四大菜系，MSG-free有机',addr:'Level 1, FIVE Palm Jumeirah',phone:'+971 4 455 9989',hours:'7pm-1am',cost:'300-500 AED/人',rating:4.5,tags:['中餐','高端','Palm','已核实✓'],outdoor:true,mapQ:'Maiden+Shanghai+FIVE+Palm+Dubai',bookUrl:'https://maiden-shanghai.com/dubai/',tip:'露台看Marina夜景，迪拜最好中餐之一'},
     {emoji:'🇨🇳',name:'MEI (原郑和)',desc:'2025年新开取代郑和，中日融合，Robata+点心+烤鸭',addr:'Jumeirah Mina A\'Salam, Madinat Jumeirah',phone:'+971 4 432 3232',hours:'6pm-11:30pm',cost:'250-400 AED/人',rating:4.3,tags:['中日','新开🔥','Madinat','已核实✓'],outdoor:true,mapQ:'MEI+restaurant+Madinat+Jumeirah+Dubai',bookUrl:'',tip:'2025年9月替代郑和，水景位超美'},
     {emoji:'🇨🇳',name:'Hakkasan',desc:'全球知名粤菜品牌，Atlantis The Palm内',addr:'Atlantis, The Palm',phone:'+971 4 426 2626',hours:'6pm-12am',cost:'300-500 AED/人',rating:4.5,tags:['粤菜','高端','Atlantis','已核实✓'],outdoor:false,mapQ:'Hakkasan+Atlantis+Dubai',bookUrl:'',tip:'取代了Yuan成为Atlantis主打中餐'},
+    {emoji:'🇨🇳',name:'Yù & Mì港式中餐',desc:'文华东方酒店36楼！港风1960年代氛围，粤菜+川菜+港式调酒，俯瞰Downtown全城夜景',addr:'36F, Mandarin Oriental Downtown, Downtown Dubai',phone:'+971 4 777 8888',hours:'6pm-1am',cost:'250-400 AED/人',rating:4.4,tags:['中餐','粤菜','高端','Downtown','新开🔥','已核实✓'],outdoor:false,mapQ:'Yu+Mi+Mandarin+Oriental+Downtown+Dubai',bookUrl:'https://www.mandarinoriental.com/en/dubai/downtown/dine/yu-and-mi',tip:'36楼俯瞰全城夜景，隐藏餐厅Mì在吧台后面，川菜+粤菜都有',dist:2},
   ]
 },
 
