@@ -7,434 +7,60 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0f0f1a">
 <link rel="manifest" href="manifest.json">
-<title>Life Spinner - 生活转盘</title>
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0f0f1a;--card:#1a1a2e;--card2:#222240;--accent:#f59e0b;--accent2:#8b5cf6;--accent3:#06b6d4;--text:#e2e8f0;--text2:#94a3b8;--danger:#ef4444;--success:#22c55e;--radius:16px}
-body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;padding-bottom:80px}
-
-/* === NAV TABS === */
-.nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid rgba(255,255,255,0.05);display:flex;z-index:50;max-width:480px;margin:0 auto}
-.nav-btn{flex:1;padding:8px 4px 6px;text-align:center;cursor:pointer;transition:all .2s;border:none;background:transparent;color:var(--text2);font-size:10px;font-family:inherit}
-.nav-btn .nav-icon{font-size:20px;display:block;margin-bottom:2px}
-.nav-btn.active{color:var(--accent)}
-.nav-btn.active .nav-icon{transform:scale(1.15)}
-
-/* === PAGES === */
-.page{display:none;animation:fadeIn .3s ease}
-.page.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-
-/* === HEADER === */
-.header{text-align:center;padding:20px 16px 8px}
-.header h1{font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.header .sub{color:var(--text2);font-size:12px;margin-top:2px}
-
-/* === WEATHER === */
-.weather-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:10px 16px;margin:8px 16px;background:var(--card);border-radius:12px;font-size:13px}
-.weather-bar .temp{font-size:22px;font-weight:700;color:var(--accent)}
-.weather-bar .wi{font-size:24px}
-.weather-bar .wd{color:var(--text2);font-size:11px;line-height:1.3}
-.weather-bar .ww{background:rgba(239,68,68,.15);color:#fca5a5;padding:3px 8px;border-radius:6px;font-size:10px;display:none}
-.weather-bar .ww.show{display:inline-block}
-
-/* === MODE === */
-.mode-toggle{display:flex;margin:10px 16px;background:var(--card);border-radius:12px;overflow:hidden;position:relative}
-.mode-btn{flex:1;padding:12px;text-align:center;font-size:14px;font-weight:700;cursor:pointer;position:relative;z-index:1;color:var(--text2);border:none;background:transparent;transition:color .3s}
-.mode-btn.active{color:#fff}
-.mode-slider{position:absolute;top:4px;bottom:4px;width:calc(33.33% - 4px);left:4px;background:linear-gradient(135deg,var(--accent),#d97706);border-radius:10px;transition:transform .35s cubic-bezier(.4,0,.2,1);z-index:0}
-.mode-slider.couple{transform:translateX(calc(100% + 2px))}
-.mode-slider.friend{transform:translateX(calc(200% + 4px))}
-
-/* === CAT FILTER === */
-.cat-filter{display:flex;gap:5px;margin:6px 16px;flex-wrap:wrap}
-.cf-btn{padding:8px 12px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:var(--card);color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
-.cf-btn:hover{border-color:rgba(245,158,11,.3);color:var(--accent)}
-.cf-btn.active{background:var(--accent);color:#000;border-color:var(--accent);font-weight:700}
-.cf-count{font-size:9px;opacity:.7;margin-left:2px}
-
-/* === WHEEL === */
-.wheel-section{display:flex;flex-direction:column;align-items:center;padding:12px}
-.wheel-wrapper{position:relative;width:min(360px,90vw);height:min(360px,90vw);margin-bottom:12px}
-.wheel-pointer{position:absolute;top:-16px;left:50%;transform:translateX(-50%);z-index:10;font-size:32px;filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));animation:pp 2s infinite}
-@keyframes pp{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.15)}}
-canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;cursor:pointer;box-shadow:0 0 30px rgba(245,158,11,.2)}
-.spin-btn{width:280px;padding:14px;border:none;border-radius:50px;background:linear-gradient(135deg,var(--accent),#d97706);color:#000;font-size:18px;font-weight:900;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 20px rgba(245,158,11,.3);transition:all .3s}
-.spin-btn:hover{transform:scale(1.05)}
-.spin-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-.wheel-info{text-align:center;font-size:11px;color:var(--text2);margin:0 16px 2px;line-height:1.4}
-
-/* === RESULT CARD === */
-.result-card{margin:0 16px 12px;background:var(--card);border-radius:var(--radius);overflow:hidden;display:none;animation:su .4s ease}
-.result-card.show{display:block}
-@keyframes su{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-.rh{padding:16px;background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(139,92,246,.12));text-align:center}
-.rh .re{font-size:44px;margin-bottom:4px}
-.rh .rn{font-size:20px;font-weight:900}
-.rtag{display:inline-block;margin-top:6px;padding:3px 10px;border-radius:16px;font-size:11px;font-weight:500}
-.rtag.outdoor{background:rgba(34,197,94,.2);color:#86efac}
-.rtag.indoor{background:rgba(96,165,250,.2);color:#93c5fd}
-.rtag.ww{background:rgba(239,68,68,.2);color:#fca5a5;margin-left:4px}
-.ri{padding:12px 16px}
-.ri .ir{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;line-height:1.5}
-.ri .ir:last-child{border-bottom:none}
-.ri .ii{font-size:14px;flex-shrink:0;margin-top:1px}
-.ri .il{color:var(--text2);min-width:45px;font-size:12px}
-.rl{display:flex;gap:6px;padding:0 16px 16px;flex-wrap:wrap}
-.rl a{padding:8px 12px;background:var(--card2);border-radius:8px;color:var(--accent);text-decoration:none;font-size:12px;font-weight:500;transition:all .2s;display:flex;align-items:center;gap:4px}
-.rl a:hover{background:rgba(245,158,11,.15)}
-
-/* Rating Section */
-.rating-section{padding:10px 16px;border-top:1px solid rgba(255,255,255,.05)}
-.rating-row{display:flex;align-items:center;gap:8px;padding:4px 0}
-.rating-label{font-size:12px;color:var(--text2);min-width:50px}
-.rating-stars{display:flex;gap:2px}
-.rate-star{font-size:32px;cursor:pointer;color:rgba(255,255,255,.2);transition:all .15s;user-select:none}
-.rate-star:hover{transform:scale(1.2)}
-.rate-star.filled{color:var(--accent)}
-.status-btn{padding:6px 12px;border:1px solid rgba(255,255,255,.1);border-radius:8px;background:transparent;color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit}
-.status-btn:hover{border-color:rgba(255,255,255,.3)}
-.status-btn.active-rec{background:rgba(239,68,136,.15);border-color:rgba(239,68,136,.4);color:#f472b6}
-.status-btn.active-blk{background:rgba(239,68,68,.15);border-color:rgba(239,68,68,.4);color:#f87171}
-.rating-note{width:100%;padding:8px 10px;background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;outline:none}
-.rating-note:focus{border-color:var(--accent)}
-.rating-note::placeholder{color:var(--text2)}
-.visit-btn{padding:8px 14px;border:none;border-radius:8px;background:var(--success);color:#000;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
-.visit-btn:hover{filter:brightness(1.1);transform:scale(1.03)}
-
-/* Profile */
-.prof-form{display:flex;flex-direction:column;gap:6px}
-.pf-row{display:flex;align-items:center;gap:8px}
-.pf-label{font-size:12px;color:var(--text2);min-width:60px;flex-shrink:0}
-.pf-row input,.pf-row select{flex:1;padding:9px 12px;background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none}
-.pf-row input:focus{border-color:var(--accent)}
-.pf-row select{font-size:12px}
-
-/* Stats */
-.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.stat-card{background:var(--card2);border-radius:10px;padding:12px;text-align:center}
-.stat-num{font-size:24px;font-weight:900;color:var(--accent)}
-.stat-label{font-size:10px;color:var(--text2);margin-top:2px}
-
-/* Visited list */
-.visited-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border-radius:8px;margin:3px 0;font-size:12px}
-.visited-item .vi-date{color:var(--text2);font-size:10px;min-width:60px}
-.visited-item .vi-stars{color:var(--accent);font-size:11px;margin-left:auto}
-.visited-item .vi-remove{width:32px;height:32px;border:none;background:transparent;color:rgba(255,255,255,.15);border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center}
-.visited-item .vi-remove:hover{color:var(--danger);background:rgba(239,68,68,.1)}
-
-/* === SECTION CARD === */
-.sec{margin:12px 16px;background:var(--card);border-radius:var(--radius);overflow:hidden}
-.sec-h{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer}
-.sec-h h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
-.sec-h .arrow{transition:transform .3s;color:var(--text2);font-size:12px}
-.sec-h .arrow.open{transform:rotate(180deg)}
-.sec-body{display:none;padding:0 16px 16px}
-.sec-body.show{display:block;animation:su .3s ease}
-.sec-h .badge{background:var(--accent);color:#000;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:6px}
-
-/* === TODAY CARD === */
-.today-full{background:linear-gradient(135deg,rgba(245,158,11,.08),rgba(139,92,246,.08));padding:16px 12px 12px;min-height:180px}
-.today-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.today-header h3{font-size:18px;font-weight:900;color:var(--accent);display:flex;align-items:center;gap:6px}
-.today-date{font-size:12px;color:var(--text2)}
-.today-items{display:flex;flex-direction:column;gap:6px}
-.today-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:10px}
-.today-item .ti-time{font-size:13px;font-weight:700;color:var(--accent);min-width:48px}
-.today-item .ti-emoji{font-size:20px}
-.today-item .ti-name{flex:1;font-size:13px;font-weight:500}
-.today-item .ti-tag{font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.08);color:var(--text2)}
-.today-item.ti-now{border:1px solid var(--accent);background:rgba(245,158,11,.08)}
-.today-item.ti-done{opacity:.5}
-.today-empty{text-align:center;padding:12px;color:var(--text2);font-size:13px}
-.today-kids{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(6,182,212,.08);border-radius:8px;font-size:11px;color:var(--accent3);margin-top:4px}
-.today-item{cursor:pointer}
-/* Today Big Card - 今日活动大卡片 */
-.today-big{background:rgba(0,0,0,.25);border:1px solid rgba(245,158,11,.15);border-radius:14px;padding:14px;margin:10px 0;animation:su .4s ease}
-.today-big.ti-now{border-color:var(--accent);background:rgba(245,158,11,.08);box-shadow:0 0 20px rgba(245,158,11,.15)}
-.today-big.ti-done{opacity:.55}
-.tb-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.tb-time{font-size:18px;font-weight:900;color:var(--accent)}
-.tb-status{font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(255,255,255,.08);color:var(--text2)}
-.today-big.ti-now .tb-status{background:var(--accent);color:#000;font-weight:700}
-.tb-title{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.tb-emoji{font-size:32px}
-.tb-name{font-size:18px;font-weight:900;color:var(--text);flex:1}
-.tb-details{display:grid;gap:5px;padding:10px;background:rgba(0,0,0,.2);border-radius:10px;margin-bottom:8px}
-.tb-row{display:flex;gap:8px;font-size:13px;color:var(--text2);line-height:1.5}
-.tb-row span:first-child{flex-shrink:0;width:20px;text-align:center}
-.tb-row span:last-child{color:var(--text);flex:1}
-.tb-nodetail{font-size:12px;color:var(--text2);padding:8px;background:rgba(0,0,0,.15);border-radius:8px;margin-bottom:8px;text-align:center}
-.tb-actions{display:flex;gap:6px;flex-wrap:wrap}
-.tb-actions a{padding:8px 14px;border-radius:8px;background:var(--card2);color:var(--accent);text-decoration:none;font-size:12px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:4px}
-.tb-actions a:hover{background:rgba(245,158,11,.15);transform:translateY(-1px)}
-.today-detail{padding:10px 12px;background:rgba(0,0,0,.15);border-radius:8px;margin-top:4px;font-size:11px;line-height:1.6;animation:su .3s ease}
-.today-detail .td-row{display:flex;gap:6px;padding:2px 0;color:var(--text2)}
-.today-detail .td-icon{flex-shrink:0;width:16px;text-align:center}
-.today-detail .td-val{color:var(--text)}
-.today-detail .td-links{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
-.today-detail .td-links a,.today-detail .td-links button{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px;transition:all .2s}
-.today-detail .td-map{background:rgba(6,182,212,.12);color:var(--accent3)}
-.today-detail .td-call{background:rgba(34,197,94,.12);color:var(--success)}
-.today-detail .td-search{background:rgba(255,255,255,.06);color:var(--text2)}
-.today-weather{padding:8px 10px;background:rgba(245,158,11,.08);border-radius:8px;font-size:11px;color:var(--accent);margin-top:8px;line-height:1.4}
-.today-seasonal{padding:8px 10px;background:rgba(139,92,246,.1);border-radius:8px;font-size:11px;color:var(--accent2);margin-top:6px;line-height:1.4;font-weight:500}
-.today-deals{display:flex;gap:5px;margin-top:8px;flex-wrap:wrap}
-.today-deals a{padding:5px 10px;background:rgba(255,255,255,.06);border-radius:6px;color:var(--text2);text-decoration:none;font-size:10px;transition:all .2s;display:flex;align-items:center;gap:3px}
-.today-deals a:hover{background:rgba(245,158,11,.1);color:var(--accent)}
-
-/* === KIDS SCHEDULE === */
-.ks-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border-radius:8px;margin:4px 0;font-size:13px}
-.ks-row .ks-day{font-weight:700;min-width:24px;color:var(--accent3)}
-.ks-row .ks-time{color:var(--text2);font-size:11px;min-width:90px}
-.ks-row .ks-act{flex:1}
-.ks-row .ks-del{width:24px;height:24px;border:none;background:transparent;color:rgba(255,255,255,.15);border-radius:6px;cursor:pointer;font-size:11px}
-.ks-row .ks-del:hover{background:rgba(239,68,68,.15);color:var(--danger)}
-.ks-form{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)}
-.ks-form select,.ks-form input{padding:8px;background:var(--card2);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;outline:none}
-.ks-form select:focus,.ks-form input:focus{border-color:var(--accent3)}
-.ks-form .ks-add{padding:8px 14px;background:var(--accent3);border:none;border-radius:8px;color:#000;font-size:12px;font-weight:700;cursor:pointer}
-
-/* === WEEKLY GENERATOR === */
-.gen-btn{width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent2),#7c3aed);color:#fff;font-size:15px;font-weight:900;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 20px rgba(139,92,246,.3);transition:all .3s;margin:12px 0}
-.gen-btn:hover{transform:scale(1.02);box-shadow:0 6px 30px rgba(139,92,246,.5)}
-.gen-btn:active{transform:scale(.98)}
-.gen-result{margin-top:12px}
-.gen-day{margin:8px 0}
-.gen-day-h{font-size:13px;font-weight:700;color:var(--accent);padding:4px 0;display:flex;align-items:center;gap:6px}
-.gen-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card2);border-radius:8px;margin:3px 0;font-size:12px}
-.gen-item .gi-time{color:var(--text2);min-width:44px;font-size:11px}
-.gen-item .gi-emoji{font-size:16px}
-.gen-item .gi-name{flex:1}
-.gen-item .gi-type{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--text2)}
-.gen-item .gi-swap{width:24px;height:24px;border:none;background:rgba(245,158,11,.15);color:var(--accent);border-radius:6px;cursor:pointer;font-size:12px}
-.gen-item .gi-swap:hover{background:rgba(245,158,11,.3)}
-.gen-save{margin-top:12px;width:100%;padding:12px;border:none;border-radius:10px;background:var(--success);color:#000;font-size:14px;font-weight:700;cursor:pointer}
-.gen-week-header{font-size:14px;font-weight:900;color:var(--accent2);padding:12px 0 4px;margin-top:8px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:8px}
-.gen-week-header:first-child{border-top:none;margin-top:0}
-
-/* === EDITABLE PLANNER === */
-.pl-row{display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--card2);border-radius:8px;margin:3px 0;font-size:12px;transition:all .2s}
-.pl-row:hover{background:rgba(34,34,64,.9)}
-.pl-day{font-weight:700;min-width:24px;color:var(--accent);cursor:pointer;padding:2px 4px;border-radius:4px}
-.pl-time{color:var(--text2);min-width:48px;font-size:11px;cursor:pointer;padding:2px 4px;border-radius:4px}
-.pl-act{flex:1;cursor:pointer;padding:2px 4px;border-radius:4px}
-.pl-emoji{font-size:13px;cursor:pointer;padding:2px;border-radius:4px;min-width:22px;text-align:center}
-.pl-del{width:22px;height:22px;border:none;background:transparent;color:rgba(255,255,255,.12);border-radius:6px;cursor:pointer;font-size:11px}
-.pl-del:hover{background:rgba(239,68,68,.15);color:var(--danger)}
-.pl-day:hover,.pl-time:hover,.pl-act:hover{background:rgba(255,255,255,.07)}
-.pl-row-wrap{margin:3px 0}
-.pl-detail-hint{font-size:10px;color:var(--text2);padding:2px 10px 4px 36px;line-height:1.3}
-.pl-input{background:rgba(255,255,255,.1);border:1px solid var(--accent2);border-radius:4px;color:var(--text);font-size:inherit;font-family:inherit;padding:2px 5px;outline:none;width:100%}
-.pl-actions{display:flex;gap:6px;margin-bottom:8px}
-.pl-ab{padding:5px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;transition:all .2s}
-.pl-ab.add{background:rgba(34,197,94,.15);color:var(--success)}
-.pl-ab.reset{background:rgba(245,158,11,.15);color:var(--accent)}
-
-/* === DISCOVER === */
-.cat-tabs{display:flex;gap:5px;padding:4px 0 10px;flex-wrap:wrap}
-.cat-tab{padding:7px 12px;border-radius:18px;background:var(--card2);border:1px solid rgba(255,255,255,.06);color:var(--text2);font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap}
-.cat-tab.active{background:var(--accent3);color:#000;border-color:var(--accent3);font-weight:700}
-.dc{background:var(--card2);border-radius:10px;padding:12px;display:flex;align-items:flex-start;gap:10px;margin:5px 0;transition:all .2s;border:1px solid transparent}
-.dc:hover{border-color:rgba(6,182,212,.3)}
-.dc .de{font-size:26px;flex-shrink:0}
-.dc .db{flex:1;min-width:0}
-.dc .dn{font-size:13px;font-weight:700;margin-bottom:2px}
-.dc .dd{font-size:11px;color:var(--text2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.dc .dt{display:flex;gap:3px;margin-top:3px;flex-wrap:wrap}
-.dc .dt span{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--text2)}
-.dc .da{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
-.dc-ab{width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.dc-ab.add{background:rgba(34,197,94,.15);color:var(--success)}
-.dc-ab.add:hover{background:rgba(34,197,94,.3)}
-.dc-ab.added{background:rgba(34,197,94,.3);pointer-events:none}
-.dc-ab.link{background:rgba(6,182,212,.15);color:var(--accent3);text-decoration:none}
-.dc-ab.link:hover{background:rgba(6,182,212,.3)}
-.ds{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.04)}
-.ds a{padding:6px 10px;background:var(--card2);border-radius:8px;color:var(--accent3);text-decoration:none;font-size:11px;transition:all .2s;display:flex;align-items:center;gap:3px}
-
-/* === HISTORY === */
-.hi{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.03);font-size:12px}
-.hi:last-child{border-bottom:none}
-.hi .hd{color:var(--text2);font-size:12px;min-width:72px}
-
-/* === ACTIVITY MANAGER === */
-.ai{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:3px 0;background:var(--card2);border-radius:8px;font-size:13px}
-.ai .ae{font-size:18px}.ai .an{flex:1}
-.ai .ao{font-size:10px;padding:2px 6px;border-radius:4px}
-.ai .ao.out{background:rgba(34,197,94,.12);color:#86efac}
-.ai .ao.in{background:rgba(96,165,250,.12);color:#93c5fd}
-.ai .ad{width:24px;height:24px;border:none;background:rgba(239,68,68,.12);color:var(--danger);border-radius:6px;cursor:pointer;font-size:12px}
-.af{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.04)}
-.af input,.af select{padding:8px 10px;background:var(--card2);border:1px solid rgba(255,255,255,.1);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit}
-.af input:focus,.af select:focus{border-color:var(--accent)}
-.af .ei{width:50px;text-align:center;font-size:18px}
-.af .ni{flex:1;min-width:100px}
-.af select{width:70px}
-.af .ab{padding:8px 16px;background:linear-gradient(135deg,var(--accent2),#7c3aed);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer}
-
-/* === TOAST === */
-.toast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);padding:10px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:200;opacity:0;transition:all .3s;pointer-events:none;background:var(--success);color:#000}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(-8px)}
-.confetti-container{position:fixed;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:100}
-.confetti{position:absolute;width:10px;height:10px;opacity:0}
-::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
-@media(min-width:500px){body{max-width:480px;margin:0 auto}.nav{max-width:480px}}
-
-/* Hot badge animation */
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
-.hot{animation:pulse 2s infinite;color:var(--danger)}
-/* === VENUE CARD (new discover) === */
-.vc{background:var(--card);border-radius:12px;padding:14px;margin:8px 0;border:1px solid rgba(255,255,255,.04);transition:all .2s}
-.vc:hover{border-color:rgba(6,182,212,.25)}
-.vc-top{display:flex;align-items:flex-start;gap:10px}
-.vc-emoji{font-size:28px;flex-shrink:0;margin-top:2px}
-.vc-body{flex:1;min-width:0}
-.vc-name{font-size:14px;font-weight:700;margin-bottom:2px;display:flex;align-items:center;gap:6px}
-.vc-stars{color:var(--accent);font-size:11px}
-.vc-desc{font-size:11px;color:var(--text2);line-height:1.4;margin-bottom:4px}
-.vc-details{display:grid;gap:2px;font-size:11px;color:var(--text2)}
-.vc-details .vd{display:flex;gap:4px;align-items:flex-start}
-.vc-details .vd-icon{flex-shrink:0;width:14px;text-align:center}
-.vc-tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:5px}
-.vc-tags span{font-size:9px;padding:2px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--text2)}
-.vc-tags .vt-cost{color:var(--accent);background:rgba(245,158,11,.1)}
-.dc-dist{font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(34,197,94,.1);color:var(--success);margin-left:4px;font-weight:500}
-.vc-tags .vt-fazaa{color:#00e676;background:rgba(0,230,118,.12);font-weight:700}
-.fazaa-badge{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:6px;background:linear-gradient(135deg,rgba(0,230,118,.15),rgba(0,200,83,.1));color:#00e676;font-size:10px;font-weight:700;border:1px solid rgba(0,230,118,.2)}
-.fazaa-link{padding:6px 10px;border-radius:6px;background:rgba(0,230,118,.12);color:#00e676;text-decoration:none;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:3px}
-.vc-tags .vt-hot{color:var(--danger);background:rgba(239,68,68,.1);animation:pulse 2s infinite}
-.vc-actions{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
-.vc-actions a,.vc-actions button{padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:none;text-decoration:none;display:inline-flex;align-items:center;gap:3px}
-.vc-a-map{background:rgba(6,182,212,.12);color:var(--accent3)}
-.vc-a-call{background:rgba(34,197,94,.12);color:var(--success)}
-.vc-a-book{background:rgba(245,158,11,.12);color:var(--accent)}
-.vc-a-add{background:rgba(139,92,246,.12);color:var(--accent2)}
-.vc-a-search{background:rgba(255,255,255,.06);color:var(--text2)}
-.vc-actions a:hover,.vc-actions button:hover{filter:brightness(1.3)}
-.vc-updated{text-align:center;font-size:10px;color:var(--text2);padding:8px 0}
-.ext-update-btn{padding:12px 14px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent3),#0891b2);color:#000;font-size:13px;font-weight:700;cursor:pointer;transition:all .3s}
-.ext-update-btn:hover{filter:brightness(1.1)}
-
-/* External links grid */
-.ext-links{display:flex;flex-wrap:wrap;gap:6px}
-.ext-link{padding:8px 12px;background:var(--card2);border-radius:8px;color:var(--accent3);text-decoration:none;font-size:11px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:4px;border:1px solid rgba(6,182,212,.15)}
-.ext-link:hover{background:rgba(6,182,212,.15);border-color:var(--accent3)}
-
-/* New venue form */
-.new-venue-form{display:flex;flex-direction:column;gap:6px}
-.nvf-row{display:flex;gap:6px;align-items:center}
-.nvf-row input,.nvf-row select{padding:8px 10px;background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);font-size:12px;font-family:inherit;outline:none}
-.nvf-row input:focus,.nvf-row select:focus{border-color:var(--accent3)}
-.nvf-row select{min-width:90px;font-size:11px}
-.nvf-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent3)}
-.nvf-submit{padding:10px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent3),#0891b2);color:#000;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px;transition:all .2s}
-.nvf-submit:hover{filter:brightness(1.1);transform:scale(1.01)}
-
-/* Feed styles */
-.feed-fetch-btn{padding:10px 16px;border:none;border-radius:10px;background:linear-gradient(135deg,var(--accent3),#0891b2);color:#000;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s}
-.feed-fetch-btn:hover{filter:brightness(1.15)}
-.feed-fetch-btn:disabled{opacity:.5;cursor:wait}
-.feed-status{font-size:11px;color:var(--text2);display:flex;align-items:center;padding:0 4px}
-.feed-src-btn{padding:5px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:var(--card2);color:var(--text2);font-size:10px;cursor:pointer;transition:all .2s}
-.feed-src-btn.active{border-color:var(--accent3);color:var(--accent3)}
-.feed-src-btn.loading{animation:pulse 1s infinite}
-.feed-src-btn.done{border-color:var(--success);color:var(--success)}
-.feed-src-btn.err{border-color:var(--danger);color:var(--danger)}
-
-/* Feed item */
-.fi{background:var(--card2);border-radius:10px;padding:12px;margin:6px 0;border:1px solid rgba(255,255,255,.04)}
-.fi-title{font-size:13px;font-weight:700;margin-bottom:3px;line-height:1.3}
-.fi-title a{color:var(--text);text-decoration:none}
-.fi-title a:hover{color:var(--accent3)}
-.fi-meta{font-size:10px;color:var(--text2);margin-bottom:4px;display:flex;gap:8px;align-items:center}
-.fi-src{padding:1px 5px;border-radius:3px;background:rgba(6,182,212,.1);color:var(--accent3)}
-.fi-desc{font-size:11px;color:var(--text2);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px}
-.fi-actions{display:flex;gap:4px}
-.fi-actions a,.fi-actions button{padding:5px 10px;border-radius:6px;font-size:10px;font-weight:600;cursor:pointer;border:none;text-decoration:none;transition:all .2s}
-.fi-open{background:rgba(6,182,212,.12);color:var(--accent3)}
-.fi-add{background:rgba(34,197,94,.12);color:var(--success)}
-.fi-added{background:rgba(34,197,94,.08);color:var(--success);pointer-events:none}
-/* Distance Filter */
-.dist-filter{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap;align-items:center}
-.dist-filter .df-label{font-size:11px;color:var(--text2);margin-right:2px}
-.df-btn{padding:5px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.08);background:var(--card);color:var(--text2);font-size:11px;cursor:pointer;transition:all .2s;font-family:inherit;white-space:nowrap}
-.df-btn:hover{border-color:var(--success);color:var(--success)}
-.df-btn.active{background:var(--success);color:#000;border-color:var(--success);font-weight:700}
-
-/* Google Maps Search */
-.gmap-search{margin-bottom:8px}
-.gmap-quick{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
-.gmap-quick button{padding:5px 10px;border:1px solid rgba(34,197,94,.2);border-radius:14px;background:transparent;color:var(--success);font-size:10px;cursor:pointer;transition:all .2s;font-family:inherit}
-.gmap-quick button:hover{background:rgba(34,197,94,.1);border-color:var(--success)}
-.gmap-frame{margin-top:8px}
-.gmap-placeholder{text-align:center;padding:30px 16px;color:var(--text2);font-size:12px;background:var(--card2);border-radius:10px;line-height:1.6}
-.gmap-add{margin-top:8px;padding:10px;background:var(--card2);border-radius:10px}
-
-/* Open Search */
-.open-search{margin-bottom:8px}
-.os-row{display:flex;gap:6px;align-items:center}
-.os-input{flex:1;padding:10px 14px;background:var(--card2);border:1px solid rgba(6,182,212,.3);border-radius:10px;color:var(--text);font-size:14px;font-family:inherit;outline:none}
-.os-input:focus{border-color:var(--accent3);box-shadow:0 0 12px rgba(6,182,212,.15)}
-.os-input::placeholder{color:var(--text2)}
-.os-btn{padding:10px 16px;border:none;border-radius:10px;background:var(--accent3);color:#000;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap}
-.os-quick{padding:5px 10px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:var(--card2);color:var(--text2);font-size:10px;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
-.os-quick:hover{border-color:var(--accent3);color:var(--accent3)}
-
-.feed-empty{text-align:center;padding:16px;color:var(--text2);font-size:12px}
-.feed-loading{text-align:center;padding:20px;color:var(--accent3);font-size:13px}
-.fi-smart{display:flex;flex-wrap:wrap;gap:3px;margin:4px 0}
-.fi-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.06);color:var(--text2)}
-.fi-tag-cost{background:rgba(245,158,11,.1);color:var(--accent)}
-.fi-tag-fazaa{background:rgba(0,230,118,.1);color:#00e676;font-weight:700}
-.fi-done{opacity:.6;border-color:rgba(34,197,94,.2)}
-.fi-added{font-size:10px;color:var(--success);padding:5px 0}
-.fi-toolbar{display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap;padding:8px 10px;background:var(--card);border-radius:10px}
-.fi-selectall{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);cursor:pointer;white-space:nowrap}
-.fi-selectall input{width:16px;height:16px;accent-color:var(--accent3)}
-.fi-add-selected{padding:7px 14px;border:none;border-radius:8px;background:var(--accent3);color:#000;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
-.fi-add-selected:hover{filter:brightness(1.1)}
-.fi-add-all{padding:7px 14px;border:none;border-radius:8px;background:linear-gradient(135deg,var(--success),#16a34a);color:#fff;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
-.fi-add-all:hover{filter:brightness(1.1)}
-.fi-check{width:16px;height:16px;accent-color:var(--accent3);margin-right:6px;flex-shrink:0;cursor:pointer;vertical-align:middle}
-</style>
+<link rel="stylesheet" href="css/app.css">
+<title>Life Spinner — 充实生活</title>
 </head>
 <body>
-<script src="discover-data.js"></script>
 
-<!-- ========== PAGE 1: SPINNER ========== -->
-<div class="page active" id="pageSpinner">
-  <div class="header"><h1>🎰 Life Spinner</h1><div class="sub">JLT Cluster S | 随时转一转，生活不无聊</div></div>
-  <div class="weather-bar"><span class="wi" id="wI">⏳</span><span class="temp" id="wT">--°</span><div class="wd" id="wD">加载天气...</div><span class="ww" id="wW"></span></div>
-  <div class="mode-toggle"><div class="mode-slider" id="mSlider"></div><button class="mode-btn active" id="famBtn" onclick="setMode('family')">👨‍👩‍👧‍👧 全家</button><button class="mode-btn" id="couBtn" onclick="setMode('couple')">💑 夫妻</button><button class="mode-btn" id="friBtn" onclick="setMode('friend')">🍻 朋友</button></div>
-  <!-- Category Filter -->
-  <div class="cat-filter" id="catFilter"></div>
-  <div class="wheel-info" id="wheelInfo"></div>
-  <div class="wheel-section">
-    <div class="wheel-wrapper"><div class="wheel-pointer">📍</div><canvas id="wheel" width="1024" height="1024"></canvas></div>
-    <button class="spin-btn" id="spinBtn" onclick="spin()">🎲 转！</button>
+<!-- ========== PAGE 1: HOME DASHBOARD ========== -->
+<div class="page active" id="pageHome">
+  <div class="header">
+    <h1>🏡 今日</h1>
+    <div class="sub">让每一天都值得过</div>
   </div>
-  <div class="result-card" id="resCard"></div>
-</div>
-
-<!-- ========== PAGE 2: WEEKLY PLAN ========== -->
-<div class="page" id="pagePlan">
-  <!-- 今日活动（铺满，无边距） -->
-  <div class="today-full" id="todayCard"></div>
-
-  <!-- 已安排活动（收起） -->
-  <div class="sec" style="margin:8px 12px">
-    <div class="sec-h" onclick="toggleSec('pl')"><h3 style="color:var(--accent)">📋 已安排活动</h3><span class="arrow" id="pl-arrow">▼</span></div>
-    <div class="sec-body" id="pl-body">
-      <div class="pl-actions"><button class="pl-ab add" onclick="addPRow()">+ 添加</button><button class="pl-ab reset" onclick="resetPlan()">↺ 重置</button></div>
-      <div id="plGrid"></div>
+  <div class="dash-hero">
+    <div class="dash-date" id="dashDate"></div>
+    <div class="dash-greet" id="dashGreet">你好 👋</div>
+    <div class="dash-quote" id="dashQuote"></div>
+  </div>
+  <div class="weather-bar">
+    <span class="wi" id="wI">⏳</span>
+    <span class="temp" id="wT">--°</span>
+    <div class="wd" id="wD">加载天气...</div>
+    <span class="ww" id="wW"></span>
+  </div>
+  <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
+  <div class="dims" id="dimGrid"></div>
+  <div class="today-log" id="todayLog"></div>
+  <div class="sec" id="todaySec">
+    <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent)">📅 今日安排</h3><span class="arrow open" id="todayList-arrow">▼</span></div>
+    <div class="sec-body show" id="todayList-body">
+      <div id="todayItems"></div>
     </div>
   </div>
+</div>
 
-  <!-- 3. 孩子课表（收起） -->
-  <div class="sec" style="margin:8px 12px">
-    <div class="sec-h" onclick="toggleSec('ks')"><h3 style="color:var(--accent3)">🎒 孩子课表 <span class="badge" style="background:var(--accent3)">影响排期</span></h3><span class="arrow" id="ks-arrow">▼</span></div>
+<!-- ========== PAGE 2: MONTHLY PLAN ========== -->
+<div class="page" id="pagePlan">
+  <div class="header">
+    <h1>📅 安排</h1>
+    <div class="sub">本月计划 · 可编辑 · 到点提醒</div>
+  </div>
+  <div class="month-nav">
+    <button onclick="(function(){mpCursorDate=new Date(mpCursorDate);mpCursorDate.setMonth(mpCursorDate.getMonth()-1);renderMonthlyPlan();})()">‹</button>
+    <span class="month-title" id="mpTitle">本月计划</span>
+    <button onclick="(function(){mpCursorDate=new Date(mpCursorDate);mpCursorDate.setMonth(mpCursorDate.getMonth()+1);renderMonthlyPlan();})()">›</button>
+  </div>
+  <div style="margin:0 16px 10px">
+    <button class="gen-btn" onclick="generateMonthlyPlan()">⚡ 一键生成本月4周计划</button>
+  </div>
+  <div id="mpContent"></div>
+
+  <div class="sec">
+    <div class="sec-h" onclick="toggleSec('ks')">
+      <h3 style="color:var(--accent3)">🎒 孩子课表 <span class="badge" style="background:var(--accent3)">影响排期</span></h3>
+      <span class="arrow" id="ks-arrow">▼</span>
+    </div>
     <div class="sec-body" id="ks-body">
       <div id="ksList"></div>
       <div class="ks-form">
@@ -445,207 +71,81 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
         <input type="text" id="ksName" placeholder="课程名称" style="flex:1;min-width:80px">
         <button class="ks-add" onclick="addKidsClass()">+ 添加</button>
       </div>
-      <div style="font-size:10px;color:var(--text2);margin-top:6px">添加孩子的课外班，生成周计划时自动避开</div>
+      <div style="font-size:10px;color:var(--text2);margin-top:6px">添加孩子的课外班，生成计划时自动避开</div>
     </div>
-  </div>
-
-  <!-- 4. 转盘历史（收起） -->
-  <div class="sec" id="histSec" style="display:none;margin:8px 12px">
-    <div class="sec-h" onclick="toggleSec('hist')"><h3 style="color:var(--accent2)">🕐 转盘历史</h3><span class="arrow" id="hist-arrow">▼</span></div>
-    <div class="sec-body" id="hist-body"><div id="histList"></div></div>
-  </div>
-
-  <!-- 5. 一键生成（最下面） -->
-  <div style="margin:12px 16px">
-    <button class="gen-btn" onclick="generateMonthlyPlan()">⚡ 一键生成本月活动安排</button>
-    <div class="gen-result" id="genResult"></div>
   </div>
 </div>
 
-<!-- ========== PAGE 3: DISCOVER ========== -->
+<!-- ========== PAGE 3: SPINNER (explore dimension) ========== -->
+<div class="page" id="pageSpinner">
+  <div class="header"><h1>🎰 转盘</h1><div class="sub">选不出来时，让运气决定</div></div>
+  <div class="weather-bar">
+    <span class="wi" id="wI2">⏳</span>
+    <span class="temp" id="wT2">--°</span>
+    <div class="wd">JLT Cluster S</div>
+  </div>
+  <div class="mode-toggle">
+    <div class="mode-slider" id="mSlider"></div>
+    <button class="mode-btn active" id="familyBtn" onclick="setMode('family')">👨‍👩‍👧‍👧 全家</button>
+    <button class="mode-btn" id="coupleBtn" onclick="setMode('couple')">💑 夫妻</button>
+    <button class="mode-btn" id="friendBtn" onclick="setMode('friend')">🍻 朋友</button>
+  </div>
+  <div class="cat-filter" id="catFilter"></div>
+  <div class="wheel-info" id="wheelInfo"></div>
+  <div class="wheel-section">
+    <div class="wheel-wrapper">
+      <div class="wheel-pointer">📍</div>
+      <canvas id="wheel" width="1024" height="1024"></canvas>
+    </div>
+    <button class="spin-btn" id="spinBtn" onclick="spin()">🎲 转！</button>
+  </div>
+  <div class="result-card" id="resCard"></div>
+</div>
+
+<!-- ========== PAGE 4: DEALS (优惠专区) ========== -->
+<div class="page" id="pageDeals">
+  <div class="header"><h1>🏷️ 优惠</h1><div class="sub">折扣 · 会员卡 · 促销集合</div></div>
+  <div class="deals-hero">
+    <h2>全网全平台折扣一览</h2>
+    <p>UAE 常用的会员卡/团购/餐饮/景点折扣入口 · 按分类查看 · 也能自己录入看到的优惠</p>
+  </div>
+  <div class="deal-tabs" id="dealTabs"></div>
+  <div class="deal-grid" id="dealGrid"></div>
+  <button class="deal-add-btn" onclick="openAddDealModal()">➕ 录入你看到的折扣 / 优惠码</button>
+</div>
+
+<!-- ========== PAGE 5: DISCOVER ========== -->
 <div class="page" id="pageDiscover">
-  <div class="header"><h1>🔍 发现好店</h1><div class="sub">地图搜索 · 实时抓取 · 一键添加</div></div>
+  <div class="header"><h1>🔍 发现</h1><div class="sub">好店 · 地图搜索 · 外部平台</div></div>
   <div style="margin:0 16px">
-
-    <!-- Google Maps 搜索 -->
-    <div class="sec" style="margin:0 0 10px">
-      <div class="sec-h" onclick="toggleSec('gmap')" style="background:linear-gradient(135deg,rgba(34,197,94,.08),rgba(245,158,11,.08))">
-        <h3 style="color:var(--success)">📍 地图找店 <span class="badge" style="background:var(--success)">实时</span></h3>
-        <span class="arrow" id="gmap-arrow">▼</span>
-      </div>
-      <div class="sec-body" id="gmap-body">
-        <!-- 搜索框 -->
-        <div class="gmap-search">
-          <div class="os-row">
-            <input id="gmapQuery" type="text" placeholder="搜餐厅、咖啡、公园、游乐场..." class="os-input" style="border-color:rgba(34,197,94,.3)" onkeydown="if(event.key==='Enter')searchGMap()">
-            <button class="os-btn" style="background:var(--success)" onclick="searchGMap()">📍 搜</button>
-          </div>
-          <div class="gmap-quick">
-            <button onclick="searchGMapQ('restaurants')">🍽️ 餐厅</button>
-            <button onclick="searchGMapQ('cafe+coffee')">☕ 咖啡</button>
-            <button onclick="searchGMapQ('kids+play+area')">👧 亲子</button>
-            <button onclick="searchGMapQ('park')">🌿 公园</button>
-            <button onclick="searchGMapQ('gym+fitness')">💪 健身</button>
-            <button onclick="searchGMapQ('swimming+pool')">🏊 泳池</button>
-            <button onclick="searchGMapQ('dessert+bakery')">🍰 甜品</button>
-            <button onclick="searchGMapQ('supermarket+grocery')">🛒 超市</button>
-          </div>
+    <div class="sec">
+      <div class="sec-h" onclick="toggleSec('extUp')"><h3 style="color:var(--accent)">🔍 外部搜索</h3><span class="arrow" id="extUp-arrow">▼</span></div>
+      <div class="sec-body" id="extUp-body">
+        <div class="os-row">
+          <input id="osQuery" type="text" placeholder="搜任何活动/餐厅..." class="os-input" onkeydown="if(event.key==='Enter')openSearch()">
+          <button class="os-btn" onclick="openSearch()">🔍 搜</button>
         </div>
-        <!-- 地图iframe -->
-        <div class="gmap-frame" id="gmapFrame">
-          <iframe id="gmapIframe" src="" style="width:100%;height:350px;border:none;border-radius:10px;display:none" allowfullscreen loading="lazy"></iframe>
-          <div id="gmapPlaceholder" class="gmap-placeholder">👆 输入关键词或点击快捷按钮搜索附近店铺<br><span style="font-size:10px">搜索结果来自Google Maps，显示真实评分和位置</span></div>
+        <div class="os-row" style="gap:4px;flex-wrap:wrap;margin-top:6px">
+          <button class="os-quick" onclick="openSearchQ('Dubai family restaurant near JLT 2026')">🍽️ JLT餐厅</button>
+          <button class="os-quick" onclick="openSearchQ('Dubai kids activities new 2026')">👧 亲子活动</button>
+          <button class="os-quick" onclick="openSearchQ('Dubai weekend events this week')">🔥 本周活动</button>
+          <button class="os-quick" onclick="openSearchQ('best new cafe dessert Dubai 2026')">☕ 新咖啡</button>
         </div>
-        <!-- 搜索后一键添加 -->
-        <div class="gmap-add" id="gmapAdd" style="display:none">
-          <div style="font-size:11px;color:var(--text2);margin-bottom:6px">👆 在地图上看到好店？填入下方快速添加：</div>
-          <div class="nvf-row">
-            <input id="gm_emoji" placeholder="🍜" style="width:40px;text-align:center;font-size:16px">
-            <input id="gm_name" placeholder="店名 *" style="flex:1">
-            <input id="gm_cost" placeholder="人均" style="width:70px">
-          </div>
-          <div class="nvf-row">
-            <input id="gm_desc" placeholder="一句话描述" style="flex:1">
-            <select id="gm_cat" style="width:80px;font-size:11px">
-              <option value="marina_food">美食</option><option value="cafes">咖啡</option>
-              <option value="sports">运动</option><option value="kids_venues">亲子</option>
-              <option value="nature">户外</option><option value="trending">其他</option>
-            </select>
-          </div>
-          <button class="nvf-submit" style="background:var(--success)" onclick="addFromGMap()">📍 添加到好店+转盘</button>
-        </div>
+        <div class="ext-links" id="extLinks" style="margin-top:10px"></div>
       </div>
     </div>
-
-    <!-- 网络更新区域 -->
-    <div class="sec" style="margin:0 0 10px">
-      <div class="sec-h" onclick="toggleSec('webFeed')" style="background:linear-gradient(135deg,rgba(6,182,212,.08),rgba(139,92,246,.08))">
-        <h3 style="color:var(--accent3)">🌐 网络实时更新 <span class="badge" style="background:var(--accent3)" id="feedBadge">0条</span></h3>
-        <span class="arrow" id="webFeed-arrow">▼</span>
-      </div>
-      <div class="sec-body" id="webFeed-body">
-        <!-- 抓取按钮 -->
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
-          <button class="feed-fetch-btn" onclick="fetchAllFeeds()">🔄 立即抓取</button>
-          <button class="feed-fetch-btn" style="background:var(--card);color:var(--accent3);border:1px solid rgba(6,182,212,.3)" onclick="clearAndRefetch()">🗑️ 清空重抓</button>
-          <div class="feed-status" id="feedStatus">上次更新: 从未</div>
-        </div>
-        <div style="font-size:10px;color:var(--text2);margin-bottom:8px;line-height:1.5">
-          📡 自动机制：首次打开自动抓取 · 每次打开检查是否>24h · 页面开着每6h刷新一次 · 有新内容发推送通知
-        </div>
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px" id="feedSourceBtns"></div>
-        <!-- 抓取结果 -->
-        <div id="feedResults"></div>
-      </div>
-    </div>
-
-    <!-- 综合搜索 + 中文平台 + 评级网站 + 手动添加 -->
-    <div class="sec" style="margin:0 0 10px">
-      <div class="sec-h" onclick="toggleSec('extUp')"><h3 style="color:var(--accent)">🔍 搜索 / 📱 平台 / ✏️ 添加</h3><span class="arrow" id="extUp-arrow">▼</span></div>
-      <div class="sec-body" id="extUp-body"><span style="display:none"></span>
-        <!-- 开放搜索框 -->
-        <div class="open-search">
-          <div class="os-row">
-            <input id="osQuery" type="text" placeholder="搜任何活动/餐厅/地点..." class="os-input" onkeydown="if(event.key==='Enter')openSearch()">
-            <button class="os-btn" onclick="openSearch()">🔍 搜</button>
-          </div>
-          <div class="os-row" style="gap:4px;flex-wrap:wrap;margin-top:6px">
-            <button class="os-quick" onclick="openSearchQ('Dubai family restaurant near JLT 2026')">🍽️ JLT餐厅</button>
-            <button class="os-quick" onclick="openSearchQ('Dubai kids activities new 2026')">👧 亲子活动</button>
-            <button class="os-quick" onclick="openSearchQ('Dubai weekend events this week')">🔥 本周活动</button>
-            <button class="os-quick" onclick="openSearchQ('best new cafe dessert Dubai 2026')">☕ 新开咖啡</button>
-          </div>
-        </div>
-
-        <!-- 🇨🇳 中文平台（小红书/微信/知乎/携程） -->
-        <div style="font-size:12px;color:#ff2442;font-weight:700;margin:10px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)">📱 中文平台搜索</div>
-        <div class="ext-links">
-          <a class="ext-link" style="border-color:rgba(255,36,66,.2);color:#ff2442" href="https://www.xiaohongshu.com/search_result?keyword=迪拜美食推荐" target="_blank">📕 小红书·美食</a>
-          <a class="ext-link" style="border-color:rgba(255,36,66,.2);color:#ff2442" href="https://www.xiaohongshu.com/search_result?keyword=迪拜亲子遛娃" target="_blank">📕 小红书·亲子</a>
-          <a class="ext-link" style="border-color:rgba(255,36,66,.2);color:#ff2442" href="https://www.xiaohongshu.com/search_result?keyword=迪拜周末好去处" target="_blank">📕 小红书·周末</a>
-          <a class="ext-link" style="border-color:rgba(255,36,66,.2);color:#ff2442" href="https://www.xiaohongshu.com/search_result?keyword=迪拜隐藏餐厅" target="_blank">📕 小红书·隐藏店</a>
-          <a class="ext-link" style="color:var(--success)" href="https://mp.weixin.qq.com/s?search_click_id=search&__biz=&mid=&idx=&sn=&key=迪拜美食" target="_blank">💬 微信·搜一搜</a>
-          <a class="ext-link" style="color:#0084ff" href="https://www.zhihu.com/search?type=content&q=迪拜+值得去+餐厅+亲子" target="_blank">🔵 知乎·推荐</a>
-          <a class="ext-link" style="color:#0084ff" href="https://www.zhihu.com/search?type=content&q=迪拜+华人+生活+好玩" target="_blank">🔵 知乎·华人生活</a>
-          <a class="ext-link" style="color:var(--accent)" href="https://www.dubaitourism.cn/articles/things-to-do-with-kids-in-dubai/" target="_blank">🏙️ 迪拜旅游局中文</a>
-          <a class="ext-link" style="color:var(--accent)" href="https://www.dubaiqqt.com" target="_blank">🇦🇪 迪拜全酋通华人</a>
-          <a class="ext-link" style="color:var(--accent)" href="http://www.dubairen.com" target="_blank">🇦🇪 迪拜人网</a>
-        </div>
-
-        <!-- ⭐ 权威评级 + 美食家 -->
-        <div style="font-size:12px;color:var(--accent);font-weight:700;margin:10px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)">⭐ 权威评级 / 美食评论</div>
-        <div class="ext-links">
-          <a class="ext-link" style="color:#c41200" href="https://guide.michelin.com/en/ae-du/dubai-emirate/restaurants" target="_blank">⭐ 米其林指南·迪拜</a>
-          <a class="ext-link" style="color:#c41200" href="https://guide.michelin.com/en/ae-du/dubai-emirate/restaurants/bib-gourmand" target="_blank">🍽️ 米其林·必比登</a>
-          <a class="ext-link" href="https://www.tripadvisor.com/Restaurants-g295424-Dubai_Emirate_of_Dubai.html" target="_blank">🦉 TripAdvisor</a>
-          <a class="ext-link" href="https://www.zomato.com/dubai/best-restaurants" target="_blank">🍴 Zomato排行</a>
-          <a class="ext-link" href="https://www.google.com/maps/search/restaurants+near+JLT+Dubai/@25.0766,55.1442,14z" target="_blank">📍 Google Maps</a>
-          <a class="ext-link" href="https://www.theworlds50best.com/middle-east-north-africa/en/list/1-50" target="_blank">🏆 50 Best MENA</a>
-          <a class="ext-link" href="https://www.timeoutdubai.com/food-drink/best-restaurants-dubai-2026" target="_blank">🏆 TimeOut年度最佳</a>
-          <a class="ext-link" href="https://www.foodiva.net/where-foodiva-dines-dubai-restaurant-guide/" target="_blank">🍽️ FooDiva推荐</a>
-        </div>
-
-        <!-- 📡 快搜分类 -->
-        <!-- 🎫 票务 + 💰 优惠平台 -->
-        <div style="font-size:12px;color:var(--success);font-weight:700;margin:10px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)">🎫 票务 / 💰 优惠折扣</div>
-        <div class="ext-links">
-          <a class="ext-link" style="color:var(--success)" href="https://dubai.platinumlist.net/kids" target="_blank">🎪 Platinumlist亲子演出</a>
-          <a class="ext-link" style="color:var(--success)" href="https://dubai.platinumlist.net/event" target="_blank">🎭 Platinumlist全部活动</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.groupon.ae/coupons/dubayy/family" target="_blank">💰 Groupon家庭折扣</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.groupon.ae/local/dubai/things-to-do" target="_blank">💰 Groupon活动</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.cobone.com/en/deals/activities-dubai" target="_blank">🎫 Cobone活动折扣</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.cobone.com/en/deals/restaurants-dubai" target="_blank">🍽️ Cobone餐饮折扣</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.theentertainerme.com/" target="_blank">🎫 Entertainer买一送一</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.fazaa.ae/search?language=en&categories=Entertainment" target="_blank">🏷️ Fazaa娱乐优惠</a>
-          <a class="ext-link" style="color:var(--success)" href="https://www.fazaa.ae/search?language=en&categories=Food+%26+Beverages" target="_blank">🏷️ Fazaa餐饮优惠</a>
-        </div>
-
-        <div style="font-size:12px;color:var(--accent3);font-weight:700;margin:10px 0 6px;padding-top:8px;border-top:1px solid rgba(255,255,255,.05)">📡 英文快搜</div>
-        <div class="ext-links" id="extLinks"></div>
-
-        <div style="font-size:10px;color:var(--text2);margin-top:8px;padding:6px 8px;background:var(--card2);border-radius:8px;line-height:1.5">💡 <b>使用方法：</b>在以上平台搜到好店 → 往下滑填表单 → 一键添加到好店+转盘</div>
-        <div style="font-size:12px;color:var(--text);font-weight:700;margin:12px 0 8px;padding-top:10px;border-top:1px solid rgba(255,255,255,.05)">✏️ 手动添加</div>
-        <div class="new-venue-form">
-          <div class="nvf-row">
-            <input id="nv_emoji" placeholder="🍜" style="width:44px;text-align:center;font-size:18px">
-            <input id="nv_name" placeholder="名称 *" style="flex:1">
-            <select id="nv_cat">
-              <option value="jlt_food">JLT美食</option><option value="marina_food">Marina美食</option>
-              <option value="cafes">咖啡甜品</option><option value="sports">运动培训</option>
-              <option value="learning">学习成长</option><option value="kids_venues">亲子乐园</option>
-              <option value="nature">自然户外</option><option value="daytrips">周边短途</option>
-              <option value="nightlife">约会夜生活</option><option value="trending" selected>最新热门</option>
-            </select>
-          </div>
-          <div class="nvf-row"><input id="nv_desc" placeholder="描述 *" style="flex:1"></div>
-          <div class="nvf-row"><input id="nv_addr" placeholder="📍 地址" style="flex:1"><input id="nv_phone" placeholder="📞 电话" style="width:120px"></div>
-          <div class="nvf-row"><input id="nv_hours" placeholder="🕐 营业" style="flex:1"><input id="nv_cost" placeholder="💰 费用" style="width:100px"></div>
-          <div class="nvf-row"><input id="nv_tip" placeholder="💡 贴士" style="flex:1"></div>
-          <div class="nvf-row">
-            <input id="nv_tags" placeholder="标签（逗号分隔）" style="flex:1">
-            <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);white-space:nowrap"><input type="checkbox" id="nv_outdoor"> 户外</label>
-          </div>
-          <button class="nvf-submit" onclick="addNewVenue()">➕ 添加到发现好店</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 好店列表 -->
     <div class="cat-tabs" id="catTabs"></div>
-    <!-- 距离筛选 -->
     <div class="dist-filter" id="distFilter"></div>
     <div id="dcGrid"></div>
     <div class="vc-updated" id="dcUpdated"></div>
-    <div class="ds" id="dcSrc"></div>
   </div>
 </div>
 
-<!-- ========== PAGE 4: MY (merged manage + profile) ========== -->
+<!-- ========== PAGE 6: ME ========== -->
 <div class="page" id="pageMe">
-  <div class="header"><h1>👤 我的</h1><div class="sub">个人信息 · 统计 · 管理</div></div>
+  <div class="header"><h1>👤 我的</h1><div class="sub">个人信息 · 成长 · 烹饪 · 技能 · 管理</div></div>
 
-  <!-- 个人信息 -->
-  <div class="sec">
+  <div class="sec" id="sec-profile">
     <div class="sec-h" onclick="toggleSec('prof')"><h3 style="color:var(--accent)">📝 个人信息</h3><span class="arrow open" id="prof-arrow">▼</span></div>
     <div class="sec-body show" id="prof-body">
       <div class="prof-form">
@@ -659,2103 +159,197 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
     </div>
   </div>
 
-  <!-- 活动统计 -->
   <div class="sec">
     <div class="sec-h" onclick="toggleSec('stats')"><h3 style="color:var(--accent3)">📊 活动统计</h3><span class="arrow open" id="stats-arrow">▼</span></div>
     <div class="sec-body show" id="stats-body"><div id="statsContent"></div></div>
   </div>
 
-  <!-- 参加过的活动 -->
+  <div class="sec" id="sec-growth">
+    <div class="sec-h" onclick="toggleSec('sec-growth')"><h3 style="color:var(--dim-grow)">🌱 成长记录</h3><span class="arrow" id="sec-growth-arrow">▼</span></div>
+    <div class="sec-body" id="sec-growth-body"><div id="growthContent"></div></div>
+  </div>
+
+  <div class="sec" id="sec-cooking">
+    <div class="sec-h" onclick="toggleSec('sec-cooking')"><h3 style="color:var(--dim-passion)">🍳 烹饪食谱</h3><span class="arrow" id="sec-cooking-arrow">▼</span></div>
+    <div class="sec-body" id="sec-cooking-body"><div id="cookingContent"></div></div>
+  </div>
+
+  <div class="sec" id="sec-skills">
+    <div class="sec-h" onclick="toggleSec('sec-skills')"><h3 style="color:var(--dim-grow)">🎯 技能学习路径</h3><span class="arrow" id="sec-skills-arrow">▼</span></div>
+    <div class="sec-body" id="sec-skills-body"><div id="skillsContent"></div></div>
+  </div>
+
   <div class="sec">
     <div class="sec-h" onclick="toggleSec('visited')"><h3 style="color:var(--success)">✅ 参加过 <span class="badge" style="background:var(--success)" id="visitedCount">0</span></h3><span class="arrow" id="visited-arrow">▼</span></div>
     <div class="sec-body" id="visited-body"><div id="visitedList"></div></div>
   </div>
 
-  <!-- 推荐 -->
   <div class="sec">
     <div class="sec-h" onclick="toggleSec('myRec')"><h3 style="color:#f472b6">❤️ 推荐 <span class="badge" style="background:#f472b6" id="recCount">0</span></h3><span class="arrow" id="myRec-arrow">▼</span></div>
     <div class="sec-body" id="myRec-body"><div id="recList"></div></div>
   </div>
 
-  <!-- 黑名单 -->
   <div class="sec">
     <div class="sec-h" onclick="toggleSec('myBlk')"><h3 style="color:var(--danger)">🚫 黑名单 <span class="badge" style="background:var(--danger)" id="blkCount">0</span></h3><span class="arrow" id="myBlk-arrow">▼</span></div>
     <div class="sec-body" id="myBlk-body"><div id="blkList"></div></div>
   </div>
 
-  <!-- 活动库管理 -->
-  <div class="sec">
-    <div class="sec-h" onclick="toggleSec('mgF')"><h3>👨‍👩‍👧‍👧 全家活动 <span class="badge" id="mgFCount">0</span></h3><span class="arrow" id="mgF-arrow">▼</span></div>
-    <div class="sec-body" id="mgF-body"><div id="mgFList" style="max-height:300px;overflow-y:auto"></div><div class="af">
-      <input class="ei" id="addEmojiF" placeholder="🎯" maxlength="2"><input class="ni" id="addNameF" placeholder="活动名称"><select id="addTypeF"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('family')">+</button>
-    </div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-h" onclick="toggleSec('mgC')"><h3>💑 夫妻活动 <span class="badge" id="mgCCount" style="background:var(--accent2)">0</span></h3><span class="arrow" id="mgC-arrow">▼</span></div>
-    <div class="sec-body" id="mgC-body"><div id="mgCList" style="max-height:300px;overflow-y:auto"></div><div class="af">
-      <input class="ei" id="addEmojiC" placeholder="🎯" maxlength="2"><input class="ni" id="addNameC" placeholder="活动名称"><select id="addTypeC"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('couple')">+</button>
-    </div></div>
-  </div>
-  <div class="sec">
-    <div class="sec-h" onclick="toggleSec('mgR')"><h3>🍻 朋友活动 <span class="badge" id="mgRCount" style="background:var(--accent3)">0</span></h3><span class="arrow" id="mgR-arrow">▼</span></div>
-    <div class="sec-body" id="mgR-body"><div id="mgRList" style="max-height:300px;overflow-y:auto"></div><div class="af">
-      <input class="ei" id="addEmojiR" placeholder="🎯" maxlength="2"><input class="ni" id="addNameR" placeholder="活动名称"><select id="addTypeR"><option value="outdoor">户外</option><option value="indoor">室内</option></select><button class="ab" onclick="addAct('friend')">+</button>
-    </div></div>
-  </div>
-
-  <!-- 数据管理 -->
   <div class="sec">
     <div class="sec-h" onclick="toggleSec('dataM')"><h3>💾 数据管理</h3><span class="arrow" id="dataM-arrow">▼</span></div>
     <div class="sec-body" id="dataM-body">
       <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="pl-ab add" onclick="exportData()">📤 导出数据</button>
-        <button class="pl-ab reset" onclick="clearAllData()">🗑️ 清除全部</button>
+        <button class="btn-primary" style="flex:0 0 auto;padding:8px 14px" onclick="exportData()">📤 导出数据</button>
+        <button class="btn-ghost" onclick="openImportPicker()">📥 导入备份</button>
+        <button class="btn-danger" onclick="clearAllData()">🗑️ 清除全部</button>
       </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
+      <div style="font-size:10px;color:var(--text2);margin-top:8px">导出 = JSON 备份 · 导入 = 从备份还原（覆盖当前） · 清除 = 所有评分/记录/计划全部丢失</div>
     </div>
   </div>
 </div>
 
-<!-- NAV (4 tabs) -->
+<!-- NAV (5 tabs) -->
 <div class="nav">
-  <button class="nav-btn active" onclick="showPage('pageSpinner',this)"><span class="nav-icon">🎰</span>转盘</button>
+  <button class="nav-btn active" onclick="showPage('pageHome',this)"><span class="nav-icon">🏡</span>今日</button>
   <button class="nav-btn" onclick="showPage('pagePlan',this)"><span class="nav-icon">📅</span>安排</button>
-  <button class="nav-btn" onclick="showPage('pageDiscover',this)"><span class="nav-icon">🔍</span>发现</button>
+  <button class="nav-btn" onclick="showPage('pageSpinner',this)"><span class="nav-icon">🎰</span>转盘</button>
+  <button class="nav-btn" onclick="showPage('pageDeals',this)"><span class="nav-icon">🏷️</span>优惠</button>
   <button class="nav-btn" onclick="showPage('pageMe',this)"><span class="nav-icon">👤</span>我的</button>
 </div>
 
 <div class="confetti-container" id="confC"></div>
+
+<!-- FAB Add Button (for spinner page only) -->
+<button class="fab-add" id="fabAdd" onclick="openAddModal()" title="添加活动">+</button>
+
+<!-- Add Activity Modal -->
+<div class="add-modal-overlay" id="addModalOverlay" onclick="if(event.target===this)closeAddModal()">
+  <div class="add-modal">
+    <div class="add-modal-header">
+      <h3>➕ 添加新活动</h3>
+      <button class="add-modal-close" onclick="closeAddModal()">✕</button>
+    </div>
+    <div class="am-mode-chips">
+      <div class="am-mode-chip active" data-mode="family" onclick="setAddMode(this,'family')">👨‍👩‍👧‍👧 全家</div>
+      <div class="am-mode-chip" data-mode="couple" onclick="setAddMode(this,'couple')">💑 夫妻</div>
+      <div class="am-mode-chip" data-mode="friend" onclick="setAddMode(this,'friend')">🍻 朋友</div>
+    </div>
+    <div class="am-row-inline">
+      <div class="am-row" style="flex:0 0 70px"><label class="am-label">图标</label><input class="am-input" id="amEmoji" placeholder="🎯" maxlength="2" style="text-align:center;font-size:22px"></div>
+      <div class="am-row" style="flex:1"><label class="am-label">活动名称 *</label><input class="am-input" id="amName" placeholder="如: 沙漠露营"></div>
+    </div>
+    <div class="am-row">
+      <label class="am-label">分类</label>
+      <div class="am-chips" id="amCatChips">
+        <div class="am-chip active" data-cat="leisure" onclick="setAddCat(this)">🌴 休闲</div>
+        <div class="am-chip" data-cat="sports" onclick="setAddCat(this)">⚽ 运动</div>
+        <div class="am-chip" data-cat="food" onclick="setAddCat(this)">🍜 美食</div>
+        <div class="am-chip" data-cat="entertainment" onclick="setAddCat(this)">🎢 娱乐</div>
+        <div class="am-chip" data-cat="learning" onclick="setAddCat(this)">📚 学习</div>
+        <div class="am-chip" data-cat="nature" onclick="setAddCat(this)">🌿 自然</div>
+        <div class="am-chip" data-cat="culture" onclick="setAddCat(this)">🎭 文化</div>
+        <div class="am-chip" data-cat="cooking" onclick="setAddCat(this)">🍳 烹饪</div>
+        <div class="am-chip" data-cat="family_ritual" onclick="setAddCat(this)">🏡 家庭仪式</div>
+        <div class="am-chip" data-cat="reflect" onclick="setAddCat(this)">🧘 内省</div>
+      </div>
+    </div>
+    <div class="am-row">
+      <label class="am-label">场地</label>
+      <div class="am-chips" id="amTypeChips">
+        <div class="am-chip active" data-type="outdoor" onclick="setAddType(this)">☀️ 户外</div>
+        <div class="am-chip" data-type="indoor" onclick="setAddType(this)">🏠 室内</div>
+      </div>
+    </div>
+    <div class="am-row-inline">
+      <div class="am-row"><label class="am-label">地点</label><input class="am-input" id="amLoc" placeholder="如: JBR"></div>
+      <div class="am-row"><label class="am-label">距离</label><input class="am-input" id="amDist" placeholder="如: 10min"></div>
+    </div>
+    <div class="am-row"><label class="am-label">地址</label><input class="am-input" id="amAddr" placeholder="地址"></div>
+    <div class="am-row-inline">
+      <div class="am-row"><label class="am-label">费用</label><input class="am-input" id="amCost" placeholder="100 AED/人"></div>
+      <div class="am-row"><label class="am-label">适合年龄</label><input class="am-input" id="amAge" placeholder="所有年龄"></div>
+    </div>
+    <div class="am-row-inline">
+      <div class="am-row"><label class="am-label">最佳时间</label><input class="am-input" id="amTime" placeholder="傍晚"></div>
+      <div class="am-row"><label class="am-label">营业时间</label><input class="am-input" id="amHours" placeholder="10am-10pm"></div>
+    </div>
+    <div class="am-row"><label class="am-label">电话</label><input class="am-input" id="amPhone" placeholder="+971..."></div>
+    <div class="am-row"><label class="am-label">小贴士</label><input class="am-input" id="amTip" placeholder="带防晒"></div>
+    <div class="am-row"><label class="am-label">预订链接</label><input class="am-input" id="amBookUrl" placeholder="https://..."></div>
+    <button class="am-submit" onclick="submitAddModal()">✅ 添加</button>
+  </div>
+</div>
+
+<!-- Plan Edit Modal -->
+<div class="edit-modal" id="editModal" onclick="if(event.target===this)closePlanEdit()">
+  <div class="edit-modal-card">
+    <h3 id="editTitle">✏️ 编辑活动</h3>
+    <div class="edit-row-split">
+      <div class="edit-row"><label>时间</label><input type="time" id="edTime" value="19:30"></div>
+      <div class="edit-row"><label>图标</label><input id="edEmoji" maxlength="2" style="text-align:center;font-size:18px" value="🎯"></div>
+    </div>
+    <div class="edit-row"><label>活动名称</label><input id="edName" placeholder="活动名称"></div>
+    <div class="edit-row"><label>备注</label><input id="edNote" placeholder="一句话说明"></div>
+    <div class="edit-row"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="edOutdoor"> 户外</label></div>
+    <div class="edit-row" style="padding-top:10px;border-top:1px solid rgba(255,255,255,.05)">
+      <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <input type="checkbox" id="edReminder"> 🔔 设置提醒
+      </label>
+      <label style="font-size:10px;color:var(--text2)">提前多少分钟提醒</label>
+      <select id="edLead" style="width:100%;padding:6px 10px;background:var(--card2);border:1px solid rgba(255,255,255,.08);border-radius:6px;color:var(--text);font-family:inherit;font-size:13px">
+        <option value="5">5分钟</option>
+        <option value="15">15分钟</option>
+        <option value="30" selected>30分钟</option>
+        <option value="60">1小时</option>
+        <option value="120">2小时</option>
+      </select>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">💡 提醒在应用打开时最可靠。首次需同意系统通知权限</div>
+    </div>
+    <div class="edit-actions">
+      <button class="btn-primary" onclick="savePlanItem()">💾 保存</button>
+      <button class="btn-danger" id="edDeleteBtn" onclick="deleteCurrentPlanItem()">🗑️</button>
+      <button class="btn-ghost" onclick="closePlanEdit()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Deal Modal -->
+<div class="edit-modal" id="addDealModal" onclick="if(event.target===this)closeAddDealModal()">
+  <div class="edit-modal-card">
+    <h3>➕ 录入折扣</h3>
+    <div class="edit-row-split">
+      <div class="edit-row"><label>图标</label><input id="adEmoji" maxlength="2" value="🏷️" style="text-align:center;font-size:18px"></div>
+      <div class="edit-row"><label>分类</label><select id="adCat">
+        <option value="membership">会员卡</option>
+        <option value="groupbuy">团购</option>
+        <option value="dining" selected>餐饮</option>
+        <option value="tickets">景点</option>
+        <option value="kids">亲子</option>
+        <option value="shopping">购物</option>
+        <option value="travel">旅行</option>
+        <option value="bank">信用卡</option>
+      </select></div>
+    </div>
+    <div class="edit-row"><label>名称 *</label><input id="adName" placeholder="如: 某餐厅买一送一"></div>
+    <div class="edit-row"><label>描述</label><textarea id="adDesc" placeholder="优惠码、适用范围..."></textarea></div>
+    <div class="edit-row-split">
+      <div class="edit-row"><label>折扣</label><input id="adSavings" placeholder="如: 5折"></div>
+      <div class="edit-row"><label>截止日期</label><input type="date" id="adExpiry"></div>
+    </div>
+    <div class="edit-row"><label>链接</label><input id="adUrl" placeholder="https://..."></div>
+    <div class="edit-actions">
+      <button class="btn-primary" onclick="saveUserDeal()">💾 保存</button>
+      <button class="btn-ghost" onclick="closeAddDealModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script>
-// ==================== MASSIVE ACTIVITY DATABASE ====================
-// Each activity has: emoji, name, outdoor, cat (category), info object with full details
-const DB_FAMILY = [
-  {emoji:'🚴',name:'Al Qudra骑行',outdoor:true,cat:'sports',info:{loc:'Al Qudra Cycle Track',addr:'Dubai - Al Ain Road, Exit D63',dist:'35min',cost:'免费/租车100 AED',age:'7+',time:'早7-9点',hours:'24小时开放',phone:'',tip:'带足水，湖边可以看火烈鸟',mapQ:'Al+Qudra+Cycle+Track+Dubai',bookUrl:''}},
-  {emoji:'🧗',name:'Clip\'n Climb攀岩',outdoor:false,cat:'sports',info:{loc:'Clip\'n Climb Dubai',addr:'Gravity Zone, Al Quoz Industrial 3',dist:'15min',cost:'80-100 AED/人',age:'4+',time:'任何时间',hours:'周一-周四 12-10pm，周五-周日 10am-10pm',phone:'+971 4 338 4443',tip:'穿运动鞋，建议提前网上订',mapQ:'Clip+n+Climb+Dubai',bookUrl:'https://www.clipnclimbdubai.com'}},
-  {emoji:'🏖️',name:'Kite Beach家庭日',outdoor:true,cat:'leisure',info:{loc:'Kite Beach',addr:'Umm Suqeim, Jumeirah',dist:'20min',cost:'免费入场+餐饮100-200',age:'所有年龄',time:'早8点或下午4点后',hours:'全天开放',phone:'',tip:'有游乐设施、排球场、餐车',mapQ:'Kite+Beach+Dubai',bookUrl:''}},
-  {emoji:'🏛️',name:'Museum of the Future',outdoor:false,cat:'culture',info:{loc:'Museum of the Future',addr:'Sheikh Zayed Rd, Trade Centre 2',dist:'15min',cost:'成人149/儿童免费',age:'7+',time:'任何时间',hours:'每天 10am-7:30pm',phone:'+971 800 2071',tip:'提前买票，预留2小时',mapQ:'Museum+of+the+Future+Dubai',bookUrl:'https://museumofthefuture.ae'}},
-  {emoji:'🛶',name:'JBR皮划艇/SUP',outdoor:true,cat:'sports',info:{loc:'JBR Beach',addr:'The Walk, JBR',dist:'10min',cost:'100-150 AED/人/时',age:'7+需家长',time:'早8-10点最佳',hours:'8am-6pm',phone:'+971 50 551 0702',tip:'穿能湿的衣服，带防晒',mapQ:'kayak+SUP+JBR+Dubai',bookUrl:''}},
-  {emoji:'🌳',name:'Mushrif Park野餐',outdoor:true,cat:'leisure',info:{loc:'Mushrif National Park',addr:'Al Khawaneej, Mushrif',dist:'30min',cost:'入园5 AED/骑马30',age:'所有年龄',time:'早上或傍晚',hours:'8am-10pm',phone:'+971 4 288 3624',tip:'带野餐垫和球，有烧烤区',mapQ:'Mushrif+Park+Dubai',bookUrl:''}},
-  {emoji:'🎾',name:'全家网球',outdoor:true,cat:'sports',info:{loc:'SPORTSMANIA JLT',addr:'Cluster I, JLT',dist:'5min',cost:'50-100 AED/时',age:'所有年龄',time:'早上或傍晚',hours:'7am-11pm',phone:'+971 4 362 4888',tip:'可以教女儿们基础挥拍',mapQ:'SPORTSMANIA+JLT+Dubai',bookUrl:'http://sportsmania.ae'}},
-  {emoji:'🎬',name:'VOX亲子电影',outdoor:false,cat:'entertainment',info:{loc:'VOX Cinemas',addr:'Ibn Battuta Mall, Jebel Ali',dist:'5min',cost:'50-70 AED/人',age:'查看分级',time:'任何时间',hours:'10am-12am',phone:'+971 600 599 905',tip:'离JLT最近的VOX',mapQ:'VOX+Cinema+Ibn+Battuta',bookUrl:'https://uae.voxcinemas.com'}},
-  {emoji:'🎨',name:'亲子陶艺/手工',outdoor:false,cat:'learning',info:{loc:'Ceramics By You',addr:'The Village, Jumeirah 1',dist:'15min',cost:'100-150 AED/人',age:'完美年龄',time:'任何时间',hours:'10am-10pm',phone:'+971 4 344 7791',tip:'作品可带回家做纪念',mapQ:'Ceramics+By+You+Dubai',bookUrl:''}},
-  {emoji:'🐠',name:'Dubai Aquarium',outdoor:false,cat:'entertainment',info:{loc:'Dubai Mall',addr:'Downtown Dubai, Financial Centre Rd',dist:'20min',cost:'成人155/儿童120',age:'所有年龄',time:'工作日人少',hours:'10am-12am',phone:'+971 4 448 5200',tip:'可以加潜水体验',mapQ:'Dubai+Aquarium+Mall',bookUrl:'https://www.thedubaiaquarium.com'}},
-  {emoji:'🏊',name:'Wild Wadi水上乐园',outdoor:true,cat:'entertainment',info:{loc:'Wild Wadi Waterpark',addr:'Jumeirah Beach Rd, Umm Suqeim 3',dist:'20min',cost:'250-300 AED/人',age:'有儿童区',time:'开园就去',hours:'10am-6pm',phone:'+971 4 348 4444',tip:'自带毛巾，园内餐饮较贵',mapQ:'Wild+Wadi+Waterpark',bookUrl:'https://www.wildwadi.com'}},
-  {emoji:'⛺',name:'沙漠露营半日',outdoor:true,cat:'leisure',info:{loc:'Big Red / Fossil Rock',addr:'Hatta-Sharjah Rd',dist:'45-60min',cost:'自驾免费/团200',age:'所有年龄',time:'下午4点出发',hours:'全天',phone:'',tip:'带足水和零食，看日落',mapQ:'Big+Red+Desert+Dubai',bookUrl:''}},
-  {emoji:'🎡',name:'Ain Dubai摩天轮',outdoor:true,cat:'entertainment',info:{loc:'Ain Dubai',addr:'Bluewaters Island',dist:'10min',cost:'约130 AED/人',age:'所有年龄',time:'傍晚最佳',hours:'12pm-10pm',phone:'+971 800 362 4246',tip:'夜景震撼，全球最大摩天轮',mapQ:'Ain+Dubai',bookUrl:'https://www.aindubai.com'}},
-  {emoji:'🏎️',name:'Dubai Autodrome卡丁车',outdoor:true,cat:'sports',info:{loc:'Dubai Autodrome',addr:'Motor City, Dubai',dist:'25min',cost:'约120 AED/人',age:'9+可独立驾驶',time:'任何时间',hours:'8am-11pm',phone:'+971 4 367 8700',tip:'刺激又安全，有专门少年组',mapQ:'Dubai+Autodrome',bookUrl:'https://www.dubaiautodrome.ae'}},
-  {emoji:'🦩',name:'Ras Al Khor火烈鸟',outdoor:true,cat:'nature',info:{loc:'Ras Al Khor Wildlife Sanctuary',addr:'Ras Al Khor Rd',dist:'20min',cost:'免费',age:'所有年龄',time:'早上最佳',hours:'周六-周四 7:30am-4pm',phone:'+971 4 606 6822',tip:'带望远镜，成百上千只火烈鸟',mapQ:'Ras+Al+Khor+flamingo',bookUrl:''}},
-  {emoji:'🪂',name:'iFLY室内跳伞',outdoor:false,cat:'sports',info:{loc:'iFLY Dubai',addr:'City Centre Mirdif or Playhouse',dist:'20min',cost:'约200 AED/人',age:'3+',time:'任何时间',hours:'10am-10pm',phone:'+971 4 231 6292',tip:'模拟自由落体，超刺激',mapQ:'iFLY+Dubai',bookUrl:'https://www.iflyworld.ae'}},
-  {emoji:'🌺',name:'Miracle Garden花园',outdoor:true,cat:'nature',info:{loc:'Dubai Miracle Garden',addr:'Al Barsha South 3, Dubailand',dist:'20min',cost:'约55 AED/人',age:'所有年龄',time:'下午4点后',hours:'9am-9pm (周末至10pm)',phone:'+971 4 422 8902',tip:'1.5亿朵花，11月-5月开放',mapQ:'Dubai+Miracle+Garden',bookUrl:'https://www.dubaimiraclegarden.com'}},
-  {emoji:'🏄',name:'Surf House冲浪',outdoor:false,cat:'sports',info:{loc:'Surf House Dubai',addr:'JBR, The Walk',dist:'10min',cost:'约150 AED/人',age:'7+',time:'任何时间',hours:'10am-10pm',phone:'+971 4 578 6576',tip:'初学者友好，教练全程指导',mapQ:'Surf+House+Dubai',bookUrl:''}},
-  {emoji:'🏔️',name:'Hatta山区徒步',outdoor:true,cat:'nature',info:{loc:'Hatta',addr:'Hatta, Dubai',dist:'90min',cost:'免费-100 AED',age:'7+',time:'早上出发',hours:'全天',phone:'+971 800 637 227',tip:'皮划艇+徒步+蜜蜂花园',mapQ:'Hatta+hiking+Dubai',bookUrl:'https://visithatta.com'}},
-  {emoji:'🐪',name:'骆驼骑行体验',outdoor:true,cat:'nature',info:{loc:'Al Marmoom Heritage Village',addr:'Al Marmoom, Al Ain Rd',dist:'40min',cost:'约150 AED/人',age:'5+',time:'日落前1小时',hours:'需预约',phone:'+971 4 832 6826',tip:'孩子超兴奋，可以拍超多照片',mapQ:'camel+riding+Dubai',bookUrl:''}},
-  {emoji:'🦎',name:'Dubai Safari Park',outdoor:true,cat:'nature',info:{loc:'Dubai Safari Park',addr:'Al Warqa\'a 5',dist:'25min',cost:'约50 AED/人',age:'所有年龄',time:'早上',hours:'9am-5pm (周二关)',phone:'+971 800 900',tip:'2500+动物，Safari巴士穿越非洲区',mapQ:'Dubai+Safari+Park',bookUrl:'https://www.dubaisafari.ae'}},
-  {emoji:'📚',name:'MBR图书馆',outdoor:false,cat:'learning',info:{loc:'Mohammed Bin Rashid Library',addr:'Al Jaddaf, Culture Village',dist:'20min',cost:'免费',age:'所有年龄',time:'任何时间',hours:'周六-周四 8am-9pm，周五 2-9pm',phone:'+971 4 282 0202',tip:'超级图书馆，儿童区棒极了',mapQ:'Mohammed+Bin+Rashid+Library',bookUrl:'https://www.mbrl.ae'}},
-  {emoji:'🎢',name:'IMG冒险世界',outdoor:false,cat:'entertainment',info:{loc:'IMG Worlds of Adventure',addr:'City of Arabia, E311',dist:'25min',cost:'约300 AED/人',age:'5+',time:'开园就去',hours:'12pm-10pm (周末11am)',phone:'+971 4 403 8888',tip:'全球最大室内主题公园',mapQ:'IMG+Worlds+Adventure',bookUrl:'https://www.imgworlds.com'}},
-  {emoji:'🔬',name:'OliOli儿童博物馆',outdoor:false,cat:'learning',info:{loc:'OliOli',addr:'Al Quoz 1',dist:'15min',cost:'约120 AED',age:'2-11',time:'任何时间',hours:'9am-7pm',phone:'+971 4 702 7300',tip:'八个主题互动画廊',mapQ:'OliOli+museum+Dubai',bookUrl:'https://olioli.ae'}},
-  {emoji:'🎭',name:'KidZania职业体验',outdoor:false,cat:'learning',info:{loc:'KidZania',addr:'The Dubai Mall, Level 2',dist:'20min',cost:'约150 AED',age:'4-14',time:'工作日人少',hours:'10am-10pm',phone:'+971 4 448 5222',tip:'孩子扮演消防员/医生/飞行员',mapQ:'KidZania+Dubai+Mall',bookUrl:'https://dubai.kidzania.com'}},
-  {emoji:'🦋',name:'Dubai蝴蝶园',outdoor:false,cat:'nature',info:{loc:'Dubai Butterfly Garden',addr:'Al Barsha South 3, near Miracle Garden',dist:'20min',cost:'约55 AED',age:'所有年龄',time:'下午',hours:'9am-6pm',phone:'+971 4 422 8902',tip:'1.5万只蝴蝶，紧邻Miracle Garden',mapQ:'Dubai+Butterfly+Garden',bookUrl:''}},
-  {emoji:'⛸️',name:'Dubai Ice Rink',outdoor:false,cat:'sports',info:{loc:'Dubai Ice Rink',addr:'The Dubai Mall, Ground Floor',dist:'20min',cost:'约80 AED',age:'所有年龄',time:'任何时间',hours:'10am-12am',phone:'+971 800 382 246 255',tip:'奥运级冰场，租鞋即可',mapQ:'Dubai+Ice+Rink+Mall',bookUrl:''}},
-  {emoji:'🎠',name:'Motiongate乐园',outdoor:true,cat:'entertainment',info:{loc:'Motiongate Dubai',addr:'Dubai Parks & Resorts, Jebel Ali',dist:'20min',cost:'约250 AED/人',age:'5+',time:'开园就去',hours:'11am-8pm',phone:'+971 4 820 0000',tip:'蓝精灵/怪物史莱克，适合7-9岁',mapQ:'Motiongate+Dubai',bookUrl:'https://www.motiongatedubai.com'}},
-  {emoji:'🌊',name:'La Mer海滨区',outdoor:true,cat:'leisure',info:{loc:'La Mer',addr:'Jumeirah 1',dist:'15min',cost:'免费入场',age:'所有年龄',time:'傍晚',hours:'10am-12am',phone:'',tip:'涂鸦墙+餐厅+水上乐园',mapQ:'La+Mer+Dubai',bookUrl:''}},
-  {emoji:'🌴',name:'Zabeel Park',outdoor:true,cat:'leisure',info:{loc:'Zabeel Park',addr:'Zabeel, near DIFC',dist:'15min',cost:'5 AED入场',age:'所有年龄',time:'傍晚',hours:'8am-10pm',phone:'+971 4 398 6888',tip:'小火车、恐龙乐园、烧烤区',mapQ:'Zabeel+Park+Dubai',bookUrl:''}},
-  {emoji:'🧁',name:'亲子烘焙课',outdoor:false,cat:'learning',info:{loc:'Sugar Moo / SCAFA',addr:'多个地点',dist:'15-20min',cost:'150-250 AED/人',age:'5+',time:'周末',hours:'需预约',phone:'',tip:'和孩子一起学做蛋糕饼干',mapQ:'kids+baking+class+Dubai',bookUrl:''}},
-  {emoji:'🎳',name:'保龄球',outdoor:false,cat:'entertainment',info:{loc:'Dubai Bowling Centre',addr:'Al Mamzar / Sheikh Zayed Rd',dist:'15min',cost:'40-60 AED/局',age:'5+',time:'任何时间',hours:'10am-2am',phone:'+971 4 339 1010',tip:'全家娱乐，边玩边聊',mapQ:'bowling+Dubai',bookUrl:''}},
-  {emoji:'🏸',name:'羽毛球',outdoor:false,cat:'sports',info:{loc:'Al Nasr Leisureland',addr:'Oud Metha',dist:'20min',cost:'50-80 AED/时',age:'7+',time:'傍晚',hours:'7am-11pm',phone:'+971 4 337 1234',tip:'华人群很活跃，可以社交',mapQ:'badminton+court+Dubai',bookUrl:''}},
-  {emoji:'🥘',name:'Global Village美食',outdoor:true,cat:'food',info:{loc:'Global Village',addr:'Sheikh Mohammed Bin Zayed Rd',dist:'25min',cost:'25 AED入场+餐饮',age:'所有年龄',time:'傍晚',hours:'4pm-12am (季节性11月-4月)',phone:'+971 4 362 4114',tip:'30+国家美食，季节性开放',mapQ:'Global+Village+Dubai',bookUrl:'https://www.globalvillage.ae'}},
-  {emoji:'🕌',name:'Jumeirah Mosque参观',outdoor:false,cat:'culture',info:{loc:'Jumeirah Mosque',addr:'Jumeirah Beach Rd, Jumeirah 1',dist:'15min',cost:'约35 AED',age:'7+',time:'周六/周日10am',hours:'需预约导览',phone:'+971 4 353 6666',tip:'唯一对非穆斯林开放的清真寺',mapQ:'Jumeirah+Mosque+visit',bookUrl:''}},
-];
-
-const DB_COUPLE = [
-  {emoji:'🍽️',name:'随机菜系晚餐',outdoor:false,cat:'food',info:{loc:'迪拜各区',addr:'',dist:'视餐厅',cost:'200-400 AED/两人',age:'两人',time:'晚9:30后',hours:'',phone:'',tip:'日/意/黎/印/格鲁吉亚轮着来',mapQ:'best+restaurants+Dubai',bookUrl:''}},
-  {emoji:'🌅',name:'沙漠日落',outdoor:true,cat:'nature',info:{loc:'Fossil Rock',addr:'Hatta-Sharjah Rd',dist:'45min',cost:'免费自驾',age:'两人',time:'日落前1h',hours:'全天',phone:'',tip:'带毯子和热饮，超浪漫',mapQ:'Fossil+Rock+sunset+Dubai',bookUrl:''}},
-  {emoji:'☕',name:'精品咖啡探店',outdoor:false,cat:'food',info:{loc:'Al Quoz / D3 / DIFC',addr:'多个地点',dist:'15min',cost:'50-100 AED',age:'两人',time:'任何时间',hours:'',phone:'',tip:'Nightjar, % Arabica, RAW',mapQ:'specialty+coffee+Dubai',bookUrl:''}},
-  {emoji:'🚶',name:'JLT湖边夜散步',outdoor:true,cat:'leisure',info:{loc:'JLT Lakes',addr:'JLT Cluster S',dist:'下楼即到',cost:'免费',age:'两人',time:'晚9:30后',hours:'全天',phone:'',tip:'买杯外带咖啡，聊聊天',mapQ:'JLT+Lakes+Dubai',bookUrl:''}},
-  {emoji:'🎭',name:'Dubai Opera',outdoor:false,cat:'culture',info:{loc:'Dubai Opera',addr:'Sheikh Mohammed bin Rashid Blvd',dist:'20min',cost:'200-600 AED/人',age:'两人',time:'晚上',hours:'视演出',phone:'+971 4 440 8888',tip:'提前一个月查排期和买票',mapQ:'Dubai+Opera',bookUrl:'https://www.dubaiopera.com'}},
-  {emoji:'💆',name:'Spa放松',outdoor:false,cat:'leisure',info:{loc:'Spa近JLT',addr:'JLT / Marina区域',dist:'5-10min',cost:'300-500 AED/两人',age:'两人',time:'周末白天',hours:'需预约',phone:'',tip:'找双人套餐更划算',mapQ:'couple+spa+near+JLT',bookUrl:''}},
-  {emoji:'🛥️',name:'Marina游船',outdoor:true,cat:'leisure',info:{loc:'Dubai Marina',addr:'Dubai Marina Walk',dist:'10min',cost:'150-300 AED/人',age:'两人',time:'下午5-7点',hours:'需预约',phone:'+971 50 744 2800',tip:'日落时段最好',mapQ:'Dubai+Marina+boat+cruise',bookUrl:''}},
-  {emoji:'🍷',name:'酒吧/Lounge',outdoor:false,cat:'nightlife',info:{loc:'DIFC / JBR / Marina',addr:'多个地点',dist:'10-15min',cost:'200-400 AED',age:'两人',time:'晚上',hours:'5pm-2am',phone:'',tip:'Ladies Night有优惠',mapQ:'best+rooftop+bar+Dubai',bookUrl:''}},
-  {emoji:'📸',name:'城市摄影散步',outdoor:true,cat:'culture',info:{loc:'Al Fahidi / Al Seef',addr:'Al Fahidi Historical District',dist:'20min',cost:'免费',age:'两人',time:'下午5点',hours:'全天',phone:'',tip:'金色时段光线最好',mapQ:'Al+Fahidi+photography',bookUrl:''}},
-  {emoji:'🍣',name:'Omakase体验',outdoor:false,cat:'food',info:{loc:'DIFC / Downtown',addr:'多家选择',dist:'20min',cost:'400-800 AED/人',age:'两人',time:'晚上',hours:'需预约',phone:'',tip:'两人约会首选',mapQ:'best+omakase+Dubai',bookUrl:''}},
-  {emoji:'🌃',name:'哈利法塔夜景',outdoor:false,cat:'entertainment',info:{loc:'At The Top, Burj Khalifa',addr:'1 Sheikh Mohammed bin Rashid Blvd',dist:'20min',cost:'约150 AED/人',age:'两人',time:'日落时段',hours:'8:30am-11pm',phone:'+971 4 888 8888',tip:'夜间票更便宜，全城灯光',mapQ:'Burj+Khalifa+At+The+Top',bookUrl:'https://www.burjkhalifa.ae'}},
-  {emoji:'🎤',name:'KTV之夜',outdoor:false,cat:'nightlife',info:{loc:'Lucky Voice / KTV',addr:'Grand Millennium, DIFC',dist:'15min',cost:'100-200 AED/人',age:'两人',time:'晚上',hours:'6pm-2am',phone:'+971 4 321 7798',tip:'有中文歌库',mapQ:'karaoke+Dubai',bookUrl:''}},
-  {emoji:'🌙',name:'Marina夜间游船',outdoor:true,cat:'nightlife',info:{loc:'Dubai Marina',addr:'Marina Walk, Pier 7',dist:'10min',cost:'200-400 AED/人',age:'两人',time:'晚上8点',hours:'需预约',phone:'',tip:'2小时晚间游船+晚餐',mapQ:'Dubai+Marina+dinner+cruise',bookUrl:''}},
-  {emoji:'🍿',name:'露天电影',outdoor:true,cat:'entertainment',info:{loc:'Rooftop Cinema',addr:'Galleria Mall, Al Wasl',dist:'15min',cost:'约100 AED/人',age:'两人',time:'晚上',hours:'季节性',phone:'+971 4 346 9000',tip:'浪漫约会选择',mapQ:'outdoor+cinema+Dubai',bookUrl:''}},
-  {emoji:'🏌️',name:'Topgolf',outdoor:true,cat:'sports',info:{loc:'Topgolf Dubai',addr:'Emirates Golf Club',dist:'10min',cost:'约150 AED/时',age:'两人',time:'傍晚',hours:'10am-12am',phone:'+971 4 390 7777',tip:'不会打也好玩',mapQ:'Topgolf+Dubai',bookUrl:'https://topgolf.com/ae/dubai'}},
-  {emoji:'🖼️',name:'Alserkal艺术区',outdoor:false,cat:'culture',info:{loc:'Alserkal Avenue',addr:'Al Quoz Industrial 1',dist:'15min',cost:'免费',age:'两人',time:'下午',hours:'10am-7pm',phone:'',tip:'画廊+咖啡+独立书店',mapQ:'Alserkal+Avenue+Dubai',bookUrl:'https://alserkal.online'}},
-  {emoji:'🏰',name:'阿布扎比一日游',outdoor:false,cat:'daytrip',info:{loc:'Abu Dhabi',addr:'Sheikh Zayed Grand Mosque + Louvre',dist:'90min',cost:'油费+门票200',age:'两人',time:'早出发',hours:'全天',phone:'',tip:'清真寺+卢浮宫',mapQ:'Abu+Dhabi+day+trip',bookUrl:''}},
-  {emoji:'🏔️',name:'Jebel Jais滑索',outdoor:true,cat:'sports',info:{loc:'Jebel Jais, RAK',addr:'Ras Al Khaimah',dist:'90min',cost:'约400 AED/人',age:'两人',time:'早上',hours:'需预约',phone:'+971 7 203 0300',tip:'世界最长高空滑索！',mapQ:'Jebel+Jais+zipline+RAK',bookUrl:'https://www.visitjebeljais.com'}},
-];
-
-// Discover extra activities (not in spinner by default)
-// Discover data now loaded from discover-data.js (VENUES object)
-const EXT_SOURCES = [
-  {name:'TimeOut Dubai',url:'https://www.timeoutdubai.com/things-to-do',icon:'📰'},
-  {name:'Visit Dubai',url:'https://www.visitdubai.com/en/things-to-do',icon:'🏙️'},
-  {name:'WhatsOn',url:'https://whatson.ae/',icon:'📅'},
-  {name:'Dubai Calendar',url:'https://www.dubaicalendar.com/',icon:'🗓️'},
-  {name:'Platinumlist',url:'https://dubai.platinumlist.net/',icon:'🎫'},
-  {name:'Groupon',url:'https://www.groupon.ae/',icon:'💰'},
-  {name:'TripAdvisor',url:'https://www.tripadvisor.com/Attractions-g295424-Activities-Dubai.html',icon:'⭐'},
-  {name:'KidzApp',url:'https://kidzapp.com/',icon:'👧'},
-  {name:'JLT Dining',url:'https://www.jltdining.com/',icon:'🍽️'},
-];
-
-const DEFAULT_PLANNER = [
-  {day:'一',time:'19:30',act:'JLT湖边全家散步',emoji:'🚶'},
-  {day:'二',time:'19:30',act:'家庭阅读/学习时间',emoji:'📖'},
-  {day:'三',time:'19:30',act:'JLT湖边跑步（自己）',emoji:'🏃'},
-  {day:'四',time:'19:30',act:'家庭桌游/拼图',emoji:'🎲'},
-  {day:'五',time:'20:00',act:'网球 + 夫妻晚餐',emoji:'🎾'},
-  {day:'六',time:'08:00',act:'周末出行活动（转盘）',emoji:'🎯'},
-  {day:'六',time:'21:30',act:'夫妻时间',emoji:'💑'},
-  {day:'日',time:'09:00',act:'全家出行活动',emoji:'☀️'},
-  {day:'日',time:'19:30',act:'家庭电影夜（JLT）',emoji:'🎬'},
-];
-const DAYS = ['一','二','三','四','五','六','日'];
-const CAT_LABELS = {sports:'运动',learning:'学习',food:'美食',culture:'文化',entertainment:'娱乐',leisure:'休闲',nature:'自然',nightlife:'夜生活',daytrip:'短途',jlt_food:'JLT美食',marina_food:'Marina美食',cafes:'咖啡',kids_venues:'亲子',budget_food:'平价美食',asian_food:'亚洲美食',fine_dining:'高端',michelin_chinese:'米其林/中餐',unique:'特色体验',trending:'热门'};
-
-// ==================== STATE ====================
-let mode = 'family';
-let famActs = JSON.parse(localStorage.getItem('s_fam')) || JSON.parse(JSON.stringify(DB_FAMILY));
-let couActs = JSON.parse(localStorage.getItem('s_cou')) || JSON.parse(JSON.stringify(DB_COUPLE));
-let friActs = JSON.parse(localStorage.getItem('s_fri')) || JSON.parse(JSON.stringify([...DB_COUPLE, ...DB_FAMILY.filter(a=>['sports','food','entertainment','leisure','nightlife'].includes(a.cat))]));
-let history = JSON.parse(localStorage.getItem('s_hist')) || [];
-let planner = JSON.parse(localStorage.getItem('s_plan')) || JSON.parse(JSON.stringify(DEFAULT_PLANNER));
-let kidsSchedule = JSON.parse(localStorage.getItem('s_kids')) || [];
-let generatedPlan = null;
-let spinning = false, curRot = 0, weather = null, curCat = 'sports';
-let catFilter = 'all'; // 'all' or a cat key like 'sports','food', etc.
-
-const CAT_FILTERS = [
-  {id:'all',label:'🎯 全部',emoji:'🎯'},
-  {id:'sports',label:'⚽ 运动',emoji:'⚽'},
-  {id:'food',label:'🍜 美食',emoji:'🍜'},
-  {id:'entertainment',label:'🎢 娱乐',emoji:'🎢'},
-  {id:'learning',label:'📚 学习',emoji:'📚'},
-  {id:'nature',label:'🌿 自然',emoji:'🌿'},
-  {id:'culture',label:'🎭 文化',emoji:'🎭'},
-  {id:'leisure',label:'🌴 休闲',emoji:'🌴'},
-  {id:'nightlife',label:'🌙 夜间',emoji:'🌙'},
-  {id:'daytrip',label:'🚗 短途',emoji:'🚗'},
-];
-
-const WHEEL_MAX = 8; // 转盘最多显示数量，8个看得最清楚
-let wheelActs = []; // 当前转盘上显示的活动
-
-function actsPool() {
-  const base = mode === 'family' ? famActs : mode === 'couple' ? couActs : friActs;
-  if (catFilter === 'all') return base;
-  return base.filter(a => a.cat === catFilter);
-}
-
-// 从池子里随机抽取最多 WHEEL_MAX 个到转盘
-// 优先选有Fazaa优惠的活动
-function hasFazaa(act) {
-  if (act.info && act.info.fazaa) return true;
-  if (typeof VENUES === 'undefined') return false;
-  let found = false;
-  Object.values(VENUES).forEach(cat => (cat.items||[]).forEach(v => {
-    if (v.name === act.name && v.fazaa) found = true;
-  }));
-  return found;
-}
-
-function sampleWheel() {
-  // Filter out blacklisted
-  const pool = actsPool().filter(a => getUserRating(a.name).status !== 'blacklist');
-  if (pool.length <= WHEEL_MAX) {
-    wheelActs = [...pool];
-  } else {
-    const now = new Date();
-    const dow = now.getDay(); // 0=Sun, 6=Sat
-    const isWeekendNow = dow === 0 || dow === 5 || dow === 6;
-
-    const recommended = pool.filter(a => getUserRating(a.name).status === 'recommend');
-    const others = pool.filter(a => getUserRating(a.name).status !== 'recommend');
-
-    const picks = [];
-    const pickNames = new Set();
-    const addPick = (a) => { if (a && !pickNames.has(a.name)) { picks.push(a); pickNames.add(a.name); }};
-
-    // 1. 推荐活动（最多2个）
-    const shuffledR = [...recommended].sort(() => Math.random() - 0.5);
-    shuffledR.slice(0, 2).forEach(addPick);
-
-    // 2. Fazaa优惠（最多1个）
-    const fazaaPool = others.filter(a => hasFazaa(a) && !pickNames.has(a.name)).sort(() => Math.random() - 0.5);
-    if (fazaaPool.length) addPick(fazaaPool[0]);
-
-    // 3. 智能填充：室内外搭配 + 远近搭配
-    const rest = others.filter(a => !pickNames.has(a.name));
-    const nearOut = rest.filter(a => isNearby(a) && isOutdoor(a)).sort(() => Math.random() - 0.5);
-    const nearIn = rest.filter(a => isNearby(a) && !isOutdoor(a)).sort(() => Math.random() - 0.5);
-    const farOut = rest.filter(a => !isNearby(a) && isOutdoor(a)).sort(() => Math.random() - 0.5);
-    const farIn = rest.filter(a => !isNearby(a) && !isOutdoor(a)).sort(() => Math.random() - 0.5);
-
-    if (isWeekendNow) {
-      // 周末：均匀搭配四种组合
-      const groups = [farOut, nearOut, farIn, nearIn];
-      let gi = 0, safety = 0;
-      while (picks.length < WHEEL_MAX && safety < 32) {
-        const g = groups[gi % groups.length];
-        if (g.length) addPick(g.shift());
-        gi++; safety++;
-      }
-    } else {
-      // 工作日：偏近(~70%)，室内外各半
-      const groups = [nearOut, nearIn, nearOut, nearIn, farOut, farIn];
-      let gi = 0, safety = 0;
-      while (picks.length < WHEEL_MAX && safety < 32) {
-        const g = groups[gi % groups.length];
-        if (g.length) addPick(g.shift());
-        gi++; safety++;
-      }
-    }
-
-    // 如果还没填满，从剩余随机补
-    if (picks.length < WHEEL_MAX) {
-      const leftover = rest.filter(a => !pickNames.has(a.name)).sort(() => Math.random() - 0.5);
-      leftover.slice(0, WHEEL_MAX - picks.length).forEach(addPick);
-    }
-
-    wheelActs = picks.sort(() => Math.random() - 0.5);
-  }
-  updateWheelInfo();
-}
-
-function updateWheelInfo() {
-  const pool = actsPool();
-  const el = document.getElementById('wheelInfo');
-  if (pool.length <= WHEEL_MAX) {
-    el.textContent = `共 ${pool.length} 个活动`;
-  } else {
-    el.innerHTML = `从 <b style="color:var(--accent)">${pool.length}</b> 个活动中随机选了 <b style="color:var(--accent)">${wheelActs.length}</b> 个 · 点 🔀 换一批`;
-  }
-}
-
-function shuffleWheel() {
-  curRot = 0;
-  sampleWheel();
-  drawWheel();
-  document.getElementById('resCard').classList.remove('show');
-}
-
-// Keep old acts() for backward compat in generator etc.
-function acts() { return actsPool(); }
-function save() {
-  localStorage.setItem('s_fam', JSON.stringify(famActs));
-  localStorage.setItem('s_cou', JSON.stringify(couActs));
-  localStorage.setItem('s_fri', JSON.stringify(friActs));
-  localStorage.setItem('s_hist', JSON.stringify(history));
-  localStorage.setItem('s_plan', JSON.stringify(planner));
-  localStorage.setItem('s_kids', JSON.stringify(kidsSchedule));
-}
-function toast(m) { const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2000); }
-
-// ==================== NAV ====================
-function showPage(id, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  if (id === 'pageDiscover' && !document.getElementById('catTabs').innerHTML) initDiscover();
-  if (id === 'pageMe') { renderManage(); renderMyPage(); }
-  if (id === 'pagePlan') { renderToday(); renderPlanner(); renderKids(); renderHist(); }
-}
-function toggleSec(id) {
-  const b = document.getElementById(id+'-body');
-  const a = document.getElementById(id+'-arrow');
-  b.classList.toggle('show'); a.classList.toggle('open');
-}
-
-// ==================== WEATHER ====================
-async function fetchWeather() {
-  try {
-    const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=25.08&longitude=55.15&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Asia/Dubai&forecast_days=7');
-    const d = await r.json(); weather = d;
-    const c = d.current, t = Math.round(c.temperature_2m), h = c.relative_humidity_2m, w = Math.round(c.wind_speed_10m);
-    const icons = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',51:'🌦️',55:'🌧️',61:'🌧️',80:'🌦️',95:'⛈️'};
-    document.getElementById('wI').textContent = icons[c.weather_code]||'🌤️';
-    document.getElementById('wT').textContent = t+'°';
-    document.getElementById('wD').innerHTML = `湿度${h}% · 风${w}km/h<br>迪拜实时`;
-    const wn = document.getElementById('wW');
-    if(t>=35){wn.classList.add('show');wn.textContent=`🌡️${t}°C 较热`;} else if(t>=30){wn.classList.add('show');wn.textContent=`☀️${t}°C 温暖`;}
-  } catch(e) { document.getElementById('wD').textContent='天气加载失败'; }
-}
-
-// ==================== MODE ====================
-function setMode(m) {
-  mode=m;
-  document.getElementById('mSlider').className='mode-slider'+(m==='couple'?' couple':m==='friend'?' friend':'');
-  document.getElementById('famBtn').classList.toggle('active',m==='family');
-  document.getElementById('couBtn').classList.toggle('active',m==='couple');
-  document.getElementById('friBtn').classList.toggle('active',m==='friend');
-  curRot=0; renderCatFilter(); sampleWheel(); drawWheel();
-}
-
-// ==================== CATEGORY FILTER ====================
-function renderCatFilter() {
-  const base = mode === 'family' ? famActs : mode === 'couple' ? couActs : friActs;
-  const el = document.getElementById('catFilter');
-  el.innerHTML = CAT_FILTERS.map(c => {
-    const count = c.id === 'all' ? base.length : base.filter(a => a.cat === c.id).length;
-    if (c.id !== 'all' && count === 0) return ''; // hide empty categories
-    return `<button class="cf-btn ${catFilter===c.id?'active':''}" onclick="setCatFilter('${c.id}')">${c.label}<span class="cf-count">${count}</span></button>`;
-  }).join('');
-}
-
-function setCatFilter(id) {
-  catFilter = id;
-  curRot = 0;
-  renderCatFilter();
-  sampleWheel();
-  drawWheel();
-}
-
-// ==================== WHEEL ====================
-const COLORS=['#f59e0b','#8b5cf6','#06b6d4','#22c55e','#ef4444','#ec4899','#3b82f6','#14b8a6','#f97316','#a855f7','#10b981','#e11d48','#0ea5e9','#d946ef','#84cc16','#f43f5e'];
-function drawWheel(hi=-1) {
-  const cv=document.getElementById('wheel'),ctx=cv.getContext('2d'),a=wheelActs,n=a.length;
-  const S=1024, cx=S/2, cy=S/2, r=S/2-12;
-  if(!n){ctx.clearRect(0,0,S,S);ctx.fillStyle='#333';ctx.font='bold 36px sans-serif';ctx.textAlign='center';ctx.fillText('无活动',cx,cy);return;}
-  const arc=Math.PI*2/n;
-  ctx.clearRect(0,0,S,S);
-
-  for(let i=0;i<n;i++){
-    const sa=curRot+i*arc;
-    // Segment
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,sa,sa+arc);ctx.closePath();
-    ctx.fillStyle=i===hi?'#fff':COLORS[i%COLORS.length];ctx.fill();
-    ctx.strokeStyle='rgba(0,0,0,.3)';ctx.lineWidth=3;ctx.stroke();
-
-    // Text — auto-flip so text is always upright
-    const midAngle = sa + arc/2;
-    // Normalize angle to 0-2PI
-    let normAngle = midAngle % (Math.PI*2);
-    if (normAngle < 0) normAngle += Math.PI*2;
-    // If segment points left (between 90° and 270°), flip text 180°
-    const flipped = normAngle > Math.PI/2 && normAngle < Math.PI*1.5;
-
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(midAngle + (flipped ? Math.PI : 0));
-    ctx.fillStyle = i===hi ? '#000' : '#fff';
-    ctx.textAlign = 'center';
-
-    const dir = flipped ? -1 : 1; // text placement direction
-
-    // Emoji
-    const emojiSz = n<=4?84:n<=6?72:n<=8?60:50;
-    ctx.font=`bold ${emojiSz}px "Noto Sans SC",sans-serif`;
-    ctx.fillText(a[i].emoji, dir * r*0.33, emojiSz*0.35);
-
-    // Name
-    const nameSz = n<=4?50:n<=6?44:n<=8?40:32;
-    const maxLen = n<=4?10:n<=6?8:n<=8?6:5;
-    ctx.font=`bold ${nameSz}px "Noto Sans SC",sans-serif`;
-    const nm=a[i].name.length>maxLen?a[i].name.slice(0,maxLen-1)+'…':a[i].name;
-    ctx.fillText(nm, dir * r*0.65, nameSz*0.35);
-
-    ctx.restore();
-  }
-  // Center circle
-  const cr=60;
-  ctx.beginPath();ctx.arc(cx,cy,cr,0,Math.PI*2);
-  ctx.fillStyle='#0f0f1a';ctx.fill();
-  ctx.strokeStyle='#f59e0b';ctx.lineWidth=4;ctx.stroke();
-  ctx.fillStyle='#fff';ctx.font='bold 28px sans-serif';ctx.textAlign='center';
-  ctx.fillText('GO',cx,cy+10);
-}
-
-function spin() {
-  // 每次转之前先随机换一批（用户无感）
-  sampleWheel(); curRot=0; drawWheel();
-
-  const a=wheelActs;if(!a.length||spinning)return;
-  spinning=true;document.getElementById('spinBtn').disabled=true;document.getElementById('resCard').classList.remove('show');
-  const n=a.length,arc=Math.PI*2/n,ti=Math.floor(Math.random()*n);
-  const ta=-(ti*arc+arc/2)-Math.PI/2,sp=5+Math.random()*3,tr=sp*Math.PI*2+ta-(curRot%(Math.PI*2));
-  const sr=curRot,dur=4000+Math.random()*1000,st=performance.now();
-  function ease(t){return 1-Math.pow(1-t,4)}
-  function anim(now){const p=Math.min((now-st)/dur,1);curRot=sr+tr*ease(p);drawWheel();
-    if(p<1)requestAnimationFrame(anim);
-    else{spinning=false;document.getElementById('spinBtn').disabled=false;showResAct(a[ti]);drawWheel(ti);confetti();
-      const d=new Date();history.unshift({emoji:a[ti].emoji,name:a[ti].name,mode,date:d.toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'})});
-      if(history.length>20)history.pop();save();renderHist();
-      }}
-  requestAnimationFrame(anim);
-}
-
-// ==================== RESULT ====================
-function showResAct(act) {
-  const info=act.info,card=document.getElementById('resCard');
-  const hot=weather&&weather.current.temperature_2m>=35;
-  let ww=act.outdoor&&hot?'<span class="rtag ww">⚠️ 高温</span>':'';
-  let lk='';
-  if(info.mapQ)lk+=`<a href="https://www.google.com/maps/search/${info.mapQ}" target="_blank">📍 地图</a>`;
-  if(info.bookUrl)lk+=`<a href="${info.bookUrl}" target="_blank">🎫 预订</a>`;
-  if(info.phone)lk+=`<a href="tel:${info.phone}">📞 电话</a>`;
-  lk+=`<a href="https://www.google.com/search?q=${encodeURIComponent(act.name+' Dubai 2026')}" target="_blank">🔍 搜索</a>`;
-  lk+=`<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(act.name+' Dubai vlog')}" target="_blank">▶️ 视频</a>`;
-  // Check Fazaa: look up from VENUES data
-  let fazaaInfo = info.fazaa || '';
-  if (!fazaaInfo && typeof VENUES !== 'undefined') {
-    Object.values(VENUES).forEach(cat => (cat.items||[]).forEach(v => {
-      if (v.name === act.name && v.fazaa) fazaaInfo = v.fazaa;
-    }));
-  }
-  if (fazaaInfo) lk += `<a class="fazaa-link" href="https://www.fazaa.ae/search?language=en&keyword=${encodeURIComponent(act.name)}" target="_blank">🏷️ Fazaa</a>`;
-
-  const fazaaRow = fazaaInfo ? `<div class="ir"><span class="ii">🏷️</span><span class="il">Fazaa</span><span class="fazaa-badge">${fazaaInfo}</span></div>` : '';
-
-  card.innerHTML=`<div class="rh"><div class="re">${act.emoji}</div><div class="rn">${act.name}</div>
-    <span class="rtag ${act.outdoor?'outdoor':'indoor'}">${act.outdoor?'☀️ 户外':'🏠 室内'}</span>${ww}
-    ${fazaaInfo?'<span class="rtag" style="background:rgba(0,230,118,.15);color:#00e676">🏷️ 有Fazaa优惠</span>':''}
-    <span class="rtag" style="background:rgba(255,255,255,.08);color:var(--text2)">${CAT_LABELS[act.cat]||''}</span></div>
-  <div class="ri">
-    ${fazaaRow}
-    <div class="ir"><span class="ii">📍</span><span class="il">地点</span><span>${info.loc}</span></div>
-    ${info.addr?`<div class="ir"><span class="ii">🏠</span><span class="il">地址</span><span>${info.addr}</span></div>`:''}
-    <div class="ir"><span class="ii">🚗</span><span class="il">距离</span><span>从JLT ${info.dist}</span></div>
-    <div class="ir"><span class="ii">💰</span><span class="il">预算</span><span>${info.cost}</span></div>
-    <div class="ir"><span class="ii">👧</span><span class="il">适龄</span><span>${info.age}</span></div>
-    <div class="ir"><span class="ii">⏰</span><span class="il">建议</span><span>${info.time}</span></div>
-    ${info.hours?`<div class="ir"><span class="ii">🕐</span><span class="il">营业</span><span>${info.hours}</span></div>`:''}
-    ${info.phone?`<div class="ir"><span class="ii">📞</span><span class="il">电话</span><span>${info.phone}</span></div>`:''}
-    <div class="ir"><span class="ii">💡</span><span class="il">贴士</span><span>${info.tip}</span></div>
-  </div>
-  ${renderRatingSection(act.name, act.emoji, act.cat)}
-  <div class="rl">${lk}</div>`;
-  card.classList.add('show');card.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
-
-// ==================== USER RATINGS / RECOMMEND / BLACKLIST ====================
-let userRatings = JSON.parse(localStorage.getItem('s_ratings')) || {};
-// Format: { "活动名": { stars: 0-5, status: "normal"|"recommend"|"blacklist", note: "" } }
-
-function getUserRating(name) {
-  return userRatings[name] || { stars: 0, status: 'normal', note: '' };
-}
-
-function setUserStars(name, stars) {
-  if (!userRatings[name]) userRatings[name] = { stars: 0, status: 'normal', note: '' };
-  userRatings[name].stars = stars;
-  localStorage.setItem('s_ratings', JSON.stringify(userRatings));
-  // Re-render stars in result card
-  const el = document.getElementById('ratingStars');
-  if (el) el.innerHTML = renderStarsHTML(name);
-}
-
-function setUserStatus(name, status) {
-  if (!userRatings[name]) userRatings[name] = { stars: 0, status: 'normal', note: '' };
-  userRatings[name].status = status;
-  localStorage.setItem('s_ratings', JSON.stringify(userRatings));
-  // Re-render status buttons
-  const el = document.getElementById('ratingBtns');
-  if (el) el.innerHTML = renderStatusBtnsHTML(name);
-  // If blacklisted, resample wheel to remove it
-  if (status === 'blacklist') { sampleWheel(); drawWheel(); toast(`🚫 "${name}" 已拉黑，不再出现在转盘`); }
-  else if (status === 'recommend') toast(`❤️ "${name}" 已推荐，转盘优先`);
-  else toast('已恢复普通状态');
-}
-
-function saveUserNote(name) {
-  const note = document.getElementById('ratingNote')?.value || '';
-  if (!userRatings[name]) userRatings[name] = { stars: 0, status: 'normal', note: '' };
-  userRatings[name].note = note;
-  localStorage.setItem('s_ratings', JSON.stringify(userRatings));
-  toast('💬 备注已保存');
-}
-
-function renderStarsHTML(name) {
-  const r = getUserRating(name);
-  let html = '';
-  for (let s = 1; s <= 5; s++) {
-    const filled = s <= r.stars;
-    html += `<span class="rate-star ${filled?'filled':''}" onclick="setUserStars('${name.replace(/'/g,"\\'")}',${s})">${filled?'★':'☆'}</span>`;
-  }
-  return html;
-}
-
-function renderStatusBtnsHTML(name) {
-  const r = getUserRating(name);
-  const esc = name.replace(/'/g,"\\'");
-  return `<button class="status-btn ${r.status==='recommend'?'active-rec':''}" onclick="setUserStatus('${esc}','${r.status==='recommend'?'normal':'recommend'}')">❤️ 推荐</button>`
-    + `<button class="status-btn ${r.status==='blacklist'?'active-blk':''}" onclick="setUserStatus('${esc}','${r.status==='blacklist'?'normal':'blacklist'}')">🚫 拉黑</button>`;
-}
-
-function renderRatingSection(name, emoji, cat) {
-  const r = getUserRating(name);
-  const esc = name.replace(/'/g,"\\'");
-  const isVisited = visitedActs.some(v => v.name === name);
-  const visitBtn = isVisited
-    ? `<span style="font-size:11px;color:var(--success)">✅ 已参加</span>`
-    : `<button class="visit-btn" onclick="confirmVisit('${esc}','${emoji||'🎯'}','${cat||''}')">✅ 确认参加</button>`;
-  return `<div class="rating-section">
-    <div class="rating-row" style="justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="rating-label">评分</span>
-        <span id="ratingStars" class="rating-stars">${renderStarsHTML(name)}</span>
-      </div>
-      ${visitBtn}
-    </div>
-    <div class="rating-row">
-      <span class="rating-label">标记</span>
-      <span id="ratingBtns">${renderStatusBtnsHTML(name)}</span>
-    </div>
-    <div class="rating-row">
-      <input id="ratingNote" class="rating-note" placeholder="写个备注..." value="${(r.note||'').replace(/"/g,'&quot;')}" onblur="saveUserNote('${esc}')">
-    </div>
-  </div>`;
-}
-
-function confirmVisit(name, emoji, cat) {
-  markVisited(name, emoji, cat);
-  toast('✅ 已记录参加「' + name.slice(0,15) + '」');
-  // Re-render the button to show "已参加"
-  const card = document.getElementById('resCard');
-  if (card) {
-    const btns = card.querySelectorAll('.visit-btn');
-    btns.forEach(b => { b.outerHTML = '<span style="font-size:11px;color:var(--success)">✅ 已参加</span>'; });
-  }
-}
-
-// ==================== CONFETTI ====================
-function confetti(){const c=document.getElementById('confC'),cols=['#f59e0b','#8b5cf6','#22c55e','#ef4444','#ec4899','#3b82f6'];for(let i=0;i<50;i++){const e=document.createElement('div');e.className='confetti';e.style.cssText=`left:${30+Math.random()*40}%;top:-10px;width:${6+Math.random()*7}px;height:${6+Math.random()*7}px;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'2px'}`;c.appendChild(e);const x=(Math.random()-.5)*280,y=280+Math.random()*450;e.animate([{opacity:1,transform:'translate(0,0) rotate(0)'},{opacity:0,transform:`translate(${x}px,${y}px) rotate(${Math.random()*720}deg)`}],{duration:1200+Math.random()*1400,easing:'cubic-bezier(.25,.46,.45,.94)'}).onfinish=()=>e.remove();}}
-
-// ==================== KIDS SCHEDULE ====================
-function renderKids() {
-  const el=document.getElementById('ksList');
-  el.innerHTML=kidsSchedule.map((k,i)=>`<div class="ks-row"><span class="ks-day">${k.day}</span><span class="ks-time">${k.start}-${k.end}</span><span class="ks-act">${k.name}</span><button class="ks-del" onclick="delKid(${i})">✕</button></div>`).join('');
-}
-function addKidsClass(){
-  const day=document.getElementById('ksDay').value,start=document.getElementById('ksStart').value,end=document.getElementById('ksEnd').value,name=document.getElementById('ksName').value.trim();
-  if(!name)return;
-  kidsSchedule.push({day,start,end,name});save();renderKids();
-  document.getElementById('ksName').value='';toast('✅ 已添加课表');
-}
-function delKid(i){kidsSchedule.splice(i,1);save();renderKids();}
-
-// ==================== MONTHLY GENERATOR ====================
-// 规则：周中(一-四)孩子只能在JLT内活动；周末(五-日)可以安排外出
-// 智能规则：a.运动每周同一时间 b.工作日附近/周末可远 c.户外户内搭配 d.远近搭配
-const JLT_ACTIVITIES = [
-  {emoji:'🚶',name:'JLT湖边全家散步',cat:'leisure',outdoor:true},
-  {emoji:'🏃',name:'JLT湖边跑步（自己）',cat:'sports',outdoor:true},
-  {emoji:'🚴',name:'JLT湖边骑车/滑板车',cat:'sports',outdoor:true},
-  {emoji:'📖',name:'家庭阅读时间',cat:'learning',outdoor:false},
-  {emoji:'🎲',name:'家庭桌游/卡牌',cat:'entertainment',outdoor:false},
-  {emoji:'🎬',name:'家庭电影夜',cat:'entertainment',outdoor:false},
-  {emoji:'🧩',name:'拼图/乐高时间',cat:'learning',outdoor:false},
-  {emoji:'🎨',name:'画画/手工时间',cat:'learning',outdoor:false},
-  {emoji:'🎹',name:'乐器练习',cat:'learning',outdoor:false},
-  {emoji:'💻',name:'亲子编程/学习',cat:'learning',outdoor:false},
-  {emoji:'🧘',name:'JLT湖边瑜伽/拉伸',cat:'sports',outdoor:true},
-  {emoji:'⚽',name:'JLT楼下踢球/运动',cat:'sports',outdoor:true},
-  {emoji:'🍳',name:'全家一起做饭',cat:'food',outdoor:false},
-  {emoji:'📝',name:'日记/写作时间',cat:'learning',outdoor:false},
-  {emoji:'🌙',name:'JLT湖边夜散步+聊天',cat:'leisure',outdoor:true},
-  {emoji:'♟️',name:'国际象棋/围棋',cat:'learning',outdoor:false},
-  {emoji:'🎤',name:'家庭KTV/唱歌',cat:'entertainment',outdoor:false},
-  {emoji:'📺',name:'纪录片之夜',cat:'learning',outdoor:false},
-];
-const JLT_COUPLE = [
-  {emoji:'🚶',name:'JLT湖边夫妻散步',cat:'leisure',outdoor:true},
-  {emoji:'☕',name:'楼下咖啡聊天',cat:'food',outdoor:false},
-  {emoji:'🎬',name:'两人电影时间',cat:'entertainment',outdoor:false},
-  {emoji:'📖',name:'各自阅读+分享',cat:'learning',outdoor:false},
-  {emoji:'🧘',name:'一起做瑜伽',cat:'sports',outdoor:true},
-  {emoji:'🍷',name:'阳台小酌聊天',cat:'leisure',outdoor:false},
-];
-
-const WEEKDAYS = ['一','二','三','四']; // 周中
-const WEEKEND = ['五','六','日'];        // 周末
-
-function isWeekday(day) { return WEEKDAYS.includes(day); }
-
-// === 距离和室内外辅助函数 ===
-function getDistMin(act) {
-  if (!act) return 0;
-  const d = act.info && act.info.dist;
-  if (!d) return 0;
-  if (typeof d === 'number') return [0, 10, 20, 30, 60][d] || 0;
-  const m = String(d).match(/(\d+)/);
-  return m ? parseInt(m[1]) : 0;
-}
-function isNearby(act) { return getDistMin(act) <= 15; }
-function isOutdoor(act) { return !!act.outdoor; }
-
-function pickRand(arr, cat, exclude) {
-  let pool = cat ? arr.filter(a => a.cat === cat) : [...arr];
-  if (exclude) {
-    const exNames = Array.isArray(exclude) ? exclude.map(e => e.name) : [exclude.name];
-    pool = pool.filter(a => !exNames.includes(a.name));
-  }
-  if (!pool.length) pool = arr;
-  return pool[Math.floor(Math.random() * pool.length)];
-}
-
-// 智能选择：考虑室内外和远近搭配
-function pickBalanced(arr, cat, exclude, preferOutdoor, preferFar) {
-  let pool = cat ? arr.filter(a => a.cat === cat) : [...arr];
-  if (exclude) {
-    const exNames = Array.isArray(exclude) ? exclude.map(e => e.name) : [exclude.name];
-    pool = pool.filter(a => !exNames.includes(a.name));
-  }
-  if (!pool.length) pool = arr;
-  // 优先匹配偏好
-  let preferred = pool;
-  if (preferOutdoor !== undefined) {
-    const filtered = pool.filter(a => isOutdoor(a) === preferOutdoor);
-    if (filtered.length) preferred = filtered;
-  }
-  if (preferFar !== undefined) {
-    const filtered = preferred.filter(a => isNearby(a) !== preferFar);
-    if (filtered.length) preferred = filtered;
-  }
-  return preferred[Math.floor(Math.random() * preferred.length)];
-}
-
-function generateMonthlyPlan() {
-  const container = document.getElementById('genResult');
-  const allFam = [...famActs];
-  const allCou = [...couActs];
-
-  const kidBusy = {};
-  kidsSchedule.forEach(k => { if(!kidBusy[k.day])kidBusy[k.day]=[]; kidBusy[k.day].push({start:k.start,end:k.end,name:k.name}); });
-
-  // 计算未来4周的日期
-  const today = new Date();
-  // 找到下一个周一（如果今天是周一则从今天开始）
-  const dayOfWeek = today.getDay(); // 0=Sun
-  const daysToMon = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : (8 - dayOfWeek);
-  const startDate = new Date(today);
-  startDate.setDate(today.getDate() + daysToMon);
-
-  // a. 运动每周固定：选2个运动，整月不变
-  const jltSports = JLT_ACTIVITIES.filter(a => a.cat === 'sports');
-  const shuffledSports = [...jltSports].sort(() => Math.random() - 0.5);
-  const monSport = shuffledSports[0]; // 周一固定运动
-  const wedSport = shuffledSports[1] || shuffledSports[0]; // 周三固定运动
-
-  const weeks = [];
-  const usedWeekend = []; // 追踪已用的周末活动，避免重复
-
-  for (let w = 0; w < 4; w++) {
-    const plan = {};
-    const weekStart = new Date(startDate);
-    weekStart.setDate(startDate.getDate() + w * 7);
-
-    // 计算本周日期
-    const weekDates = {};
-    DAYS.forEach((day, i) => {
-      const d = new Date(weekStart);
-      d.setDate(weekStart.getDate() + i);
-      weekDates[day] = `${d.getMonth()+1}/${d.getDate()}`;
-    });
-
-    // === 周中：JLT内活动 ===
-    // 周一：固定运动（每周同一个）
-    plan['一'] = [{time:'19:30',act:monSport,note:'JLT运动',jlt:true}];
-    // 周二：学习类，室内外交替
-    const tuePrefOutdoor = w % 2 === 0;
-    plan['二'] = [{time:'19:30',act:pickBalanced(JLT_ACTIVITIES,'learning',null,tuePrefOutdoor),note:'JLT学习',jlt:true}];
-    // 周三：固定运动（每周同一个，和周一不同）
-    plan['三'] = [{time:'19:30',act:wedSport,note:'JLT运动',jlt:true}];
-    // 周四：娱乐/休闲，室内外交替
-    const thuCats = ['entertainment','leisure','food'];
-    const thuPrefOutdoor = w % 2 === 1;
-    plan['四'] = [{time:'19:30',act:pickBalanced(JLT_ACTIVITIES,thuCats[Math.floor(Math.random()*thuCats.length)],null,thuPrefOutdoor),note:'JLT休闲',jlt:true}];
-
-    // === 周末：可以外出，远近搭配+室内外搭配 ===
-    // 周五：网球（固定）
-    plan['五'] = [
-      {time:'20:00',act:{emoji:'🎾',name:'网球 + 夫妻晚餐',outdoor:true},note:'固定',jlt:false},
-    ];
-
-    // 周六：全天出行 — 远近交替（奇数周远/偶数周近），室内外搭配
-    const satPreferFar = w % 2 === 0;
-    const satMorning = pickBalanced(allFam, null, usedWeekend, true, satPreferFar);
-    // 下午和上午互补：上午户外→下午室内，上午近→下午远
-    const satAfternoon = pickBalanced(allFam, null, [...usedWeekend, satMorning], !isOutdoor(satMorning), !satPreferFar);
-    usedWeekend.push(satMorning, satAfternoon);
-    plan['六'] = [
-      {time:'08:00',act:satMorning,note: isNearby(satMorning)?'附近出行':'远足出行',jlt:false},
-      {time:'14:00',act:satAfternoon,note: isNearby(satAfternoon)?'附近活动':'远处探索',jlt:false},
-      {time:'21:30',act:pickRand(allCou.length ? allCou : JLT_COUPLE),note:'夫妻时间',jlt:false},
-    ];
-
-    // 周日：上午出行（和周六互补远近）+ 晚上JLT收尾
-    const sunPreferFar = !satPreferFar;
-    const sunAct = pickBalanced(allFam, null, [...usedWeekend], undefined, sunPreferFar);
-    usedWeekend.push(sunAct);
-    plan['日'] = [
-      {time:'09:00',act:sunAct,note: isNearby(sunAct)?'附近出行':'远足出行',jlt:false},
-      {time:'19:30',act:{emoji:'🎬',name:'家庭桌游/电影夜',outdoor:false},note:'JLT收尾',jlt:true},
-    ];
-
-    weeks.push({ plan, dates: weekDates });
-  }
-
-  generatedPlan = weeks;
-  renderGenPlan(kidBusy);
-  container.scrollIntoView({behavior:'smooth'});
-}
-
-function renderGenPlan(kidBusy) {
-  if(!kidBusy) { kidBusy={}; kidsSchedule.forEach(k=>{if(!kidBusy[k.day])kidBusy[k.day]=[];kidBusy[k.day].push({start:k.start,end:k.end,name:k.name});}); }
-  const container = document.getElementById('genResult');
-  if (!generatedPlan || !generatedPlan.length) { container.innerHTML = ''; return; }
-
-  let html = '<div style="font-size:12px;color:var(--success);padding:4px 0;font-weight:700">✅ 已生成一个月计划！点击 🔄 可换活动</div>';
-  html += '<div style="font-size:10px;color:var(--text2);padding:2px 0 8px">📌 运动每周固定 · 周中JLT附近 · 周末远近搭配 · 室内外交替</div>';
-
-  generatedPlan.forEach((week, wi) => {
-    const firstDate = week.dates['一'];
-    const lastDate = week.dates['日'];
-    html += `<div class="gen-week-header">第${wi+1}周 <span style="font-weight:400;color:var(--text2)">${firstDate} - ${lastDate}</span></div>`;
-
-    DAYS.forEach(day => {
-      if(!week.plan[day]) return;
-      const busy = kidBusy[day];
-      const isWd = isWeekday(day);
-      html += `<div class="gen-day"><div class="gen-day-h">${isWd?'🏠':'🚗'} ${week.dates[day]} 周${day} <span style="font-size:10px;font-weight:400;color:${isWd?'var(--accent3)':'var(--success)'}">${isWd?'JLT内':'可出行'}</span>`;
-      if(busy) html += `<span style="font-size:10px;color:var(--danger);font-weight:400;margin-left:4px">🎒 ${busy.map(b=>b.start+' '+b.name).join(', ')}</span>`;
-      html += '</div>';
-      week.plan[day].forEach((item, idx) => {
-        const a = item.act;
-        const jltTag = item.jlt ? '<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(6,182,212,.15);color:var(--accent3);margin-left:4px">JLT</span>' : '';
-        const outdoorTag = !item.jlt && a.outdoor !== undefined ? `<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:${a.outdoor?'rgba(34,197,94,.15)':'rgba(139,92,246,.15)'};color:${a.outdoor?'var(--success)':'var(--accent2)'};margin-left:4px">${a.outdoor?'户外':'室内'}</span>` : '';
-        const distTag = !item.jlt && a.info && a.info.dist ? `<span style="font-size:9px;padding:1px 4px;border-radius:3px;background:rgba(245,158,11,.12);color:var(--accent);margin-left:3px">${a.info.dist}</span>` : '';
-        html += `<div class="gen-item"><span class="gi-time">${item.time}</span><span class="gi-emoji">${a.emoji||'🎯'}</span><span class="gi-name">${a.name||'待定'}${jltTag}${outdoorTag}${distTag}</span><span class="gi-type">${item.note}</span><button class="gi-swap" onclick="swapGenItem(${wi},'${day}',${idx})" title="换一个">🔄</button></div>`;
-      });
-      html += '</div>';
-    });
-  });
-  html += '<button class="gen-save" onclick="saveGenPlan()">💾 保存第1周到固定节奏</button>';
-  container.innerHTML = html;
-}
-
-function swapGenItem(weekIdx, day, idx) {
-  if(!generatedPlan||!generatedPlan[weekIdx]||!generatedPlan[weekIdx].plan[day])return;
-  const item = generatedPlan[weekIdx].plan[day][idx];
-  let newAct;
-  if (isWeekday(day) || item.jlt) {
-    newAct = pickRand(JLT_ACTIVITIES, null, item.act);
-  } else {
-    const pool = (item.note === '夫妻时间') ? (couActs.length ? couActs : JLT_COUPLE) : famActs;
-    newAct = pickBalanced(pool, null, item.act, !isOutdoor(item.act), !isNearby(item.act));
-  }
-  generatedPlan[weekIdx].plan[day][idx].act = newAct;
-  renderGenPlan();
-}
-function saveGenPlan() {
-  if(!generatedPlan||!generatedPlan.length)return;
-  planner=[];
-  const week = generatedPlan[0]; // 保存第1周
-  DAYS.forEach(day=>{if(!week.plan[day])return;
-    week.plan[day].forEach(item=>{planner.push({day,time:item.time,act:item.act.name||'待定',emoji:item.act.emoji||'🎯'});});});
-  save();renderPlanner();toast('✅ 已保存第1周到固定节奏');
-}
-
-// ==================== PLANNER ====================
-// ==================== TODAY CARD ====================
-function renderToday() {
-  const card = document.getElementById('todayCard');
-  const now = new Date();
-  const dayIdx = now.getDay(); // 0=Sun, 1=Mon...
-  const dayMap = {1:'一',2:'二',3:'三',4:'四',5:'五',6:'六',0:'日'};
-  const todayDay = dayMap[dayIdx];
-  const nowTime = now.getHours() * 60 + now.getMinutes(); // minutes since midnight
-  const dateStr = now.toLocaleDateString('zh-CN', {month:'long',day:'numeric',weekday:'long'});
-
-  // Find today's planner items
-  const todayItems = planner.filter(r => r.day === todayDay);
-
-  // Find today's kids classes
-  const todayKids = kidsSchedule.filter(k => k.day === todayDay);
-
-  let html = `<div class="today-header"><h3>📌 今日活动</h3><span class="today-date">${dateStr}</span></div>`;
-
-  if (!todayItems.length && !todayKids.length) {
-    html += `<div class="today-empty">今天没有安排 — 去转一转？🎰</div>`;
-  } else {
-    html += '<div class="today-items">';
-
-    // Sort by time
-    const sorted = [...todayItems].sort((a,b) => {
-      const ta = a.time.split(':').reduce((h,m) => parseInt(h)*60+parseInt(m));
-      const tb = b.time.split(':').reduce((h,m) => parseInt(h)*60+parseInt(m));
-      return ta - tb;
-    });
-
-    sorted.forEach((item, idx) => {
-      const [h,m] = item.time.split(':').map(Number);
-      const itemMin = h * 60 + m;
-      const isNow = nowTime >= itemMin && nowTime < itemMin + 90;
-      const isDone = nowTime > itemMin + 90;
-      const cls = isNow ? 'today-big ti-now' : isDone ? 'today-big ti-done' : 'today-big';
-      const status = isNow ? '⬅️ 进行中' : isDone ? '✅ 已完成' : '⏳ 待进行';
-
-      // Look up activity details from database
-      const actData = findActByName(item.act);
-      const info = actData?.info;
-      let detailRows = '';
-      if (info) {
-        const rows = [];
-        if (info.loc && info.loc !== '待补充') rows.push(`<div class="tb-row"><span>📍</span><span>${info.loc}</span></div>`);
-        if (info.addr) rows.push(`<div class="tb-row"><span>🏠</span><span>${info.addr}</span></div>`);
-        if (info.cost && info.cost !== '待补充') rows.push(`<div class="tb-row"><span>💰</span><span>${info.cost}</span></div>`);
-        if (info.phone) rows.push(`<div class="tb-row"><span>📞</span><span>${info.phone}</span></div>`);
-        if (info.hours) rows.push(`<div class="tb-row"><span>🕐</span><span>${info.hours}</span></div>`);
-        if (info.tip) rows.push(`<div class="tb-row"><span>💡</span><span>${info.tip}</span></div>`);
-        // Fazaa check
-        let fazaa = info.fazaa || '';
-        if (!fazaa && typeof VENUES !== 'undefined') {
-          Object.values(VENUES).forEach(cat => (cat.items||[]).forEach(v => { if (v.name === actData.name && v.fazaa) fazaa = v.fazaa; }));
-        }
-        if (fazaa) rows.push(`<div class="tb-row" style="color:#00e676"><span>🏷️</span><span>${fazaa}</span></div>`);
-        detailRows = rows.join('');
-      }
-
-      // Action links
-      let links = '';
-      if (info?.mapQ) links += `<a href="https://www.google.com/maps/search/${info.mapQ}" target="_blank">📍 导航</a>`;
-      if (info?.phone) links += `<a href="tel:${info.phone}">📞 拨打</a>`;
-      if (info?.bookUrl) links += `<a href="${info.bookUrl}" target="_blank">🎫 预订</a>`;
-      links += `<a href="https://www.google.com/search?q=${encodeURIComponent(item.act+' Dubai')}" target="_blank">🔍 搜索</a>`;
-
-      html += `<div class="${cls}">
-        <div class="tb-head">
-          <span class="tb-time">${item.time}</span>
-          <span class="tb-status">${status}</span>
-        </div>
-        <div class="tb-title">
-          <span class="tb-emoji">${item.emoji}</span>
-          <span class="tb-name">${item.act}</span>
-        </div>
-        ${detailRows ? `<div class="tb-details">${detailRows}</div>` : `<div class="tb-nodetail">暂无详情 — 可在转盘活动中查看</div>`}
-        <div class="tb-actions">${links}</div>
-      </div>`;
-    });
-
-    // Kids classes
-    todayKids.forEach(k => {
-      html += `<div class="today-kids">🎒 ${k.start}-${k.end} ${k.name}</div>`;
-    });
-
-    html += '</div>';
-  }
-
-  // 天气智能推荐
-  if (weather && weather.current) {
-    const temp = Math.round(weather.current.temperature_2m);
-    const isHot = temp >= 35;
-    const isNice = temp < 30;
-    const weatherEmoji = isHot ? '🔥' : isNice ? '🌤️' : '☀️';
-    const suggestion = isHot
-      ? '气温较高，推荐室内活动：商场/博物馆/电影/室内乐园'
-      : isNice
-      ? '天气不错！适合户外：公园/海滩/骑行/野餐'
-      : '温暖天气，户外注意防晒补水';
-    html += `<div class="today-weather">${weatherEmoji} ${temp}°C — ${suggestion}</div>`;
-  }
-
-  // 季节性活动提醒
-  const seasonalAlert = getSeasonalAlert();
-  if (seasonalAlert) {
-    html += `<div class="today-seasonal">${seasonalAlert}</div>`;
-  }
-
-  // 优惠快捷入口
-  html += `<div class="today-deals">
-    <a href="https://www.groupon.ae/coupons/dubayy/family" target="_blank">💰 Groupon家庭</a>
-    <a href="https://www.cobone.com/en/deals/activities-dubai" target="_blank">🎫 Cobone活动</a>
-    <a href="https://dubai.platinumlist.net/kids" target="_blank">🎪 演出票务</a>
-    <a href="https://www.fazaa.ae/offers" target="_blank">🏷️ Fazaa</a>
-  </div>`;
-
-  card.innerHTML = html;
-}
-
-// 季节性活动日历
-function getSeasonalAlert() {
-  const now = new Date();
-  const m = now.getMonth() + 1; // 1-12
-  const d = now.getDate();
-  const events = [
-    {start:[1,1],end:[1,11],text:'🛍️ Dubai Shopping Festival进行中！全城大促'},
-    {start:[2,13],end:[2,22],text:'🧧 Chinese New Year活动！关注华人社区'},
-    {start:[2,16],end:[3,22],text:'🌙 Ramadan期间：夜市/Iftar/特别活动，注意餐厅白天可能不营业'},
-    {start:[3,20],end:[3,25],text:'🎉 Eid Al Fitr假期！很多景点有特别活动和折扣'},
-    {start:[5,8],end:[5,24],text:'🎮 Dubai Esports & Games Festival！'},
-    {start:[5,22],end:[5,31],text:'🐏 Eid Al Adha假期！景点特别活动'},
-    {start:[7,3],end:[8,30],text:'☀️ Dubai Summer Surprises！暑期特惠，很多室内活动Kids Go Free'},
-    {start:[10,1],end:[10,31],text:'🎃 万圣节活动季！各大乐园有主题活动'},
-    {start:[11,1],end:[11,30],text:'🌺 户外黄金季开始！Miracle Garden/Global Village开放'},
-    {start:[11,30],end:[12,3],text:'🇦🇪 Eid Al Etihad国庆！烟花+特别活动+折扣'},
-    {start:[12,5],end:[12,31],text:'🛍️ Dubai Shopping Festival来了！+ 🎄 圣诞市集活动'},
-  ];
-  for (const e of events) {
-    const [sm,sd] = e.start, [em,ed] = e.end;
-    if ((m > sm || (m === sm && d >= sd)) && (m < em || (m === em && d <= ed))) {
-      return e.text;
-    }
-  }
-  return null;
-}
-
-// Look up activity details from spinner database by name
-function findActByName(name) {
-  const all = [...famActs, ...couActs];
-  return all.find(a => a.name === name || name.includes(a.name) || a.name.includes(name));
-}
-
-function toggleTodayDetail(el, actName) {
-  // If detail already open, close it
-  const existing = el.nextElementSibling;
-  if (existing && existing.classList.contains('today-detail')) {
-    existing.remove();
-    return;
-  }
-  // Close any other open details
-  document.querySelectorAll('.today-detail').forEach(d => d.remove());
-
-  // Find matching activity in database
-  const act = findActByName(actName);
-  let detailHtml = '';
-
-  if (act && act.info) {
-    const info = act.info;
-    detailHtml += `<div class="today-detail">`;
-    if (info.loc && info.loc !== '待补充') detailHtml += `<div class="td-row"><span class="td-icon">📍</span><span class="td-val">${info.loc}</span></div>`;
-    if (info.addr) detailHtml += `<div class="td-row"><span class="td-icon">🏠</span><span class="td-val">${info.addr}</span></div>`;
-    if (info.cost && info.cost !== '待补充') detailHtml += `<div class="td-row"><span class="td-icon">💰</span><span class="td-val">${info.cost}</span></div>`;
-    if (info.hours) detailHtml += `<div class="td-row"><span class="td-icon">🕐</span><span class="td-val">${info.hours}</span></div>`;
-    if (info.phone) detailHtml += `<div class="td-row"><span class="td-icon">📞</span><span class="td-val">${info.phone}</span></div>`;
-    if (info.tip) detailHtml += `<div class="td-row"><span class="td-icon">💡</span><span class="td-val">${info.tip}</span></div>`;
-    // Fazaa check
-    let fazaa = info.fazaa || '';
-    if (!fazaa && typeof VENUES !== 'undefined') {
-      Object.values(VENUES).forEach(cat => (cat.items||[]).forEach(v => { if (v.name === act.name && v.fazaa) fazaa = v.fazaa; }));
-    }
-    if (fazaa) detailHtml += `<div class="td-row"><span class="td-icon">🏷️</span><span class="td-val" style="color:#00e676">${fazaa}</span></div>`;
-    // Links
-    detailHtml += `<div class="td-links">`;
-    if (info.mapQ) detailHtml += `<a class="td-map" href="https://www.google.com/maps/search/${info.mapQ}" target="_blank">📍 导航</a>`;
-    if (info.phone) detailHtml += `<a class="td-call" href="tel:${info.phone}">📞 拨打</a>`;
-    if (info.bookUrl) detailHtml += `<a class="td-map" href="${info.bookUrl}" target="_blank">🎫 预订</a>`;
-    detailHtml += `<a class="td-search" href="https://www.google.com/search?q=${encodeURIComponent(act.name+' Dubai')}" target="_blank">🔍 搜索</a>`;
-    detailHtml += `</div></div>`;
-  } else {
-    // No detail found in database
-    detailHtml = `<div class="today-detail">
-      <div class="td-row"><span class="td-icon">💡</span><span class="td-val">该活动暂无详情，可在转盘中找到后查看</span></div>
-      <div class="td-links"><a class="td-search" href="https://www.google.com/search?q=${encodeURIComponent(actName+' Dubai')}" target="_blank">🔍 搜索一下</a></div>
-    </div>`;
-  }
-
-  el.insertAdjacentHTML('afterend', detailHtml);
-}
-
-function renderPlanner(){
-  const g=document.getElementById('plGrid');
-  g.innerHTML=planner.map((r,i)=>{
-    const act = findActByName(r.act);
-    const hasDetail = act && act.info;
-    const loc = hasDetail ? (act.info.addr || act.info.loc || '') : '';
-    const cost = hasDetail ? (act.info.cost || '') : '';
-    const detailHint = (loc || cost) ? `<div class="pl-detail-hint">${loc?'📍'+loc.slice(0,20):''}${loc&&cost?' · ':''}${cost?'💰'+cost:''}</div>` : '';
-    return `<div class="pl-row-wrap">
-      <div class="pl-row" id="pr${i}">
-        <span class="pl-day" onclick="event.stopPropagation();editPF(${i},'day')" id="pd${i}">${r.day}</span>
-        <span class="pl-time" onclick="event.stopPropagation();editPF(${i},'time')" id="pt${i}">${r.time}</span>
-        <span class="pl-act" onclick="event.stopPropagation();toggleTodayDetail(this.parentNode,'${r.act.replace(/'/g,"\\'")}')" id="pa${i}">${r.emoji} ${r.act}</span>
-        <button class="pl-del" onclick="event.stopPropagation();delPRow(${i})">✕</button>
-      </div>
-      ${detailHint}
-    </div>`;
-  }).join('');
-}
-function editPF(i,f){
-  const r=planner[i],el=document.getElementById(f==='day'?`pd${i}`:f==='time'?`pt${i}`:f==='act'?`pa${i}`:`pe${i}`);
-  if(f==='day'){const s=document.createElement('select');s.className='day-select';s.style.cssText='background:var(--card2);border:1px solid var(--accent2);border-radius:4px;color:var(--text);font-size:12px;padding:2px;';DAYS.forEach(d=>{const o=document.createElement('option');o.value=d;o.textContent=d;if(d===r.day)o.selected=true;s.appendChild(o);});el.innerHTML='';el.appendChild(s);s.focus();const fin=()=>{r.day=s.value;save();renderPlanner();};s.onchange=fin;s.onblur=fin;}
-  else{const inp=document.createElement('input');inp.className='pl-input';inp.value=r[f];if(f==='time')inp.type='time';inp.style.width=f==='time'?'60px':f==='emoji'?'36px':'100%';el.innerHTML='';el.appendChild(inp);inp.focus();if(f!=='time')inp.select();const fin=()=>{const v=inp.value.trim();if(v)r[f]=v;save();renderPlanner();};inp.onblur=fin;inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();fin();}if(e.key==='Escape')renderPlanner();};}
-}
-function delPRow(i){planner.splice(i,1);save();renderPlanner();}
-function addPRow(){planner.push({day:'六',time:'10:00',act:'新活动',emoji:'🎯'});save();renderPlanner();setTimeout(()=>editPF(planner.length-1,'act'),100);}
-function resetPlan(){if(confirm('恢复默认？')){planner=JSON.parse(JSON.stringify(DEFAULT_PLANNER));save();renderPlanner();toast('已恢复');}}
-
-// ==================== HISTORY ====================
-function renderHist(){
-  const sec=document.getElementById('histSec'),el=document.getElementById('histList');
-  if(!history.length){sec.style.display='none';return;}sec.style.display='block';
-  el.innerHTML=history.slice(0,10).map(h=>`<div class="hi"><span class="hd">${h.date}</span><span>${h.emoji}</span><span>${h.name}</span><span style="color:var(--text2);font-size:10px;margin-left:auto">${h.mode==='family'?'👨‍👩‍👧‍👧':'💑'}</span></div>`).join('');
-}
-
-// ==================== DISCOVER ====================
-// ==================== DISCOVER (VENUE-BASED) ====================
-// ==================== EXTERNAL SEARCH LINKS ====================
-const EXT_SEARCHES = [
-  {label:'🍜 JLT新餐厅', q:'best+new+restaurants+JLT+Dubai+2026'},
-  {label:'🌊 Marina新开店', q:'new+restaurants+Dubai+Marina+2026'},
-  {label:'☕ 网红咖啡甜品', q:'trending+cafes+dessert+Dubai+2026+Instagram'},
-  {label:'👧 亲子新去处', q:'new+kids+activities+Dubai+2026+family'},
-  {label:'⚽ 儿童运动班', q:'kids+sports+classes+Dubai+JLT+Marina+2026'},
-  {label:'📚 儿童学习班', q:'kids+learning+classes+coding+art+Dubai+2026'},
-  {label:'🎢 新开乐园', q:'new+attractions+theme+park+Dubai+2026'},
-  {label:'🔥 本周热门活动', q:'things+to+do+Dubai+this+week+2026'},
-  {label:'🌿 户外新去处', q:'new+outdoor+activities+Dubai+2026+family'},
-  {label:'🍽️ 最佳Brunch', q:'best+family+brunch+Dubai+2026'},
-  {label:'🎭 近期演出', q:'Dubai+Opera+concerts+events+2026'},
-  {label:'🚗 周边一日游', q:'day+trips+from+Dubai+2026+family'},
-];
-
-// ==================== LIVE FEED SYSTEM ====================
-// ==================== SMART FEED SYSTEM ====================
-const FEED_SOURCES = [
-  // --- RSS自动抓取（已验证可用） ---
-  {id:'whatson', name:'WhatsOn', url:'https://whatson.ae/feed/', emoji:'📰'},          // ✅ 已验证
-  {id:'dtblog', name:'Dubai Travel', url:'https://www.dubaitravelblog.com/feed', emoji:'✈️'}, // ✅ 已验证
-  {id:'foodiva', name:'FooDiva美食', url:'https://www.foodiva.net/feed', emoji:'🍽️'},     // ✅ 已验证
-  {id:'lovin', name:'Lovin Dubai', url:'https://lovin.co/dubai/en/news/feed', emoji:'❤️'},  // 修正URL
-  // --- 手动跳转（点击打开网页浏览） ---
-  {id:'timeout', name:'TimeOut Dubai', url:'https://www.timeoutdubai.com/things-to-do', emoji:'⏰', isPage:true},
-  {id:'gn_life', name:'Gulf News', url:'https://gulfnews.com/lifestyle/things-to-do', emoji:'🗞️', isPage:true},
-  {id:'dubai_cal', name:'Dubai Calendar', url:'https://www.dubaicalendar.com/', emoji:'📅', isPage:true},
-  {id:'fazaa', name:'Fazaa优惠', url:'https://www.fazaa.ae/offers', emoji:'🏷️', isPage:true},
-  {id:'kidzapp', name:'KidzApp亲子', url:'https://kidzapp.com/', emoji:'👧', isPage:true},
-  {id:'groupon', name:'Groupon折扣', url:'https://www.groupon.ae/local/dubai/things-to-do', emoji:'💰', isPage:true},
-  {id:'entertainer', name:'Entertainer', url:'https://www.theentertainerme.com/', emoji:'🎫', isPage:true},
-];
-const RSS_PROXY = 'https://api.rss2json.com/v1/api.json?rss_url=';
-let feedItems = JSON.parse(localStorage.getItem('s_feedItems2')) || [];
-let feedLastUpdate = localStorage.getItem('s_feedLastUpdate') || '';
-
-// ---- Smart Parser: extract structured data from article text ----
-const DUBAI_AREAS = ['JLT','JBR','Marina','Downtown','DIFC','Al Quoz','Jumeirah','Deira','Bur Dubai','Business Bay','City Walk','Al Barsha','Bluewaters','Palm','Mirdif','Silicon Oasis','Dubai Mall','Mall of the Emirates','Ibn Battuta','Festival City','Creek','La Mer','Kite Beach','Hatta','Sharjah','Abu Dhabi','Ajman','Fujairah','RAK','Ras Al Khaimah'];
-const CAT_KEYWORDS = {
-  food: ['restaurant','brunch','cafe','coffee','food','eat','dining','menu','chef','kitchen','dish','pizza','burger','sushi','steak','dessert','bakery','iftar','breakfast','lunch','dinner','bistro','brasserie'],
-  sports: ['gym','fitness','sport','swim','tennis','football','yoga','run','marathon','cycling','surf','climb','golf','paddle','padel','boxing','karate','dance'],
-  kids_venues: ['kids','children','family','play','park','theme park','waterpark','bounce','trampoline','kidzania','legoland','aquarium','zoo'],
-  culture: ['museum','art','gallery','opera','theatre','theater','concert','exhibition','festival','culture','heritage','library','book'],
-  entertainment: ['cinema','movie','show','comedy','karaoke','bowling','gaming','VR','laser','arcade','escape room'],
-  nature: ['beach','desert','hike','garden','safari','wildlife','camping','kayak','snorkel','dive','mountain','lake','outdoor'],
-  nightlife: ['bar','lounge','rooftop','club','cocktail','happy hour','ladies night','nightlife','brunch'],
-  leisure: ['spa','wellness','pool','hotel','staycation','cruise','boat','yacht'],
-};
-
-function smartParse(title, desc, fullText) {
-  const text = (title + ' ' + desc + ' ' + (fullText||'')).toLowerCase();
-  const result = { extractedCat:'trending', extractedAddr:'', extractedCost:'', extractedPhone:'', relevance:0, tags:[] };
-
-  // 1. Category detection
-  let bestCat = 'trending', bestScore = 0;
-  Object.entries(CAT_KEYWORDS).forEach(([cat, keywords]) => {
-    let score = 0;
-    keywords.forEach(kw => { if (text.includes(kw)) score++; });
-    if (score > bestScore) { bestScore = score; bestCat = cat; }
-  });
-  result.extractedCat = bestCat;
-  result.relevance = bestScore;
-
-  // 2. Location extraction
-  DUBAI_AREAS.forEach(area => {
-    if (text.includes(area.toLowerCase())) {
-      result.extractedAddr = area + ', Dubai';
-      result.tags.push(area);
-    }
-  });
-
-  // 3. Price extraction (AED / Dhs patterns)
-  const priceMatch = text.match(/(?:aed|dhs|dh)\s*(\d[\d,.]*)/i) || text.match(/(\d[\d,.]*)\s*(?:aed|dhs|dirhams)/i);
-  if (priceMatch) result.extractedCost = priceMatch[0].toUpperCase().replace(/DHS/i,'AED');
-
-  // 4. Phone extraction
-  const phoneMatch = text.match(/\+971[\s-]?\d[\s-]?\d{3}[\s-]?\d{4}/) || text.match(/0\d[\s-]?\d{3}[\s-]?\d{4}/);
-  if (phoneMatch) result.extractedPhone = phoneMatch[0];
-
-  // 5. Discount/offer detection
-  const hasDiscount = /\b(free|discount|off|offer|deal|save|half price|buy one get one|bogo|2 for 1|complimentary)\b/i.test(text);
-  const hasFazaa = /fazaa/i.test(text);
-  if (hasDiscount) { result.tags.push('有优惠💰'); result.relevance += 3; }
-  if (hasFazaa) { result.tags.push('Fazaa🏷️'); result.relevance += 5; }
-
-  // 6. Family/kids relevance boost
-  if (/\b(kids?|child|family|families)\b/i.test(text)) { result.tags.push('亲子'); result.relevance += 2; }
-
-  // 7. "New" / "Opening" boost
-  if (/\b(new|opening|just opened|now open|launched|debut)\b/i.test(text)) { result.tags.push('新开🔥'); result.relevance += 2; }
-
-  return result;
-}
-
-// Guess emoji from category
-function catEmoji(cat) {
-  return {food:'🍽️',sports:'⚽',kids_venues:'🎢',culture:'🎭',entertainment:'🎮',nature:'🌿',nightlife:'🌙',leisure:'🌴',trending:'🔥'}[cat]||'📌';
-}
-
-// ---- Feed fetching (same proxied RSS, but with smart parse) ----
-function renderFeedSourceBtns() {
-  document.getElementById('feedSourceBtns').innerHTML = FEED_SOURCES.map(s =>
-    `<button class="feed-src-btn" id="fsb-${s.id}" onclick="fetchOneFeed('${s.id}')">${s.emoji} ${s.name}</button>`
-  ).join('');
-}
-
-async function fetchOneFeed(srcId) {
-  const src = FEED_SOURCES.find(s => s.id === srcId);
-  if (!src) return;
-  if (src.isPage) { window.open(src.url, '_blank'); return; }
-  const btn = document.getElementById('fsb-' + srcId);
-  btn.classList.add('loading'); btn.textContent = src.emoji + ' ...';
-  try {
-    const resp = await fetch(RSS_PROXY + encodeURIComponent(src.url));
-    const data = await resp.json();
-    if (data.status === 'ok' && data.items) {
-      const added = processFeedData(data.items, src);
-      btn.classList.remove('loading'); btn.classList.add('done');
-      btn.textContent = src.emoji + ` +${added}`;
-    } else throw new Error();
-  } catch(e) { btn.classList.remove('loading'); btn.classList.add('err'); btn.textContent = src.emoji + ' 失败'; }
-  setTimeout(() => { btn.className='feed-src-btn'; btn.textContent=src.emoji+' '+src.name; }, 3000);
-}
-
-function processFeedData(items, src) {
-  const existingTitles = new Set(feedItems.map(f => f.title));
-  let added = 0;
-  items.forEach(item => {
-    if (existingTitles.has(item.title)) return;
-    const rawDesc = (item.description || '').replace(/<[^>]*>/g, '');
-    const parsed = smartParse(item.title, rawDesc, item.content);
-    // Skip very low relevance (likely not an activity article)
-    if (parsed.relevance < 1 && !item.title.match(/dubai|uae|restaurant|park|beach|event|open|new|kids|family/i)) return;
-    feedItems.unshift({
-      title: item.title || '',
-      link: item.link || '',
-      desc: rawDesc.slice(0, 250),
-      date: item.pubDate ? new Date(item.pubDate).toLocaleDateString('zh-CN',{month:'short',day:'numeric'}) : '',
-      source: src.name, sourceId: src.id,
-      // Smart parsed fields
-      cat: parsed.extractedCat,
-      addr: parsed.extractedAddr,
-      cost: parsed.extractedCost,
-      phone: parsed.extractedPhone,
-      tags: parsed.tags,
-      relevance: parsed.relevance,
-      emoji: catEmoji(parsed.extractedCat),
-      added: false, // whether user has added to venues
-    });
-    existingTitles.add(item.title);
-    added++;
-  });
-  // Sort by relevance (highest first), keep max 100
-  feedItems.sort((a,b) => (b.relevance||0) - (a.relevance||0));
-  if (feedItems.length > 100) feedItems = feedItems.slice(0, 100);
-  localStorage.setItem('s_feedItems2', JSON.stringify(feedItems));
-  renderFeedItems(); updateFeedBadge();
-  return added;
-}
-
-async function fetchAllFeeds() {
-  const btn = document.querySelector('.feed-fetch-btn');
-  btn.disabled = true; btn.textContent = '📡 抓取中...';
-  document.getElementById('feedResults').innerHTML = '<div class="feed-loading">📡 正在智能抓取并解析...</div>';
-  let total = 0;
-  for (const src of FEED_SOURCES) {
-    if (src.isPage) continue;
-    try {
-      const resp = await fetch(RSS_PROXY + encodeURIComponent(src.url));
-      const data = await resp.json();
-      if (data.status === 'ok' && data.items) {
-        total += processFeedData(data.items, src);
-        const sb = document.getElementById('fsb-'+src.id);
-        if(sb){sb.classList.add('done');setTimeout(()=>sb.classList.remove('done'),3000);}
-      }
-    } catch(e) {
-      const sb = document.getElementById('fsb-'+src.id);
-      if(sb){sb.classList.add('err');setTimeout(()=>sb.classList.remove('err'),3000);}
-    }
-  }
-  feedLastUpdate = new Date().toISOString();
-  localStorage.setItem('s_feedLastUpdate', feedLastUpdate);
-  btn.disabled = false; btn.textContent = '🔄 立即从网上更新';
-  document.getElementById('feedStatus').textContent = `✅ ${feedLastUpdate} · 新增${total}条`;
-  renderFeedItems(); updateFeedBadge();
-  updateFetchStatusUI();
-  if(total>0){ toast(`✅ 智能抓取 ${total} 条，已按相关度排序`); notifyNewContent(total); }
-  else toast('暂无新内容');
-}
-
-// ---- Render feed items with smart parsed info ----
-// Add a single feed item to venues (silent, returns true if added)
-function addFeedItemSilent(f) {
-  const catKey = f.cat === 'food' ? 'marina_food' : f.cat === 'kids_venues' ? 'kids_venues' : f.cat === 'sports' ? 'sports' : f.cat === 'nightlife' ? 'nightlife' : 'trending';
-  const venue = {
-    emoji: f.emoji || '📌',
-    name: f.title.slice(0, 50).replace(/[:：|–—]/g,' ').trim(),
-    desc: f.desc?.slice(0, 120) || '',
-    addr: f.addr || '', phone: f.phone || '', hours: '', cost: f.cost || '详见原文',
-    rating: 0, tags: [...(f.tags||[]), f.source, '智能抓取'],
-    outdoor: f.cat === 'nature',
-    mapQ: encodeURIComponent(f.title.slice(0,30) + ' Dubai'),
-    bookUrl: f.link, tip: f.desc?.slice(0, 80) || '', _userAdded: true, _fromFeed: true,
-  };
-  const allNames = new Set();
-  Object.values(VENUES).forEach(c=>(c.items||[]).forEach(v=>allNames.add(v.name)));
-  if (allNames.has(venue.name)) { f.added = true; return false; }
-  if (!userVenues[catKey]) userVenues[catKey] = { label: VENUES[catKey]?.label || '🔥 最新热门', items: [] };
-  userVenues[catKey].items.push(venue);
-  if (!VENUES[catKey]) VENUES[catKey] = { label: userVenues[catKey].label, items: [] };
-  VENUES[catKey].items.push(venue);
-  f.added = true;
-  return true;
-}
-
-function finishBatchAdd(count) {
-  localStorage.setItem('s_userVenues', JSON.stringify(userVenues));
-  localStorage.setItem('s_feedItems2', JSON.stringify(feedItems));
-  syncVenuesToSpinner(); buildMergedCats(); sampleWheel(); drawWheel();
-  renderFeedItems(); updateFeedBadge();
-  toast(`⚡ 添加了 ${count} 个到好店+转盘`);
-}
-
-// 全选/取消全选
-function toggleAllFeedChecks(checked) {
-  document.querySelectorAll('.fi-check').forEach(cb => { if (!cb.disabled) cb.checked = checked; });
-  updateSelectedCount();
-}
-
-function updateSelectedCount() {
-  const checks = document.querySelectorAll('.fi-check:checked:not(:disabled)');
-  const btn = document.getElementById('addSelectedBtn');
-  if (btn) btn.textContent = `⚡ 添加勾选的 (${checks.length}条)`;
-}
-
-// 添加勾选的
-function addSelectedFeeds() {
-  const checks = document.querySelectorAll('.fi-check:checked:not(:disabled)');
-  if (!checks.length) { toast('请先勾选要添加的项'); return; }
-  let count = 0;
-  checks.forEach(cb => {
-    const idx = parseInt(cb.dataset.idx);
-    const f = feedItems[idx];
-    if (f && !f.added) { if (addFeedItemSilent(f)) count++; }
-  });
-  finishBatchAdd(count);
-}
-
-// 全部添加（不需要勾选）
-function addAllFeeds() {
-  const unadded = feedItems.filter(f => !f.added && f.relevance >= 1);
-  if (!unadded.length) { toast('没有可添加的新内容'); return; }
-  let count = 0;
-  unadded.forEach(f => { if (addFeedItemSilent(f)) count++; });
-  finishBatchAdd(count);
-}
-
-function renderFeedItems() {
-  const el = document.getElementById('feedResults');
-  if (!feedItems.length) {
-    el.innerHTML = '<div class="feed-empty">点击「🔄 立即从网上更新」开始抓取</div>';
-    return;
-  }
-  // 只显示未添加的
-  const showItems = feedItems.filter(f => !f.added);
-  const addedCount = feedItems.length - showItems.length;
-  let headerHtml = '';
-  if (showItems.length > 0) {
-    headerHtml = `<div class="fi-toolbar">
-      <label class="fi-selectall"><input type="checkbox" onchange="toggleAllFeedChecks(this.checked)"> 全选</label>
-      <button class="fi-add-selected" id="addSelectedBtn" onclick="addSelectedFeeds()">⚡ 添加勾选的 (0条)</button>
-      <button class="fi-add-all" onclick="addAllFeeds()">📥 全部添加 (${showItems.length})</button>
-      ${addedCount?`<span style="font-size:10px;color:var(--success);margin-left:auto">${addedCount}条已添加</span>`:''}
-    </div>`;
-  } else if (feedItems.length > 0) {
-    headerHtml = `<div style="font-size:12px;color:var(--success);margin-bottom:8px;padding:12px;text-align:center">✅ 全部 ${feedItems.length} 条已添加到好店<br><span style="font-size:10px;color:var(--text2)">点「🔄 立即抓取」获取新内容</span></div>`;
-  }
-  el.innerHTML = headerHtml + showItems.slice(0, 30).map((f) => {
-    const i = feedItems.indexOf(f); // 用原始index
-    const relBar = f.relevance >= 5 ? '🔥🔥🔥' : f.relevance >= 3 ? '🔥🔥' : f.relevance >= 1 ? '🔥' : '';
-    const smartInfo = [];
-    if (f.cat && f.cat !== 'trending') smartInfo.push(`<span class="fi-tag">${catEmoji(f.cat)} ${CAT_LABELS[f.cat]||f.cat}</span>`);
-    if (f.addr) smartInfo.push(`<span class="fi-tag">📍 ${f.addr}</span>`);
-    if (f.cost) smartInfo.push(`<span class="fi-tag fi-tag-cost">💰 ${f.cost}</span>`);
-    if (f.phone) smartInfo.push(`<span class="fi-tag">📞 ${f.phone}</span>`);
-    f.tags?.forEach(t => smartInfo.push(`<span class="fi-tag ${t.includes('Fazaa')?'fi-tag-fazaa':t.includes('优惠')?'fi-tag-cost':''}">${t}</span>`));
-
-    return `<div class="fi">
-      <div class="fi-title"><input type="checkbox" class="fi-check" data-idx="${i}" onchange="updateSelectedCount()"><span style="margin-right:4px">${f.emoji||'📰'}</span><a href="${f.link}" target="_blank">${f.title}</a> ${relBar}</div>
-      <div class="fi-meta"><span class="fi-src">${f.source}</span><span>${f.date}</span></div>
-      ${smartInfo.length?`<div class="fi-smart">${smartInfo.join('')}</div>`:''}
-      ${f.desc?`<div class="fi-desc">${f.desc}</div>`:''}
-      <div class="fi-actions">
-        <a class="fi-open" href="${f.link}" target="_blank">🔗 原文</a>
-        <button class="fi-add" onclick="smartAddFeed(${i})">⚡ 智能添加</button>
-        <button class="fi-add" style="background:rgba(139,92,246,.12);color:var(--accent2)" onclick="editAddFeed(${i})">✏️ 编辑添加</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// Smart one-click add: directly create venue from parsed data
-function smartAddFeed(idx) {
-  const f = feedItems[idx]; if(!f) return;
-  const catKey = f.cat === 'food' ? 'marina_food' : f.cat === 'kids_venues' ? 'kids_venues' : f.cat === 'sports' ? 'sports' : f.cat === 'nightlife' ? 'nightlife' : 'trending';
-  const venue = {
-    emoji: f.emoji || '📌',
-    name: f.title.slice(0, 50).replace(/[:：|–—]/g,' ').trim(),
-    desc: f.desc?.slice(0, 120) || '',
-    addr: f.addr || '',
-    phone: f.phone || '',
-    hours: '',
-    cost: f.cost || '详见原文',
-    rating: 0,
-    tags: [...(f.tags||[]), f.source, '智能抓取'],
-    outdoor: f.cat === 'nature',
-    mapQ: encodeURIComponent(f.title.slice(0,30) + ' Dubai'),
-    bookUrl: f.link,
-    tip: f.desc?.slice(0, 80) || '',
-    _userAdded: true, _fromFeed: true,
-  };
-  // Save
-  if (!userVenues[catKey]) {
-    const catObj = VENUES[catKey];
-    userVenues[catKey] = { label: catObj ? catObj.label : '🔥 最新热门', items: [] };
-  }
-  // Check dup
-  const allNames = new Set();
-  Object.values(VENUES).forEach(c=>(c.items||[]).forEach(v=>allNames.add(v.name)));
-  if (allNames.has(venue.name)) { toast('该活动已存在'); return; }
-  userVenues[catKey].items.push(venue);
-  localStorage.setItem('s_userVenues', JSON.stringify(userVenues));
-  if (!VENUES[catKey]) VENUES[catKey] = { label: userVenues[catKey].label, items: [] };
-  VENUES[catKey].items.push(venue);
-  // Mark as added
-  f.added = true;
-  localStorage.setItem('s_feedItems2', JSON.stringify(feedItems));
-  // Sync to spinner
-  syncVenuesToSpinner(); buildMergedCats(); sampleWheel(); drawWheel();
-  renderFeedItems();
-  toast(`⚡ "${venue.name.slice(0,20)}" → 好店+转盘`);
-}
-
-// Edit-then-add: pre-fill form like before
-function editAddFeed(idx) {
-  const f = feedItems[idx]; if(!f) return;
-  document.getElementById('nv_emoji').value = f.emoji || '📌';
-  document.getElementById('nv_name').value = f.title.slice(0, 40);
-  document.getElementById('nv_desc').value = f.desc?.slice(0, 100) || '';
-  document.getElementById('nv_addr').value = f.addr || '';
-  document.getElementById('nv_phone').value = f.phone || '';
-  document.getElementById('nv_cost').value = f.cost || '';
-  document.getElementById('nv_tags').value = [...(f.tags||[]), f.source].join(',');
-  document.getElementById('nv_cat').value = f.cat==='food'?'marina_food':f.cat==='sports'?'sports':f.cat==='kids_venues'?'kids_venues':'trending';
-  const body = document.getElementById('extUp-body');
-  if (!body.classList.contains('show')) toggleSec('extUp');
-  document.getElementById('nv_name').scrollIntoView({behavior:'smooth',block:'center'});
-  document.getElementById('nv_name').focus();
-  toast('已智能填入，可修改后添加');
-}
-
-// ==================== GOOGLE MAPS SEARCH ====================
-function searchGMap() {
-  const q = document.getElementById('gmapQuery').value.trim();
-  if (!q) return;
-  searchGMapQ(q);
-}
-function searchGMapQ(q) {
-  document.getElementById('gmapQuery').value = q;
-  const iframe = document.getElementById('gmapIframe');
-  const placeholder = document.getElementById('gmapPlaceholder');
-  const addSection = document.getElementById('gmapAdd');
-  // Use Google Maps embed with search
-  const lat = userLat || 25.0766;
-  const lng = userLng || 55.1442;
-  iframe.src = `https://www.google.com/maps/embed/v1/search?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodeURIComponent(q)}+near+JLT+Dubai&center=${lat},${lng}&zoom=13`;
-  iframe.style.display = 'block';
-  placeholder.style.display = 'none';
-  addSection.style.display = 'block';
-  // Also set emoji guess
-  const emojiMap = {restaurant:'🍽️',cafe:'☕',coffee:'☕',park:'🌿',gym:'💪',swim:'🏊',kid:'👧',play:'🎢',dessert:'🍰',bakery:'🥐',supermarket:'🛒'};
-  let emoji = '📍';
-  for (const [k,v] of Object.entries(emojiMap)) { if (q.toLowerCase().includes(k)) { emoji = v; break; } }
-  document.getElementById('gm_emoji').value = emoji;
-}
-
-function addFromGMap() {
-  const name = document.getElementById('gm_name').value.trim();
-  if (!name) { toast('请填写店名'); return; }
-  const catKey = document.getElementById('gm_cat').value;
-  const venue = {
-    emoji: document.getElementById('gm_emoji').value.trim() || '📍',
-    name,
-    desc: document.getElementById('gm_desc').value.trim() || '',
-    addr: '', phone: '', hours: '',
-    cost: document.getElementById('gm_cost').value.trim() || '待补充',
-    rating: 0,
-    tags: ['地图发现','已核实✓'],
-    outdoor: false,
-    mapQ: encodeURIComponent(name + ' Dubai'),
-    bookUrl: '', tip: '',
-    _userAdded: true,
-  };
-  // Save to userVenues
-  if (!userVenues[catKey]) userVenues[catKey] = { label: VENUES[catKey]?.label || '📍 地图发现', items: [] };
-  const allNames = new Set();
-  Object.values(VENUES).forEach(c=>(c.items||[]).forEach(v=>allNames.add(v.name)));
-  if (allNames.has(name)) { toast('该店已存在'); return; }
-  userVenues[catKey].items.push(venue);
-  localStorage.setItem('s_userVenues', JSON.stringify(userVenues));
-  if (!VENUES[catKey]) VENUES[catKey] = { label: userVenues[catKey].label, items: [] };
-  VENUES[catKey].items.push(venue);
-  syncVenuesToSpinner(); buildMergedCats(); sampleWheel(); drawWheel();
-  // Clear form
-  document.getElementById('gm_name').value = '';
-  document.getElementById('gm_desc').value = '';
-  document.getElementById('gm_cost').value = '';
-  toast(`📍 "${name}" 已添加到好店+转盘`);
-}
-
-// ==================== OPEN SEARCH ====================
-function openSearch() {
-  const q = document.getElementById('osQuery').value.trim();
-  if (!q) return;
-  window.open(`https://www.google.com/search?q=${encodeURIComponent(q + ' Dubai')}`, '_blank');
-}
-function openSearchQ(q) {
-  document.getElementById('osQuery').value = q;
-  window.open(`https://www.google.com/search?q=${encodeURIComponent(q)}`, '_blank');
-}
-
-function clearAndRefetch() {
-  if (!confirm('清空所有抓取数据并重新抓取？')) return;
-  feedItems = [];
-  feedLastUpdate = '';
-  localStorage.removeItem('s_feedItems2');
-  localStorage.removeItem('s_feedLastUpdate');
-  renderFeedItems(); updateFeedBadge(); updateFetchStatusUI();
-  fetchAllFeeds();
-}
-
-function updateFeedBadge() {
-  const count = feedItems.filter(f => !f.added).length;
-  document.getElementById('feedBadge').textContent = count > 0 ? count + '条新' : feedItems.length + '条';
-}
-
-// Auto-fetch: on page load if >24h stale, and every 6h while page is open
-let autoFetchTimer = null;
-function getLastUpdateMs() {
-  if (!feedLastUpdate) return 0;
-  const d = new Date(feedLastUpdate);
-  return isNaN(d.getTime()) ? 0 : d.getTime();
-}
-function autoFetchIfStale() {
-  if (!feedLastUpdate || !getLastUpdateMs()) { fetchAllFeeds(); return; }
-  const hours = (Date.now() - getLastUpdateMs()) / 3600000;
-  if (hours >= 24) fetchAllFeeds();
-  if (!autoFetchTimer) {
-    autoFetchTimer = setInterval(() => {
-      const h = (Date.now() - getLastUpdateMs()) / 3600000;
-      if (h >= 6) {
-        fetchAllFeeds();
-        updateFetchStatusUI();
-      }
-    }, 1000 * 60 * 30); // check every 30min
-  }
-}
-
-function updateFetchStatusUI() {
-  const el = document.getElementById('feedStatus');
-  if (!el) return;
-  if (!feedLastUpdate) {
-    el.innerHTML = '❌ 从未更新 — <b>点击抓取</b>';
-    return;
-  }
-  const lastDate = new Date(feedLastUpdate);
-  if (isNaN(lastDate.getTime())) {
-    // 旧格式数据，清除重来
-    feedLastUpdate = '';
-    localStorage.removeItem('s_feedLastUpdate');
-    el.innerHTML = '❌ 从未更新 — <b>点击抓取</b>';
-    return;
-  }
-  const mins = Math.round((Date.now() - lastDate.getTime()) / 60000);
-  if (mins < 5) el.innerHTML = '✅ 刚刚更新';
-  else if (mins < 60) el.innerHTML = `✅ ${mins}分钟前更新`;
-  else if (mins < 1440) el.innerHTML = `✅ ${Math.round(mins/60)}小时前更新`;
-  else el.innerHTML = `⚠️ ${Math.round(mins/1440)}天前 — <b style="color:var(--accent)">建议刷新</b>`;
-}
-
-// Request notification permission for background alerts
-function requestNotifyPermission() {
-  if ('Notification' in window && Notification.permission === 'default') {
-    Notification.requestPermission();
-  }
-}
-
-function notifyNewContent(count) {
-  if ('Notification' in window && Notification.permission === 'granted' && document.hidden) {
-    new Notification('Life Spinner 有新内容', { body: `抓取到 ${count} 条新活动推荐`, icon: 'icon-192.png' });
-  }
-}
-
-// User-added venues stored in localStorage
-let userVenues = JSON.parse(localStorage.getItem('s_userVenues')) || {};
-
-function mergeUserVenues() {
-  // Merge user-added venues into VENUES so they show in the grid
-  Object.keys(userVenues).forEach(catKey => {
-    if (!VENUES[catKey]) {
-      VENUES[catKey] = { label: userVenues[catKey].label || '📌 自定义', items: [] };
-    }
-    const existingNames = new Set(VENUES[catKey].items.map(it => it.name));
-    (userVenues[catKey].items || []).forEach(it => {
-      if (!existingNames.has(it.name)) {
-        VENUES[catKey].items.push(it);
-        existingNames.add(it.name);
-      }
-    });
-  });
-}
-
-function addNewVenue() {
-  const name = document.getElementById('nv_name').value.trim();
-  const desc = document.getElementById('nv_desc').value.trim();
-  if (!name || !desc) { toast('请填写店铺名称和描述'); return; }
-
-  const catKey = document.getElementById('nv_cat').value;
-  const venue = {
-    emoji: document.getElementById('nv_emoji').value.trim() || '📌',
-    name,
-    desc,
-    addr: document.getElementById('nv_addr').value.trim(),
-    phone: document.getElementById('nv_phone').value.trim(),
-    hours: document.getElementById('nv_hours').value.trim(),
-    cost: document.getElementById('nv_cost').value.trim() || '待补充',
-    rating: 0,
-    tags: document.getElementById('nv_tags').value.split(/[,，]/).map(t=>t.trim()).filter(Boolean),
-    outdoor: document.getElementById('nv_outdoor').checked,
-    mapQ: encodeURIComponent(name + ' Dubai'),
-    bookUrl: '',
-    tip: document.getElementById('nv_tip').value.trim(),
-    _userAdded: true,
-  };
-
-  // Save to userVenues
-  if (!userVenues[catKey]) {
-    const catObj = VENUES[catKey];
-    userVenues[catKey] = { label: catObj ? catObj.label : '📌 自定义', items: [] };
-  }
-  userVenues[catKey].items.push(venue);
-  localStorage.setItem('s_userVenues', JSON.stringify(userVenues));
-
-  // Also add to live VENUES
-  if (!VENUES[catKey]) VENUES[catKey] = { label: userVenues[catKey].label, items: [] };
-  VENUES[catKey].items.push(venue);
-
-  // Clear form
-  ['nv_emoji','nv_name','nv_desc','nv_addr','nv_phone','nv_hours','nv_cost','nv_tip','nv_tags'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('nv_outdoor').checked = false;
-
-  // Refresh merged cats and re-render
-  buildMergedCats();
-  renderDC();
-  toast(`✅ "${name}" 已添加`);
-}
-
-// ==================== GPS DISTANCE SYSTEM ====================
-// Dubai area coordinates (approximate centers)
-const AREA_COORDS = {
-  'jlt':        [25.0766, 55.1442],
-  'cluster':    [25.0766, 55.1442],
-  'marina':     [25.0778, 55.1355],
-  'jbr':        [25.0789, 55.1325],
-  'ibn battuta':[25.0447, 55.1187],
-  'bluewaters': [25.0818, 55.1249],
-  'al barsha':  [25.0988, 55.2005],
-  'downtown':   [25.1972, 55.2744],
-  'difc':       [25.2104, 55.2796],
-  'dubai mall': [25.1985, 55.2796],
-  'city walk':  [25.2071, 55.2612],
-  'al quoz':    [25.1388, 55.2277],
-  'alserkal':   [25.1388, 55.2277],
-  'jumeirah':   [25.2106, 55.2553],
-  'umm suqeim': [25.1690, 55.2164],
-  'kite beach': [25.1616, 55.2077],
-  'la mer':     [25.2318, 55.2618],
-  'al wasl':    [25.1850, 55.2500],
-  'business bay':[25.1860, 55.2728],
-  'zabeel':     [25.2250, 55.3000],
-  'safa':       [25.1860, 55.2441],
-  'deira':      [25.2716, 55.3085],
-  'al fahidi':  [25.2635, 55.2965],
-  'bur dubai':  [25.2600, 55.2950],
-  'satwa':      [25.2210, 55.2690],
-  'naif':       [25.2720, 55.3100],
-  'mirdif':     [25.2202, 55.4216],
-  'al warqa':   [25.2003, 55.3911],
-  'motor city': [25.0458, 55.2363],
-  'festival city':[25.2263, 55.3527],
-  'al mamzar':  [25.2933, 55.3413],
-  'palm':       [25.1124, 55.1390],
-  'atlantis':   [25.1311, 55.1170],
-  'madinat':    [25.1346, 55.1857],
-  'mall of emirates':[25.1183, 55.2009],
-  'moe':        [25.1183, 55.2009],
-  'dubai hills':[25.1008, 55.2393],
-  'al khawaneej':[25.2759, 55.4210],
-  'mushrif':    [25.2759, 55.4210],
-  'al qudra':   [25.0073, 55.2249],
-  'hatta':      [24.7900, 56.1200],
-  'abu dhabi':  [24.4539, 54.3773],
-  'sharjah':    [25.3463, 55.4209],
-  'fujairah':   [25.1288, 56.3264],
-  'rak':        [25.7895, 55.9432],
-  'ras al khaimah':[25.7895,55.9432],
-  'al ain':     [24.2075, 55.7447],
-  'ajman':      [25.4052, 55.5136],
-  'musandam':   [26.2000, 56.2500],
-  'mleiha':     [25.1400, 55.8700],
-};
-
-let userLat = 25.0766, userLng = 55.1442; // default JLT
-let gpsReady = false;
-let distFilter = -1; // -1=all, 0=<5km, 1=<15km, 2=<30km, 3=30km+
-const DIST_RANGES = [
-  {label:'📍 <5km', max:5},
-  {label:'🚗 <15km', max:15},
-  {label:'🚗 <30km', max:30},
-  {label:'🗺️ 30km+', max:99999},
-];
-
-function initGPS() {
-  if ('geolocation' in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      pos => { userLat = pos.coords.latitude; userLng = pos.coords.longitude; gpsReady = true;
-        if (document.getElementById('distFilter').innerHTML) { renderDistFilter(); renderDC(); }
-        toast('📍 已获取位置'); },
-      () => { /* fallback to JLT */ },
-      {enableHighAccuracy: false, timeout: 8000}
-    );
-  }
-}
-
-// Haversine distance in km
-function haversine(lat1,lng1,lat2,lng2) {
-  const R=6371, dLat=(lat2-lat1)*Math.PI/180, dLng=(lng2-lng1)*Math.PI/180;
-  const a=Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
-  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
-}
-
-function getVenueCoords(item) {
-  const text = ((item.addr||'')+' '+(item.name||'')+' '+(item.desc||'')).toLowerCase();
-  for (const [area, coords] of Object.entries(AREA_COORDS)) {
-    if (text.includes(area)) return coords;
-  }
-  return [25.0766, 55.1442]; // default JLT
-}
-
-function getVenueDist(item) {
-  const [lat,lng] = getVenueCoords(item);
-  return haversine(userLat, userLng, lat, lng);
-}
-
-function fmtDist(km, matched) {
-  if (!matched) return '距离未知';
-  if (km < 1) return `${Math.round(km*1000)}m`;
-  if (km < 10) return `${km.toFixed(1)}km`;
-  return `${Math.round(km)}km`;
-}
-
-function getVenueCoordsMatched(item) {
-  const text = ((item.addr||'')+' '+(item.name||'')+' '+(item.desc||'')).toLowerCase();
-  for (const [area, coords] of Object.entries(AREA_COORDS)) {
-    if (text.includes(area)) return { coords, matched: true };
-  }
-  return { coords: [25.0766, 55.1442], matched: false };
-}
-
-function renderDistFilter() {
-  const el = document.getElementById('distFilter');
-  const gpsStatus = gpsReady ? '📍 实时定位' : '📍 默认JLT';
-  el.innerHTML = `<span class="df-label">${gpsStatus}</span>` +
-    `<button class="df-btn ${distFilter===-1?'active':''}" onclick="setDistFilter(-1)">全部</button>` +
-    DIST_RANGES.map((r,i) => `<button class="df-btn ${distFilter===i?'active':''}" onclick="setDistFilter(${i})">${r.label}</button>`).join('');
-}
-
-function setDistFilter(d) {
-  distFilter = d;
-  renderDistFilter();
-  renderDC();
-}
-
-// ==================== MERGED TYPE CATEGORIES ====================
-// Merge area-based data into type-based view
-let mergedCats = {};
-function buildMergedCats() {
-  const TYPE_MAP = {
-    'jlt_food':'🍜 美食','marina_food':'🍜 美食','cafes':'🍜 美食','budget_food':'🍜 美食','asian_food':'🍜 美食','fine_dining':'🍜 美食','michelin_chinese':'🍜 美食',
-    'sports':'⚽ 运动','learning':'📚 学习','learning_content':'📚 学习','kids_venues':'🎢 亲子','nature':'🌿 户外','daytrips':'🚗 短途','nightlife':'🌙 夜生活','trending':'🔥 热门','unique':'🎯 特色',
-  };
-  mergedCats = {};
-  Object.entries(VENUES).forEach(([key, cat]) => {
-    const typeName = TYPE_MAP[key] || cat.label;
-    if (!mergedCats[typeName]) mergedCats[typeName] = [];
-    (cat.items||[]).forEach(it => {
-      // Deduplicate by name
-      if (!mergedCats[typeName].find(x => x.name.trim().toLowerCase() === it.name.trim().toLowerCase())) {
-        mergedCats[typeName].push({...it, _srcCat: key});
-      }
-    });
-  });
-  // Sort each category by distance
-  Object.values(mergedCats).forEach(arr => arr.sort((a,b) => getVenueDist(a) - getVenueDist(b)));
-}
-
-function initDiscover(){
-  mergeUserVenues();
-  initGPS();
-  buildMergedCats();
-  // Type tabs
-  const typeKeys = Object.keys(mergedCats);
-  curCat = typeKeys[0];
-  document.getElementById('catTabs').innerHTML = typeKeys.map(k =>
-    `<div class="cat-tab ${k===curCat?'active':''}" onclick="switchCat('${encodeURIComponent(k)}')">${k} <span style="font-size:9px;opacity:.6">${mergedCats[k].length}</span></div>`
-  ).join('');
-  renderDistFilter();
-  renderDC();
-  // Feed system
-  renderFeedSourceBtns();
-  renderFeedItems();
-  updateFeedBadge();
-  updateFetchStatusUI();
-  requestNotifyPermission();
-  autoFetchIfStale();
-  // Search links
-  document.getElementById('extLinks').innerHTML = EXT_SEARCHES.map(s =>
-    `<a class="ext-link" href="https://www.google.com/search?q=${s.q}" target="_blank">${s.label}</a>`
-  ).join('');
-  // Footer
-  const userCount = Object.values(userVenues).reduce((s,c)=>s+(c.items||[]).length,0);
-  document.getElementById('dcUpdated').textContent = `内置: ${typeof DISCOVER_UPDATED!=='undefined'?DISCOVER_UPDATED:'--'} · 自定义${userCount}个 · 网络${feedItems.length}条`;
-  document.getElementById('dcSrc').innerHTML='<span style="font-size:11px;color:var(--text2);margin-right:4px">信息源：</span>'+EXT_SOURCES.map(s=>`<a href="${s.url}" target="_blank">${s.icon} ${s.name}</a>`).join('');
-}
-function switchCat(id){
-  curCat = decodeURIComponent(id);
-  const typeKeys = Object.keys(mergedCats);
-  document.getElementById('catTabs').innerHTML = typeKeys.map(k =>
-    `<div class="cat-tab ${k===curCat?'active':''}" onclick="switchCat('${encodeURIComponent(k)}')">${k} <span style="font-size:9px;opacity:.6">${mergedCats[k]?.length||0}</span></div>`
-  ).join('');
-  renderDC();
-}
-function renderDC(){
-  let items = mergedCats[curCat];
-  if (!items) return;
-  // Sort by distance
-  items = [...items].sort((a,b) => getVenueDist(a) - getVenueDist(b));
-  // Apply distance filter
-  if (distFilter >= 0) {
-    const maxKm = DIST_RANGES[distFilter].max;
-    items = items.filter(it => getVenueDist(it) <= maxKm);
-  }
-  const existing=new Set([...famActs.map(a=>a.name),...couActs.map(a=>a.name),...friActs.map(a=>a.name)]);
-  if (!items.length) {
-    document.getElementById('dcGrid').innerHTML = `<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">该距离范围内暂无此分类的店铺</div>`;
-    return;
-  }
-  document.getElementById('dcGrid').innerHTML=items.map((it,i)=>{
-    const added=existing.has(it.name);
-    const {coords: vCoords, matched: vMatched} = getVenueCoordsMatched(it);
-    const km = haversine(userLat, userLng, vCoords[0], vCoords[1]);
-    const distBadge = `<span class="dc-dist">📍 ${fmtDist(km, vMatched)}</span>`;
-    const stars=it.rating>0?'⭐'.repeat(Math.round(it.rating))+` ${it.rating}`:'🆕 新推荐';
-    let details='';
-    if(it.addr)details+=`<div class="vd"><span class="vd-icon">📍</span>${it.addr}</div>`;
-    if(it.phone)details+=`<div class="vd"><span class="vd-icon">📞</span>${it.phone}</div>`;
-    if(it.hours)details+=`<div class="vd"><span class="vd-icon">🕐</span>${it.hours}</div>`;
-    if(it.tip)details+=`<div class="vd"><span class="vd-icon">💡</span>${it.tip}</div>`;
-
-    let actions='';
-    if(it.mapQ)actions+=`<a class="vc-a-map" href="https://www.google.com/maps/search/${it.mapQ}" target="_blank">📍 导航</a>`;
-    if(it.phone)actions+=`<a class="vc-a-call" href="tel:${it.phone}">📞 拨打</a>`;
-    if(it.bookUrl)actions+=`<a class="vc-a-book" href="${it.bookUrl}" target="_blank">🎫 预订</a>`;
-    actions+=`<a class="vc-a-search" href="https://www.google.com/search?q=${it.mapQ||encodeURIComponent(it.name)}+Dubai+2026" target="_blank">🔍</a>`;
-    actions+=`<span style="font-size:10px;color:${added?'var(--success)':'var(--text2)'};padding:6px 0">${added?'✅ 转盘中':'⏳ 待同步'}</span>`;
-
-    return `<div class="vc"><div class="vc-top"><div class="vc-emoji">${it.emoji}</div><div class="vc-body">
-      <div class="vc-name">${it.name} <span class="vc-stars">${stars}</span> ${distBadge}</div>
-      <div class="vc-desc">${it.desc}</div>
-      <div class="vc-details">${details}</div>
-      <div class="vc-tags">${(it.tags||[]).map(t=>t.includes('🔥')?`<span class="vt-hot">${t}</span>`:`<span>${t}</span>`).join('')}<span class="vt-cost">${it.cost}</span>${it.fazaa?`<span class="vt-fazaa">🏷️ ${it.fazaa}</span>`:''}</div>
-    </div></div><div class="vc-actions">${actions}</div></div>`;
-  }).join('');
-}
-function addVenue(catKey,idx){
-  const cat=VENUES[catKey];if(!cat)return;
-  const it=cat.items[idx];
-  const existing=new Set([...famActs.map(a=>a.name),...couActs.map(a=>a.name),...friActs.map(a=>a.name)]);
-  if(existing.has(it.name))return;
-  const spinnerCat=catKey.includes('food')||catKey==='cafes'?'food':catKey.includes('sport')?'sports':catKey==='learning'?'learning':catKey==='nature'?'nature':catKey==='daytrips'?'daytrip':catKey==='nightlife'?'nightlife':'entertainment';
-  const newAct={emoji:it.emoji,name:it.name,outdoor:it.outdoor||false,cat:spinnerCat,
-    info:{loc:it.name,addr:it.addr||'',dist:'详见导航',cost:it.cost,age:mode==='family'?'适合全家':'两人',
-    time:it.hours||'灵活',hours:it.hours||'',phone:it.phone||'',tip:it.tip||it.desc,
-    mapQ:it.mapQ||encodeURIComponent(it.name+' Dubai'),bookUrl:it.bookUrl||''}};
-  acts().push(newAct);save();drawWheel();renderDC();
-  toast(`✅ "${it.name}" → ${mode==='family'?'全家':'夫妻'}转盘`);
-}
-
-// ==================== MANAGE ====================
-// ==================== PROFILE & VISITED ====================
-let profile = JSON.parse(localStorage.getItem('s_profile')) || {};
-let visitedActs = JSON.parse(localStorage.getItem('s_visited')) || [];
-// visitedActs: [{name, emoji, date, cat, stars}]
-
-function saveProfile() {
-  profile.name = document.getElementById('pf_name')?.value || '';
-  profile.addr = document.getElementById('pf_addr')?.value || '';
-  profile.family = document.getElementById('pf_family')?.value || '';
-  profile.interests = document.getElementById('pf_interests')?.value || '';
-  profile.fazaa = document.getElementById('pf_fazaa')?.value || '';
-  profile.entertainer = document.getElementById('pf_entertainer')?.value || '';
-  localStorage.setItem('s_profile', JSON.stringify(profile));
-  toast('✅ 已保存');
-}
-
-function loadProfile() {
-  if (profile.name) document.getElementById('pf_name').value = profile.name;
-  if (profile.addr) document.getElementById('pf_addr').value = profile.addr;
-  if (profile.family) document.getElementById('pf_family').value = profile.family;
-  if (profile.interests) document.getElementById('pf_interests').value = profile.interests;
-  if (profile.fazaa) document.getElementById('pf_fazaa').value = profile.fazaa;
-  if (profile.entertainer) document.getElementById('pf_entertainer').value = profile.entertainer;
-}
-
-function markVisited(name, emoji, cat) {
-  // Check if already visited today
-  const today = new Date().toLocaleDateString('zh-CN');
-  if (visitedActs.find(v => v.name === name && v.date === today)) return;
-  const r = getUserRating(name);
-  visitedActs.unshift({ name, emoji: emoji||'🎯', date: today, cat: cat||'', stars: r.stars||0 });
-  if (visitedActs.length > 200) visitedActs = visitedActs.slice(0, 200);
-  localStorage.setItem('s_visited', JSON.stringify(visitedActs));
-}
-
-function removeVisited(idx) {
-  visitedActs.splice(idx, 1);
-  localStorage.setItem('s_visited', JSON.stringify(visitedActs));
-  renderMyPage();
-}
-
-function renderMyPage() {
-  loadProfile();
-  // Stats
-  const totalVisited = visitedActs.length;
-  const uniqueVisited = new Set(visitedActs.map(v => v.name)).size;
-  const recCount = Object.values(userRatings).filter(r => r.status === 'recommend').length;
-  const blkCount = Object.values(userRatings).filter(r => r.status === 'blacklist').length;
-  const avgStars = Object.values(userRatings).filter(r => r.stars > 0);
-  const avg = avgStars.length ? (avgStars.reduce((s,r) => s+r.stars, 0) / avgStars.length).toFixed(1) : '-';
-  // Cat breakdown
-  const catCounts = {};
-  visitedActs.forEach(v => { catCounts[v.cat] = (catCounts[v.cat]||0) + 1; });
-  const topCat = Object.entries(catCounts).sort((a,b) => b[1]-a[1])[0];
-
-  document.getElementById('statsContent').innerHTML = `
-    <div class="stat-grid">
-      <div class="stat-card"><div class="stat-num">${totalVisited}</div><div class="stat-label">总参加次数</div></div>
-      <div class="stat-card"><div class="stat-num">${uniqueVisited}</div><div class="stat-label">不同活动</div></div>
-      <div class="stat-card"><div class="stat-num">${avg}</div><div class="stat-label">平均评分</div></div>
-      <div class="stat-card"><div class="stat-num">${topCat?topCat[0]||'-':'-'}</div><div class="stat-label">最常参加</div></div>
-    </div>
-    <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--text2)">
-      <span>❤️ 推荐 ${recCount}</span>
-      <span>🚫 黑名单 ${blkCount}</span>
-      <span>⭐ 已评分 ${avgStars.length}</span>
-    </div>`;
-
-  // Visited list
-  document.getElementById('visitedCount').textContent = uniqueVisited;
-  document.getElementById('visitedList').innerHTML = visitedActs.length
-    ? visitedActs.slice(0, 50).map((v, i) => {
-        const r = getUserRating(v.name);
-        const stars = r.stars > 0 ? '★'.repeat(r.stars) : '';
-        return `<div class="visited-item">
-          <span class="vi-date">${v.date}</span>
-          <span>${v.emoji}</span>
-          <span style="flex:1">${v.name}</span>
-          <span class="vi-stars">${stars}</span>
-          <button class="vi-remove" onclick="removeVisited(${i})" title="删除">✕</button>
-        </div>`;
-      }).join('')
-    : '<div style="font-size:12px;color:var(--text2);padding:8px">还没有参加过活动，转盘转到后会自动记录</div>';
-
-  // Recommended
-  const recs = Object.entries(userRatings).filter(([n,r]) => r.status === 'recommend');
-  document.getElementById('recCount').textContent = recs.length;
-  document.getElementById('recList').innerHTML = recs.length
-    ? recs.map(([n,r]) => `<div class="visited-item"><span>❤️</span><span style="flex:1">${n}</span><span class="vi-stars">${r.stars?'★'.repeat(r.stars):''}</span><span style="font-size:10px;color:var(--text2)">${r.note||''}</span><button class="vi-remove" onclick="setUserStatus('${n.replace(/'/g,"\\'")}','normal');renderMyPage()" title="取消推荐">✕</button></div>`).join('')
-    : '<div style="font-size:12px;color:var(--text2);padding:8px">转盘结果中点❤️推荐</div>';
-
-  // Blacklist
-  const blks = Object.entries(userRatings).filter(([n,r]) => r.status === 'blacklist');
-  document.getElementById('blkCount').textContent = blks.length;
-  document.getElementById('blkList').innerHTML = blks.length
-    ? blks.map(([n,r]) => `<div class="visited-item"><span>🚫</span><span style="flex:1">${n}</span><span style="font-size:10px;color:var(--text2)">${r.note||''}</span><button class="vi-remove" onclick="setUserStatus('${n.replace(/'/g,"\\'")}','normal');renderMyPage()" title="解除拉黑">✕</button></div>`).join('')
-    : '<div style="font-size:12px;color:var(--text2);padding:8px">转盘结果中点🚫拉黑</div>';
-}
-
-function exportData() {
-  const data = {
-    profile, userRatings, visitedActs,
-    planner, kidsSchedule, history,
-    familyActs: famActs.length, coupleActs: couActs.length,
-    exportDate: new Date().toISOString()
-  };
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `life-spinner-backup-${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
-  toast('📤 数据已导出');
-}
-
-function clearAllData() {
-  if (!confirm('确定清除全部数据？此操作不可恢复！')) return;
-  if (!confirm('真的要清除吗？所有评价、记录、设置都会丢失！')) return;
-  localStorage.clear();
-  location.reload();
-}
-
-function renderManage(){
-  document.getElementById('mgFCount').textContent=famActs.length;
-  document.getElementById('mgCCount').textContent=couActs.length;
-  document.getElementById('mgRCount').textContent=friActs.length;
-  renderMgList('F',famActs);renderMgList('C',couActs);renderMgList('R',friActs);
-}
-function renderRatingsList(){
-  const entries = Object.entries(userRatings).filter(([n,r]) => r.status !== 'normal' || r.stars > 0);
-  document.getElementById('mgRateCount').textContent = entries.length;
-  const el = document.getElementById('mgRateList');
-  if (!entries.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text2);padding:8px">还没有评价，转盘转到后可以评分/推荐/拉黑</div>'; return; }
-  // Split into recommended, rated, blacklisted
-  const rec = entries.filter(([n,r]) => r.status === 'recommend');
-  const blk = entries.filter(([n,r]) => r.status === 'blacklist');
-  const rated = entries.filter(([n,r]) => r.status === 'normal' && r.stars > 0);
-  let html = '';
-  if (rec.length) {
-    html += '<div style="font-size:11px;color:#f472b6;font-weight:700;padding:4px 0">❤️ 推荐（转盘优先）</div>';
-    html += rec.map(([n,r]) => renderRatingItem(n,r)).join('');
-  }
-  if (blk.length) {
-    html += '<div style="font-size:11px;color:var(--danger);font-weight:700;padding:4px 0;margin-top:6px">🚫 黑名单（不会出现在转盘）</div>';
-    html += blk.map(([n,r]) => renderRatingItem(n,r)).join('');
-  }
-  if (rated.length) {
-    html += '<div style="font-size:11px;color:var(--accent);font-weight:700;padding:4px 0;margin-top:6px">⭐ 已评分</div>';
-    html += rated.map(([n,r]) => renderRatingItem(n,r)).join('');
-  }
-  el.innerHTML = html;
-}
-function renderRatingItem(name, r) {
-  const stars = r.stars > 0 ? '⭐'.repeat(r.stars) : '';
-  const statusIcon = r.status === 'recommend' ? '❤️' : r.status === 'blacklist' ? '🚫' : '';
-  const esc = name.replace(/'/g,"\\'");
-  return `<div class="ai" style="justify-content:space-between">
-    <span style="flex:1;font-size:12px">${statusIcon} ${name} ${stars}</span>
-    ${r.note?`<span style="font-size:10px;color:var(--text2);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.note}</span>`:''}
-    <button class="ad" onclick="clearRating('${esc}')" title="清除评价">✕</button>
-  </div>`;
-}
-function clearRating(name) {
-  delete userRatings[name];
-  localStorage.setItem('s_ratings', JSON.stringify(userRatings));
-  renderRatingsList();
-  sampleWheel(); drawWheel();
-  toast('已清除评价');
-}
-function renderMgList(t,arr){
-  document.getElementById('mg'+t+'List').innerHTML=arr.map((a,i)=>`<div class="ai"><span class="ae">${a.emoji}</span><span class="an">${a.name}</span><span class="ao ${a.outdoor?'out':'in'}">${a.outdoor?'户外':'室内'}</span><span class="ao" style="background:rgba(255,255,255,.05)">${CAT_LABELS[a.cat]||''}</span><button class="ad" onclick="delAct('${t}',${i})">✕</button></div>`).join('');
-}
-function delAct(t,i){(t==='F'?famActs:t==='C'?couActs:friActs).splice(i,1);save();renderManage();drawWheel();}
-function addAct(m){
-  const sfx=m==='family'?'F':'C';
-  const emoji=document.getElementById('addEmoji'+sfx).value.trim()||'🎯';
-  const name=document.getElementById('addName'+sfx).value.trim();
-  const type=document.getElementById('addType'+sfx).value;
-  if(!name)return;
-  const arr=m==='family'?famActs:m==='couple'?couActs:friActs;
-  arr.push({emoji,name,outdoor:type==='outdoor',cat:'leisure',info:{loc:'待补充',addr:'',dist:'待补充',cost:'待补充',age:m==='family'?'适合全家':'两人',time:'灵活',hours:'',phone:'',tip:'新添加',mapQ:encodeURIComponent(name+' Dubai'),bookUrl:''}});
-  save();renderManage();drawWheel();document.getElementById('addEmoji'+sfx).value='';document.getElementById('addName'+sfx).value='';toast('✅ 已添加');
-}
-
-// ==================== SYNC VENUES → SPINNER ====================
-function syncVenuesToSpinner() {
-  if (typeof VENUES === 'undefined') return 0;
-  const famNames = new Set(famActs.map(a => a.name));
-  const couNames = new Set(couActs.map(a => a.name));
-  const friNames = new Set(friActs.map(a => a.name));
-  const coupleCategories = new Set(['nightlife', 'cafes']);
-  const friendCategories = new Set(['sports','food','entertainment','leisure','nightlife']);
-  let added = 0;
-
-  Object.keys(VENUES).forEach(catKey => {
-    const items = (VENUES[catKey].items || []);
-    const spinCat = catKey.includes('food') || catKey === 'cafes' || catKey === 'jlt_food' || catKey === 'marina_food'
-      ? 'food' : catKey === 'sports' ? 'sports' : catKey === 'learning' ? 'learning'
-      : catKey === 'nature' ? 'nature' : catKey === 'daytrips' ? 'daytrip'
-      : catKey === 'nightlife' ? 'nightlife' : catKey === 'kids_venues' ? 'entertainment' : 'leisure';
-
-    items.forEach(it => {
-      const newAct = {
-        emoji: it.emoji, name: it.name, outdoor: it.outdoor || false, cat: spinCat,
-        info: { loc: it.name, addr: it.addr||'', dist: '详见导航', cost: it.cost||'',
-          age: coupleCategories.has(catKey) ? '两人' : '适合全家',
-          time: it.hours||'灵活', hours: it.hours||'', phone: it.phone||'',
-          tip: it.tip||it.desc, mapQ: it.mapQ||encodeURIComponent(it.name+' Dubai'), bookUrl: it.bookUrl||'' }
-      };
-      if (coupleCategories.has(catKey)) {
-        if (!couNames.has(it.name)) { couActs.push(newAct); couNames.add(it.name); added++; }
-      } else {
-        if (!famNames.has(it.name)) { famActs.push(newAct); famNames.add(it.name); added++; }
-        if (['food','leisure','culture','daytrip'].includes(spinCat) && !couNames.has(it.name)) {
-          couActs.push({...newAct, info:{...newAct.info, age:'两人'}}); couNames.add(it.name); added++;
-        }
-      }
-      // Friend pool: sports, food, entertainment, leisure, nightlife
-      if (friendCategories.has(spinCat) && !friNames.has(it.name)) {
-        friActs.push({...newAct, info:{...newAct.info, age:'朋友'}}); friNames.add(it.name); added++;
-      }
-    });
-  });
-  save();
-  return added;
-}
-
-function syncAllAndNotify() {
-  const count = syncVenuesToSpinner();
-  renderCatFilter(); drawWheel(); renderManage();
-  const btn = document.getElementById('syncBtn');
-  if (count > 0) {
-    toast(`✅ 已同步 ${count} 个新活动到转盘！`);
-    btn.textContent = `✅ 已同步！全家${famActs.length}个 · 夫妻${couActs.length}个`;
-    btn.classList.add('synced');
-  } else {
-    toast('全部已在转盘中，无需更新');
-    btn.textContent = `✅ 全部已同步 · 全家${famActs.length}个 · 夫妻${couActs.length}个`;
-    btn.classList.add('synced');
-  }
-  setTimeout(() => { btn.textContent = '🔄 一键同步全部到转盘'; btn.classList.remove('synced'); }, 4000);
-}
-
-// ==================== INIT ====================
-window.addEventListener('DOMContentLoaded', () => {
-  syncVenuesToSpinner();
-  fetchWeather(); renderCatFilter(); sampleWheel(); drawWheel(); renderToday(); renderPlanner(); renderKids(); renderHist();
-  document.getElementById('wheel').addEventListener('click', () => { if(!spinning) spin(); });
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-});
-</script>
+<!-- Scripts order matters: data → core → discover-data → app -->
+<script src="js/data.js"></script>
+<script src="js/core.js"></script>
+<script src="discover-data.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
