@@ -27,13 +27,14 @@
     <div class="qc-author" id="dashQuoteAuthor"></div>
   </div>
   <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
-  <div class="pillars" id="pillarGrid"></div>
+  <div class="app-shortcuts" id="appShortcuts"></div>
   <div class="sec" id="todaySec">
-    <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent);font-size:13px">📅 今日安排</h3><span class="arrow" id="todayList-arrow">▼</span></div>
-    <div class="sec-body" id="todayList-body">
+    <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent);font-size:13px">📅 今日安排</h3><span class="arrow open" id="todayList-arrow">▼</span></div>
+    <div class="sec-body show" id="todayList-body">
       <div id="todayItems"></div>
     </div>
   </div>
+  <div class="pillars" id="pillarGrid"></div>
 </div>
 
 <!-- ========== PAGE 2: MONTHLY PLAN ========== -->
@@ -126,9 +127,17 @@
     </div>
   </div>
 
+  <div class="sec" id="sec-wishlist">
+    <div class="sec-h" onclick="toggleSec('wish')"><h3 style="color:#a855f7">💭 想做的事 <span class="badge" style="background:#a855f7" id="wishCount">0</span></h3><span class="arrow open" id="wish-arrow">▼</span></div>
+    <div class="sec-body show" id="wish-body">
+      <div id="wishlistList"></div>
+      <button class="wish-add-btn" onclick="openWishlistModal()">➕ 添加一件想做的事</button>
+    </div>
+  </div>
+
   <div class="sec">
-    <div class="sec-h" onclick="toggleSec('stats')"><h3 style="color:var(--accent3)">📊 活动统计</h3><span class="arrow open" id="stats-arrow">▼</span></div>
-    <div class="sec-body show" id="stats-body"><div id="statsContent"></div></div>
+    <div class="sec-h" onclick="toggleSec('stats')"><h3 style="color:var(--accent3)">📊 活动统计</h3><span class="arrow" id="stats-arrow">▼</span></div>
+    <div class="sec-body" id="stats-body"><div id="statsContent"></div></div>
   </div>
 
   <div class="sec" id="sec-growth">
@@ -318,6 +327,40 @@
     <div class="edit-actions">
       <button class="btn-primary" onclick="saveUserDeal()">💾 保存</button>
       <button class="btn-ghost" onclick="closeAddDealModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Wishlist Modal -->
+<div class="edit-modal" id="wishlistModal" onclick="if(event.target===this)closeWishlistModal()">
+  <div class="edit-modal-card">
+    <h3 id="wishModalTitle">💭 想做的事</h3>
+    <div class="edit-row-split">
+      <div class="edit-row" style="flex:0 0 70px"><label>图标</label><input id="wlEmoji" maxlength="2" value="💭" style="text-align:center;font-size:18px"></div>
+      <div class="edit-row"><label>分类</label><select id="wlCat">
+        <option value="explore" selected>✨ 探索</option>
+        <option value="food">🍜 美食</option>
+        <option value="sports">⚽ 运动</option>
+        <option value="culture">🎭 文化</option>
+        <option value="nature">🌿 自然</option>
+        <option value="travel">✈️ 旅行</option>
+        <option value="learning">📚 学习</option>
+        <option value="family">👨‍👩‍👧 家庭</option>
+        <option value="other">📌 其他</option>
+      </select></div>
+    </div>
+    <div class="edit-row"><label>想做什么 *</label><input id="wlTitle" placeholder="如: 看一次现场音乐节"></div>
+    <div class="edit-row"><label>具体推荐 / 在哪做</label><input id="wlVenue" placeholder="如: Dubai Jazz Festival · Dubai Media City"></div>
+    <div class="edit-row-split">
+      <div class="edit-row"><label>什么时候</label><input id="wlWhen" placeholder="如: 每年 2-3 月 / 周末"></div>
+      <div class="edit-row"><label>预算/费用</label><input id="wlCost" placeholder="如: ~200 AED"></div>
+    </div>
+    <div class="edit-row"><label>备注</label><textarea id="wlNotes" placeholder="提前订票、带防晒、孩子能去..."></textarea></div>
+    <div class="edit-row"><label>链接</label><input id="wlUrl" placeholder="https://..."></div>
+    <div class="edit-actions">
+      <button class="btn-primary" onclick="saveWishlistItem()">💾 保存</button>
+      <button class="btn-danger" id="wlDeleteBtn" onclick="deleteCurrentWishlist()" style="display:none">🗑️</button>
+      <button class="btn-ghost" onclick="closeWishlistModal()">取消</button>
     </div>
   </div>
 </div>

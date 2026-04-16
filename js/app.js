@@ -51,9 +51,42 @@ function renderDashboard() {
   document.getElementById('dashDate').textContent = dateStr;
 
   renderQuoteCard();
+  renderAppShortcuts();
   renderPillarCards();
   renderUpcomingReminders();
   renderTodayItems();
+}
+
+// ==================== 一键打开外部 App ====================
+function renderAppShortcuts() {
+  const el = document.getElementById('appShortcuts');
+  if (!el || typeof APP_SHORTCUTS === 'undefined') return;
+  el.innerHTML = APP_SHORTCUTS.map(a => `
+    <button class="app-shortcut" onclick="launchApp('${escAttr(a.id)}')" title="${escAttr(a.label)}">
+      <span class="as-emoji">${escapeHtml(a.emoji)}</span>
+      <span class="as-label">${escapeHtml(a.label)}</span>
+    </button>
+  `).join('');
+}
+
+// 尝试打开 app；约 1.5s 后页面若仍可见则降级到 web 链接
+function launchApp(id) {
+  const a = APP_SHORTCUTS.find(x => x.id === id);
+  if (!a) return;
+  const t0 = Date.now();
+  // iOS Safari 对 anchor click 比 window.location 更稳
+  const anchor = document.createElement('a');
+  anchor.href = a.scheme;
+  anchor.style.display = 'none';
+  document.body.appendChild(anchor);
+  try { anchor.click(); } catch(e) { window.location.href = a.scheme; }
+  document.body.removeChild(anchor);
+  setTimeout(() => {
+    // 若 1.5s 内页面没被切走（说明 scheme 没装/没响应），打开 web 回退
+    if (!document.hidden && Date.now() - t0 < 2500) {
+      window.open(a.web, '_blank');
+    }
+  }, 1500);
 }
 
 function renderQuoteCard() {
@@ -122,13 +155,7 @@ function renderPillarCards() {
   if (!el) return;
   const state = Store.load();
 
-  // ========== 规划：本周固定 + 本月计划状态 ==========
-  const weeklyCount = (state.weeklyPlan || []).length;
-  const mp = state.monthlyPlan;
-  const hasMp = !!(mp && mp.weeks && mp.weeks.length);
-  const planLine = hasMp
-    ? `本周节奏 ${weeklyCount} 项 · 月计划已生成`
-    : (weeklyCount ? `本周节奏 ${weeklyCount} 项 · 还没生成月计划` : '还没安排，去定个节奏');
+  // 规划卡已移除（用户：到第二页自己查）
 
   // ========== 灵感：3 条具体建议 ==========
   const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(),0,0)) / 86400000);
@@ -177,15 +204,6 @@ function renderPillarCards() {
     : (wk.count > 0 ? `本周已记录 ${wk.count} 次 · 继续呀` : '今天迈出第一步');
 
   el.innerHTML = `
-    <div class="pillar-card plan" onclick="showPage('pagePlan',document.querySelectorAll('.nav-btn')[1])">
-      <div class="pillar-head">
-        <span class="pillar-emoji">${PILLARS.plan.emoji}</span>
-        <span class="pillar-title">${escapeHtml(PILLARS.plan.label)}</span>
-        <span class="pillar-arrow">›</span>
-      </div>
-      <div class="pillar-line">${escapeHtml(planLine)}</div>
-    </div>
-
     <div class="pillar-card inspire" onclick="showPage('pageSpinner',document.querySelectorAll('.nav-btn')[2])">
       <div class="pillar-head">
         <span class="pillar-emoji">${PILLARS.inspire.emoji}</span>
@@ -1080,11 +1098,125 @@ function deleteUserDeal(id) {
 // ==================== ME PAGE ====================
 function renderMePage() {
   renderProfile();
+  renderWishlist();
   renderStats();
   renderVisited();
   renderGrowthSection();
   renderCookingSection();
   renderSkillsSection();
+}
+
+// ==================== 心愿单（想做的事） ====================
+const WISH_CAT_LABEL = {
+  explore:'✨ 探索', food:'🍜 美食', sports:'⚽ 运动', culture:'🎭 文化',
+  nature:'🌿 自然', travel:'✈️ 旅行', learning:'📚 学习', family:'👨‍👩‍👧 家庭', other:'📌 其他'
+};
+let _editingWishId = null;
+
+function renderWishlist() {
+  const list = Store.get('wishlist') || [];
+  const countEl = document.getElementById('wishCount');
+  if (countEl) countEl.textContent = list.length;
+  const el = document.getElementById('wishlistList');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:12px;padding:14px 8px;line-height:1.6">还没有想做的事 — 点下面按钮，把脑子里的好主意存下来<br><span style="font-size:10px;opacity:.7">比如「去音乐节」「带孩子看流星雨」「一个人去 staycation」</span></div>';
+    return;
+  }
+  el.innerHTML = list.map(w => `
+    <div class="wish-item">
+      <div class="wi-emoji">${escapeHtml(w.emoji||'💭')}</div>
+      <div class="wi-body">
+        <div class="wi-title">${escapeHtml(w.title)} <span class="wi-cat">${escapeHtml(WISH_CAT_LABEL[w.cat]||'')}</span></div>
+        ${w.venue?`<div class="wi-venue">📍 ${escapeHtml(w.venue)}</div>`:''}
+        ${(w.when||w.cost)?`<div class="wi-meta">${w.when?'⏰ '+escapeHtml(w.when):''}${w.when&&w.cost?' · ':''}${w.cost?'💰 '+escapeHtml(w.cost):''}</div>`:''}
+        ${w.notes?`<div class="wi-notes">💡 ${escapeHtml(w.notes)}</div>`:''}
+        <div class="wi-actions">
+          ${w.url?`<a class="wi-link" href="${escAttr(w.url)}" target="_blank" rel="noopener">🔗 链接</a>`:''}
+          <button class="wi-btn" onclick="completeWishlist('${escAttr(w.id)}')" title="完成">✅ 做了</button>
+          <button class="wi-btn" onclick="openWishlistModal('${escAttr(w.id)}')" title="编辑">✏️</button>
+          <button class="wi-btn del" onclick="deleteWishlist('${escAttr(w.id)}')" title="删除">🗑️</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openWishlistModal(id) {
+  _editingWishId = id || null;
+  const w = id ? (Store.get('wishlist') || []).find(x => x.id === id) : null;
+  document.getElementById('wishModalTitle').textContent = w ? '✏️ 编辑想做的事' : '💭 想做的事';
+  document.getElementById('wlEmoji').value  = w?.emoji  || '💭';
+  document.getElementById('wlCat').value    = w?.cat    || 'explore';
+  document.getElementById('wlTitle').value  = w?.title  || '';
+  document.getElementById('wlVenue').value  = w?.venue  || '';
+  document.getElementById('wlWhen').value   = w?.when   || '';
+  document.getElementById('wlCost').value   = w?.cost   || '';
+  document.getElementById('wlNotes').value  = w?.notes  || '';
+  document.getElementById('wlUrl').value    = w?.url    || '';
+  document.getElementById('wlDeleteBtn').style.display = w ? '' : 'none';
+  document.getElementById('wishlistModal').classList.add('show');
+}
+
+function closeWishlistModal() {
+  document.getElementById('wishlistModal').classList.remove('show');
+  _editingWishId = null;
+}
+
+function saveWishlistItem() {
+  const title = document.getElementById('wlTitle').value.trim();
+  if (!title) { toast('⚠️ 请填「想做什么」'); return; }
+  const data = {
+    emoji: document.getElementById('wlEmoji').value.trim() || '💭',
+    cat:   document.getElementById('wlCat').value || 'explore',
+    title,
+    venue: document.getElementById('wlVenue').value.trim(),
+    when:  document.getElementById('wlWhen').value.trim(),
+    cost:  document.getElementById('wlCost').value.trim(),
+    notes: document.getElementById('wlNotes').value.trim(),
+    url:   document.getElementById('wlUrl').value.trim()
+  };
+  Store.update(s => {
+    if (!s.wishlist) s.wishlist = [];
+    if (_editingWishId) {
+      const i = s.wishlist.findIndex(x => x.id === _editingWishId);
+      if (i >= 0) s.wishlist[i] = {...s.wishlist[i], ...data};
+    } else {
+      s.wishlist.unshift({id:'w_'+uid(), ...data, createdAt: todayISO()});
+    }
+  });
+  closeWishlistModal();
+  renderWishlist();
+  toast(_editingWishId ? '✅ 已更新' : '✅ 已加入心愿单');
+}
+
+function deleteWishlist(id) {
+  if (!confirm('删除这个想做的事？')) return;
+  Store.update(s => { s.wishlist = (s.wishlist || []).filter(x => x.id !== id); });
+  renderWishlist();
+}
+
+function deleteCurrentWishlist() {
+  if (!_editingWishId) return;
+  if (!confirm('删除这个想做的事？')) return;
+  Store.update(s => { s.wishlist = (s.wishlist || []).filter(x => x.id !== _editingWishId); });
+  closeWishlistModal();
+  renderWishlist();
+  toast('🗑️ 已删除');
+}
+
+// 标记完成 → 移到「参加过」+ 从心愿单移除
+function completeWishlist(id) {
+  const list = Store.get('wishlist') || [];
+  const w = list.find(x => x.id === id);
+  if (!w) return;
+  const visitId = 'wish_' + w.id;
+  markVisited(visitId, w.title, w.emoji||'💭', w.cat||'explore');
+  Store.update(s => { s.wishlist = (s.wishlist || []).filter(x => x.id !== id); });
+  renderWishlist();
+  renderVisited();
+  renderStats();
+  toast('🎉 已标记为做过 — 移到了「参加过」');
 }
 function renderProfile() {
   const p = Store.get('profile') || {};
@@ -1500,7 +1632,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // 导出所有全局函数（便于 HTML 内 onclick 调用）
 Object.assign(window, {
   showPage, toggleSec,
-  renderDashboard, renderQuoteCard, reshuffleQuote, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
+  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
   setMode, setCatFilter, spin,
   changeStars, changeStatus, saveUserNote, confirmVisit,
   renderMonthlyPlan, generateMonthlyPlan,
@@ -1510,6 +1642,7 @@ Object.assign(window, {
   renderDeals, renderFeaturedDeals, setDealFilter,
   openAddDealModal, closeAddDealModal, saveUserDeal, deleteUserDeal,
   renderMePage, saveProfile, removeVisitedAt, unsetStatus,
+  renderWishlist, openWishlistModal, closeWishlistModal, saveWishlistItem, deleteWishlist, deleteCurrentWishlist, completeWishlist,
   setRecipeFilter, logRecipeMade, toggleWishRecipe, toggleSkillWeek,
   setGrowthScope,
   exportData, clearAllData, openImportPicker, handleImportFile,

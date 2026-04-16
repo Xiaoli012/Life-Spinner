@@ -76,6 +76,14 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:linear-gradi
 .pillar-mini{padding:4px 8px;border-radius:12px;background:rgba(245,158,11,.12);color:var(--accent);font-size:13px;border:1px solid rgba(245,158,11,.25);cursor:pointer;font-family:inherit;transition:all .15s;line-height:1}
 .pillar-mini:hover{background:rgba(245,158,11,.25);transform:rotate(15deg)}
 
+/* 一排快捷 App（一键打开手机 app，未装则打开网页） */
+.app-shortcuts{margin:8px 16px 12px;display:flex;gap:6px;justify-content:space-between;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:4px 0}
+.app-shortcut{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;min-width:54px;background:#fff;border:1px solid rgba(245,158,11,.18);border-radius:14px;cursor:pointer;font-family:inherit;transition:all .15s;box-shadow:0 2px 6px rgba(15,23,42,.04)}
+.app-shortcut:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(245,158,11,.18);border-color:var(--accent)}
+.app-shortcut:active{transform:scale(.95)}
+.as-emoji{font-size:24px;line-height:1}
+.as-label{font-size:10px;color:var(--text2);font-weight:700}
+
 /* Dashboard upcoming reminder */
 .dash-upcoming{margin:10px 16px;padding:12px;background:var(--card);border-radius:12px;border:1px solid rgba(245,158,11,.2)}
 .dash-up-title{font-size:11px;color:var(--accent);font-weight:700;margin-bottom:6px}
@@ -301,6 +309,25 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
 .ks-form{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
 .ks-form select,.ks-form input{padding:6px 8px;background:var(--card2);border:1px solid rgba(15,23,42,.08);border-radius:6px;color:var(--text);font-family:inherit;font-size:12px}
 .ks-add{padding:6px 12px;background:var(--accent3);color:#000;border:none;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700}
+
+/* === 心愿单 / 想做的事 === */
+.wish-item{display:flex;gap:10px;padding:12px;background:linear-gradient(135deg,#f3e8ff 0%,#fff 60%);border:1px solid rgba(168,85,247,.2);border-radius:12px;margin-bottom:8px;box-shadow:0 2px 8px rgba(168,85,247,.08)}
+.wi-emoji{font-size:28px;line-height:1;flex-shrink:0;width:36px;text-align:center;padding-top:2px}
+.wi-body{flex:1;min-width:0}
+.wi-title{font-size:13px;font-weight:800;line-height:1.4;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.wi-cat{font-size:9px;background:rgba(168,85,247,.12);color:#7c3aed;padding:2px 6px;border-radius:5px;font-weight:700;letter-spacing:.3px}
+.wi-venue{font-size:11px;color:var(--text);margin-bottom:3px;font-weight:600}
+.wi-meta{font-size:10px;color:var(--text2);margin-bottom:4px}
+.wi-notes{font-size:11px;color:var(--text2);line-height:1.5;margin-bottom:6px;background:rgba(245,158,11,.06);border-left:2px solid rgba(245,158,11,.4);padding:4px 8px;border-radius:0 6px 6px 0}
+.wi-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;align-items:center}
+.wi-link{padding:4px 10px;border-radius:8px;background:var(--card2);color:var(--accent);font-size:11px;font-weight:600;text-decoration:none}
+.wi-link:hover{background:rgba(245,158,11,.15)}
+.wi-btn{padding:4px 10px;border-radius:8px;background:var(--card2);color:var(--text2);border:1px solid rgba(15,23,42,.06);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+.wi-btn:hover{background:#fff;color:var(--accent);border-color:var(--accent)}
+.wi-btn.del:hover{color:var(--danger);border-color:var(--danger)}
+
+.wish-add-btn{display:block;width:100%;margin-top:10px;padding:10px;background:linear-gradient(135deg,#f3e8ff,#fde2f3);border:1px dashed rgba(168,85,247,.4);border-radius:10px;color:#7c3aed;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;text-align:center;transition:all .15s}
+.wish-add-btn:hover{background:linear-gradient(135deg,#e9d5ff,#fbcfe8);transform:translateY(-1px);box-shadow:0 4px 12px rgba(168,85,247,.15)}
 
 /* === ME PAGE === */
 .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}

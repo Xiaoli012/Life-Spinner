@@ -20,6 +20,7 @@ const DEFAULT_STATE = {
   growthLog: [],        // [{date, type, refId, refName, minutes, note}]
   cookingLog: [],       // [{date, recipeId, rating, note}]
   cookingWishlist: [],  // [recipeId]
+  wishlist: [],         // 心愿单 [{id, emoji, title, venue, when, notes, url, cat, createdAt}]
   skillProgress: {},    // {skillId: {startedAt, weeksDone:[...]}}
   userDeals: [],        // 用户自己录入的折扣
   lastDashQuote: -1,

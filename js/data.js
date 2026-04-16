@@ -571,9 +571,22 @@ const QUOTES = [
   {text:'最大的浪漫，是把日子过成自己想要的样子'},
 ];
 
+// ==================== 一键打开外部 App ====================
+// 每条 {id, label, emoji, scheme, web}
+// scheme = 手机端 URL scheme（装了直接打开），web = 浏览器回退
+// 注意：浏览器无法检测 app 是否安装，会先尝试 scheme，~1.5s 内未跳走则降级到 web
+const APP_SHORTCUTS = [
+  {id:'strava',   label:'运动',  emoji:'🏃',  scheme:'strava://',                                      web:'https://www.strava.com'},
+  {id:'maps',     label:'地图',  emoji:'🗺️',  scheme:'comgooglemaps://?q=Dubai',                        web:'https://maps.google.com/?q=Dubai'},
+  {id:'careem',   label:'打车',  emoji:'🚕',  scheme:'careem://',                                      web:'https://www.careem.com'},
+  {id:'talabat',  label:'外卖',  emoji:'🍽️',  scheme:'talabat://',                                     web:'https://www.talabat.com/uae/dubai/restaurants'},
+  {id:'klook',    label:'景点',  emoji:'🎫',  scheme:'klook://',                                       web:'https://www.klook.com/en-AE/coureg/81-dubai-things-to-do/'},
+  {id:'whatsapp', label:'聊天',  emoji:'💬',  scheme:'whatsapp://send',                                web:'https://web.whatsapp.com'},
+];
+
 // 把数据挂到全局以便其他脚本使用
 Object.assign(window, {
-  PILLARS, DIMENSIONS, CATEGORIES, CAT_BY_ID,
+  PILLARS, DIMENSIONS, CATEGORIES, CAT_BY_ID, APP_SHORTCUTS,
   ACTIVITIES, ACT_BY_ID, ACT_BY_NAME, actsFor,
   DEAL_CATEGORIES, DEALS, FEATURED_DEALS,
   RECIPES, RECIPE_CATS,
