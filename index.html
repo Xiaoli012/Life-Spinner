@@ -14,29 +14,23 @@
 
 <!-- ========== PAGE 1: HOME DASHBOARD ========== -->
 <div class="page active" id="pageHome">
-  <div class="header">
-    <h1>🏡 今日</h1>
-    <div class="sub">规划生活 · 寻找灵感 · 走向意义</div>
+  <div class="dash-mini">
+    <span class="dm-greet" id="dashGreet">下午好 👋</span>
+    <span class="dm-meta">
+      <span class="dm-date" id="dashDate"></span>
+      <span class="dm-w" id="wMini">⏳ --°</span>
+    </span>
   </div>
-  <div class="dash-hero">
-    <div class="dash-date" id="dashDate"></div>
-    <div class="dash-greet" id="dashGreet">你好 👋</div>
-    <div class="dash-quote" id="dashQuote"></div>
-  </div>
-  <div class="weather-bar">
-    <span class="wi" id="wI">⏳</span>
-    <span class="temp" id="wT">--°</span>
-    <div class="wd" id="wD">加载天气...</div>
-    <span class="ww" id="wW"></span>
+  <div class="quote-card" id="quoteCard" onclick="reshuffleQuote()">
+    <div class="qc-mark">"</div>
+    <div class="qc-text" id="dashQuote">…</div>
+    <div class="qc-author" id="dashQuoteAuthor"></div>
   </div>
   <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
   <div class="pillars" id="pillarGrid"></div>
-  <div class="dims-label">今日的具体抓手 ↓</div>
-  <div class="dims" id="dimGrid"></div>
-  <div class="today-log" id="todayLog"></div>
   <div class="sec" id="todaySec">
-    <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent)">📅 今日安排</h3><span class="arrow open" id="todayList-arrow">▼</span></div>
-    <div class="sec-body show" id="todayList-body">
+    <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent);font-size:13px">📅 今日安排</h3><span class="arrow" id="todayList-arrow">▼</span></div>
+    <div class="sec-body" id="todayList-body">
       <div id="todayItems"></div>
     </div>
   </div>
@@ -81,11 +75,6 @@
 <!-- ========== PAGE 3: SPINNER (explore dimension) ========== -->
 <div class="page" id="pageSpinner">
   <div class="header"><h1>🎰 转盘</h1><div class="sub">选不出来时，让运气决定</div></div>
-  <div class="weather-bar">
-    <span class="wi" id="wI2">⏳</span>
-    <span class="temp" id="wT2">--°</span>
-    <div class="wd">JLT Cluster S</div>
-  </div>
   <div class="mode-toggle">
     <div class="mode-slider" id="mSlider"></div>
     <button class="mode-btn active" id="familyBtn" onclick="setMode('family')">👨‍👩‍👧‍👧 全家</button>
@@ -119,34 +108,7 @@
   <button class="deal-add-btn" onclick="openAddDealModal()">➕ 录入你看到的折扣 / 优惠码</button>
 </div>
 
-<!-- ========== PAGE 5: DISCOVER ========== -->
-<div class="page" id="pageDiscover">
-  <div class="header"><h1>🔍 发现</h1><div class="sub">好店 · 地图搜索 · 外部平台</div></div>
-  <div style="margin:0 16px">
-    <div class="sec">
-      <div class="sec-h" onclick="toggleSec('extUp')"><h3 style="color:var(--accent)">🔍 外部搜索</h3><span class="arrow" id="extUp-arrow">▼</span></div>
-      <div class="sec-body" id="extUp-body">
-        <div class="os-row">
-          <input id="osQuery" type="text" placeholder="搜任何活动/餐厅..." class="os-input" onkeydown="if(event.key==='Enter')openSearch()">
-          <button class="os-btn" onclick="openSearch()">🔍 搜</button>
-        </div>
-        <div class="os-row" style="gap:4px;flex-wrap:wrap;margin-top:6px">
-          <button class="os-quick" onclick="openSearchQ('Dubai family restaurant near JLT 2026')">🍽️ JLT餐厅</button>
-          <button class="os-quick" onclick="openSearchQ('Dubai kids activities new 2026')">👧 亲子活动</button>
-          <button class="os-quick" onclick="openSearchQ('Dubai weekend events this week')">🔥 本周活动</button>
-          <button class="os-quick" onclick="openSearchQ('best new cafe dessert Dubai 2026')">☕ 新咖啡</button>
-        </div>
-        <div class="ext-links" id="extLinks" style="margin-top:10px"></div>
-      </div>
-    </div>
-    <div class="cat-tabs" id="catTabs"></div>
-    <div class="dist-filter" id="distFilter"></div>
-    <div id="dcGrid"></div>
-    <div class="vc-updated" id="dcUpdated"></div>
-  </div>
-</div>
-
-<!-- ========== PAGE 6: ME ========== -->
+<!-- ========== PAGE 5: ME ========== -->
 <div class="page" id="pageMe">
   <div class="header"><h1>👤 我的</h1><div class="sub">个人信息 · 成长 · 烹饪 · 技能 · 管理</div></div>
 
@@ -171,7 +133,18 @@
 
   <div class="sec" id="sec-growth">
     <div class="sec-h" onclick="toggleSec('sec-growth')"><h3 style="color:var(--dim-grow)">🌱 成长记录</h3><span class="arrow" id="sec-growth-arrow">▼</span></div>
-    <div class="sec-body" id="sec-growth-body"><div id="growthContent"></div></div>
+    <div class="sec-body" id="sec-growth-body">
+      <div class="growth-quicklog">
+        <span class="gql-label">快速记录：</span>
+        <button class="gql-chip" onclick="quickLog('reading','读书')">📖 读书</button>
+        <button class="gql-chip" onclick="quickLog('podcast','听播客')">🎙️ 播客</button>
+        <button class="gql-chip" onclick="quickLog('exercise','运动')">🏃 运动</button>
+        <button class="gql-chip" onclick="quickLog('reflect','冥想/日记')">🧘 内省</button>
+        <button class="gql-chip" onclick="quickLog('cooking','做饭')">🍳 做饭</button>
+        <button class="gql-chip" onclick="quickLog('connect','家人时光')">💞 陪家人</button>
+      </div>
+      <div id="growthContent"></div>
+    </div>
   </div>
 
   <div class="sec" id="sec-cooking">

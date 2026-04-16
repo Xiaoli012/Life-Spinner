@@ -28,7 +28,6 @@ function showPage(id, btn) {
   if (id === 'pageHome')     renderDashboard();
   if (id === 'pagePlan')     { renderMonthlyPlan(); renderKidsSchedule(); }
   if (id === 'pageDeals')    renderDeals();
-  if (id === 'pageDiscover') initDiscover();
   if (id === 'pageMe')       renderMePage();
   updateFab();
 }
@@ -46,22 +45,40 @@ function renderDashboard() {
   const h = now.getHours();
   const greet = h < 6 ? '还没睡吗' : h < 11 ? '早上好' : h < 14 ? '中午好' : h < 18 ? '下午好' : h < 22 ? '晚上好' : '晚安';
   const name = state.profile.name || '';
-  const dateStr = now.toLocaleDateString('zh-CN', {month:'long',day:'numeric',weekday:'long'});
-
-  // 每日一句
-  let qi = state.lastDashQuote;
-  if (qi < 0 || qi >= QUOTES.length) qi = 0;
-  const quote = QUOTES[qi];
+  const dateStr = now.toLocaleDateString('zh-CN', {month:'long',day:'numeric',weekday:'short'});
 
   document.getElementById('dashGreet').textContent = `${greet}${name?'，'+name:''} 👋`;
-  document.getElementById('dashQuote').textContent = '"' + quote + '"';
   document.getElementById('dashDate').textContent = dateStr;
 
+  renderQuoteCard();
   renderPillarCards();
-  renderDimCards();
   renderUpcomingReminders();
-  renderTodayLog();
   renderTodayItems();
+}
+
+function renderQuoteCard() {
+  const state = Store.load();
+  let qi = state.lastDashQuote;
+  if (qi == null || qi < 0 || qi >= QUOTES.length) qi = Math.floor(Math.random() * QUOTES.length);
+  const q = QUOTES[qi];
+  const text = typeof q === 'string' ? q : (q?.text || '');
+  const author = typeof q === 'object' ? (q.author || '') : '';
+  const tEl = document.getElementById('dashQuote');
+  const aEl = document.getElementById('dashQuoteAuthor');
+  if (tEl) tEl.textContent = text;
+  if (aEl) aEl.textContent = author ? '— ' + author : '';
+}
+
+// 点击 quote 卡 → 立刻换一条
+function reshuffleQuote() {
+  const total = QUOTES.length;
+  if (total < 2) return;
+  Store.update(s => {
+    let next = Math.floor(Math.random() * total);
+    if (next === s.lastDashQuote) next = (next + 1) % total;
+    s.lastDashQuote = next;
+  });
+  renderQuoteCard();
 }
 
 // ==================== 三大支柱卡片（顶层身份） ====================
@@ -166,22 +183,17 @@ function renderPillarCards() {
         <span class="pillar-title">${escapeHtml(PILLARS.plan.label)}</span>
         <span class="pillar-arrow">›</span>
       </div>
-      <div class="pillar-desc">${escapeHtml(PILLARS.plan.desc)}</div>
-      <div class="pillar-line">${escapeHtml(planLine)}<span class="pillar-cta">${escapeHtml(PILLARS.plan.cta)} →</span></div>
+      <div class="pillar-line">${escapeHtml(planLine)}</div>
     </div>
 
     <div class="pillar-card inspire" onclick="showPage('pageSpinner',document.querySelectorAll('.nav-btn')[2])">
       <div class="pillar-head">
         <span class="pillar-emoji">${PILLARS.inspire.emoji}</span>
         <span class="pillar-title">${escapeHtml(PILLARS.inspire.label)}</span>
+        <button class="pillar-mini" onclick="event.stopPropagation();reshuffleInspire()" title="换一组">🎲</button>
         <span class="pillar-arrow">›</span>
       </div>
-      <div class="pillar-desc">${escapeHtml(PILLARS.inspire.desc)}</div>
       <div class="pillar-suggs">${eatRow}${playRow}${learnRow}</div>
-      <div class="pillar-foot">
-        <button class="pillar-mini" onclick="event.stopPropagation();reshuffleInspire()">🎲 换一组</button>
-        <span class="pillar-cta">${escapeHtml(PILLARS.inspire.cta)} →</span>
-      </div>
     </div>
 
     <div class="pillar-card meaning" onclick="openPillarMeaning()">
@@ -190,8 +202,7 @@ function renderPillarCards() {
         <span class="pillar-title">${escapeHtml(PILLARS.meaning.label)}</span>
         <span class="pillar-arrow">›</span>
       </div>
-      <div class="pillar-desc">${escapeHtml(PILLARS.meaning.desc)}</div>
-      <div class="pillar-line">${escapeHtml(meaningLine)}<span class="pillar-cta">${escapeHtml(PILLARS.meaning.cta)} →</span></div>
+      <div class="pillar-line">${escapeHtml(meaningLine)}</div>
     </div>
   `;
 }
@@ -255,73 +266,6 @@ function reshuffleInspire() {
   `;
 }
 
-function renderDimCards() {
-  const el = document.getElementById('dimGrid');
-  if (!el) return;
-  const state = Store.load();
-  const streak = growthStreak();
-  const dayName = todayDayName();
-
-  // 成长：今日一学（按日期轮换，每日固定）
-  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(),0,0)) / 86400000);
-  const learnItem = LEARNING_POOL[dayOfYear % LEARNING_POOL.length];
-  // 今天是否已打卡
-  const todayKey = todayISO();
-  const loggedToday = state.growthLog.some(l => l.date === todayKey && l.type === learnItem.type);
-
-  // 热爱：今日推荐菜
-  const recipeIdx = dayOfYear % RECIPES.length;
-  const recipe = RECIPES[recipeIdx];
-
-  // 关系：今日的家庭仪式或固定节奏
-  const todayFixed = state.weeklyPlan.find(p => p.day === dayName);
-  const connectText = todayFixed
-    ? `${todayFixed.emoji} ${todayFixed.act} · ${todayFixed.time}`
-    : '今天没安排，给家人一个拥抱';
-
-  // 探索：建议或转盘入口
-  const exploreText = '不知道做什么？<br>转一下运气';
-
-  el.innerHTML = `
-    <div class="dim-card grow" onclick="openDimDetail('grow')">
-      <div class="dim-icon">🌱</div>
-      <div class="dim-title">成长</div>
-      <div class="dim-sub">${escapeHtml(DIMENSIONS.grow.desc)}</div>
-      <div class="dim-act">
-        <span class="dim-act-emoji">${learnItem.emoji}</span>
-        <span>${escapeHtml(learnItem.name)}</span>
-      </div>
-      <div class="dim-sub muted" style="margin-top:4px">${escapeHtml(learnItem.desc||'')}</div>
-      ${streak > 0 ? `<div class="dim-streak">🔥 ${streak}天</div>` : ''}
-    </div>
-
-    <div class="dim-card passion" onclick="showPage('pageMe');setTimeout(()=>scrollTo(document.getElementById('sec-cooking')),300)">
-      <div class="dim-icon">🔥</div>
-      <div class="dim-title">热爱</div>
-      <div class="dim-sub">${escapeHtml(DIMENSIONS.passion.desc)}</div>
-      <div class="dim-act">
-        <span class="dim-act-emoji">${recipe.emoji}</span>
-        <span>今晚试试：${escapeHtml(recipe.name)}</span>
-      </div>
-      <div class="dim-sub muted" style="margin-top:4px">难度 ${'★'.repeat(recipe.difficulty)} · ${recipe.time}分钟</div>
-    </div>
-
-    <div class="dim-card connect" onclick="showPage('pagePlan')">
-      <div class="dim-icon">💞</div>
-      <div class="dim-title">关系</div>
-      <div class="dim-sub">${escapeHtml(DIMENSIONS.connect.desc)}</div>
-      <div class="dim-act">${connectText === '今天没安排，给家人一个拥抱' ? `<span class="dim-empty">${connectText}</span>` : escapeHtml(connectText)}</div>
-    </div>
-
-    <div class="dim-card explore" onclick="showPage('pageSpinner')">
-      <div class="dim-icon">✨</div>
-      <div class="dim-title">探索</div>
-      <div class="dim-sub">${escapeHtml(DIMENSIONS.explore.desc)}</div>
-      <div class="dim-act">${exploreText}</div>
-    </div>
-  `;
-}
-
 function renderUpcomingReminders() {
   const el = document.getElementById('dashUpcoming');
   if (!el) return;
@@ -344,28 +288,15 @@ function renderUpcomingReminders() {
   }).join('');
 }
 
-function renderTodayLog() {
-  const el = document.getElementById('todayLog');
-  if (!el) return;
-  // 快速打卡：读书/播客/运动/冥想/日记
-  el.innerHTML = `
-    <span class="today-log-label">快速记录：</span>
-    <button class="log-chip" onclick="quickLog('reading','读书')">📖 读书</button>
-    <button class="log-chip" onclick="quickLog('podcast','听播客')">🎙️ 播客</button>
-    <button class="log-chip" onclick="quickLog('exercise','运动')">🏃 运动</button>
-    <button class="log-chip" onclick="quickLog('reflect','冥想/日记')">🧘 内省</button>
-    <button class="log-chip" onclick="quickLog('cooking','做饭')">🍳 做饭</button>
-    <button class="log-chip" onclick="quickLog('connect','家人时光')">💞 陪家人</button>
-  `;
-}
-
 function quickLog(type, label) {
   const mins = prompt(`记录：${label}\n花了多少分钟？`, type === 'reading' ? 15 : 30);
   if (mins === null) return;
   const m = parseInt(mins) || 15;
   logGrowth({type, refId:type, refName:label, minutes:m, note:''});
   toast(`✅ 记录 ${label} ${m}分钟`);
-  renderDashboard();
+  // 触发当前可见页的局部刷新
+  if (document.getElementById('pageHome')?.classList.contains('active')) renderDashboard();
+  if (document.getElementById('pageMe')?.classList.contains('active')) renderMePage();
 }
 
 function renderTodayItems() {
@@ -434,17 +365,12 @@ async function fetchWeather() {
   try {
     const r = await fetch('https://api.open-meteo.com/v1/forecast?latitude=25.08&longitude=55.15&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=Asia/Dubai&forecast_days=7');
     const d = await r.json(); weather = d;
-    const c = d.current, t = Math.round(c.temperature_2m), h = c.relative_humidity_2m, w = Math.round(c.wind_speed_10m);
+    const c = d.current, t = Math.round(c.temperature_2m);
     const icons = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',51:'🌦️',55:'🌧️',61:'🌧️',80:'🌦️',95:'⛈️'};
-    const iconEl = document.getElementById('wI'), tEl = document.getElementById('wT'), dEl = document.getElementById('wD'), wnEl = document.getElementById('wW');
-    if (iconEl) iconEl.textContent = icons[c.weather_code] || '🌤️';
-    if (tEl) tEl.textContent = t + '°';
-    if (dEl) dEl.innerHTML = `湿度${h}% · 风${w}km/h<br>迪拜实时`;
-    if (wnEl) {
-      if(t>=35){wnEl.classList.add('show');wnEl.textContent=`🌡️${t}°C 较热`;}
-      else if(t>=30){wnEl.classList.add('show');wnEl.textContent=`☀️${t}°C 温暖`;}
-    }
-  } catch(e) { const dEl = document.getElementById('wD'); if (dEl) dEl.textContent='天气加载失败'; }
+    const ico = icons[c.weather_code] || '🌤️';
+    const mini = document.getElementById('wMini');
+    if (mini) mini.textContent = `${ico} ${t}°`;
+  } catch(e) { const m = document.getElementById('wMini'); if (m) m.textContent='—'; }
 }
 
 // ==================== SPINNER ====================
@@ -1151,89 +1077,6 @@ function deleteUserDeal(id) {
   renderDeals();
 }
 
-// ==================== DISCOVER ====================
-function initDiscover() {
-  if (document.getElementById('catTabs').innerHTML) return;
-  renderCatTabs();
-  renderDistFilter();
-  renderDiscover();
-  renderExtLinks();
-}
-let _dcCat = 'jlt_food';
-let _dcDist = 'all';
-function renderCatTabs() {
-  const el = document.getElementById('catTabs');
-  if (!el || typeof VENUES === 'undefined') return;
-  el.innerHTML = Object.entries(VENUES).map(([k,v]) =>
-    `<div class="cat-tab ${_dcCat===k?'active':''}" onclick="setDcCat('${k}')">${escapeHtml(v.label)}</div>`
-  ).join('');
-}
-function setDcCat(k) { _dcCat = k; renderCatTabs(); renderDiscover(); }
-function renderDistFilter() {
-  const el = document.getElementById('distFilter');
-  if (!el) return;
-  const opts = [['all','全部'],[0,'JLT内'],[1,'10min'],[2,'20min'],[3,'30min+'],[4,'远']];
-  el.innerHTML = opts.map(([v,l]) => `<button class="dist-btn ${String(_dcDist)===String(v)?'active':''}" onclick="setDcDist('${v}')">${escapeHtml(l)}</button>`).join('');
-}
-function setDcDist(v) { _dcDist = v === 'all' ? 'all' : parseInt(v); renderDistFilter(); renderDiscover(); }
-function renderDiscover() {
-  const grid = document.getElementById('dcGrid');
-  if (!grid || typeof VENUES === 'undefined') return;
-  const items = (VENUES[_dcCat]?.items || []).filter(v => {
-    if (_dcDist === 'all') return true;
-    return v.dist === _dcDist;
-  });
-  if (!items.length) { grid.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text2);font-size:12px">此分类此距离暂无</div>'; return; }
-  grid.innerHTML = items.map(v => {
-    const r = v.rating ? '⭐'.repeat(Math.round(v.rating)) : '';
-    const tags = (v.tags||[]).map(t => `<span class="vc-tag">${escapeHtml(t)}</span>`).join('');
-    const links = [];
-    if (v.mapQ) links.push(`<a class="vc-lk" href="https://www.google.com/maps/search/${encodeURIComponent(v.mapQ)}" target="_blank">📍 地图</a>`);
-    if (v.phone) links.push(`<a class="vc-lk" href="tel:${escAttr(v.phone)}">📞 ${escapeHtml(v.phone)}</a>`);
-    if (v.bookUrl) links.push(`<a class="vc-lk" href="${escAttr(v.bookUrl)}" target="_blank">🌐 官网</a>`);
-    if (v.fazaa) links.push(`<a class="vc-lk fazaa-link" href="https://www.fazaa.ae/search?language=en&keyword=${encodeURIComponent(v.name)}" target="_blank">🏷️ ${escapeHtml(v.fazaa)}</a>`);
-    return `<div class="vc">
-      <div class="vc-h">
-        <div class="vc-e">${escapeHtml(v.emoji)}</div>
-        <div class="vc-n">${escapeHtml(v.name)}</div>
-        <div class="vc-r">${r}</div>
-      </div>
-      <div class="vc-d">${escapeHtml(v.desc||'')}</div>
-      <div class="vc-m">
-        ${v.addr?`<span>📍 ${escapeHtml(v.addr)}</span>`:''}
-        ${v.hours?`<span>🕐 ${escapeHtml(v.hours)}</span>`:''}
-        ${v.cost?`<span>💰 ${escapeHtml(v.cost)}</span>`:''}
-      </div>
-      <div class="vc-t">${tags}</div>
-      <div class="vc-links">${links.join('')}</div>
-      ${v.tip?`<div style="font-size:11px;color:var(--text2);margin-top:6px">💡 ${escapeHtml(v.tip)}</div>`:''}
-    </div>`;
-  }).join('');
-  const u = document.getElementById('dcUpdated');
-  if (u && typeof DISCOVER_UPDATED !== 'undefined') u.textContent = '最后更新: ' + DISCOVER_UPDATED;
-}
-function renderExtLinks() {
-  const el = document.getElementById('extLinks');
-  if (!el) return;
-  const sources = [
-    {name:'TimeOut Dubai', url:'https://www.timeoutdubai.com/things-to-do', icon:'📰'},
-    {name:'Visit Dubai', url:'https://www.visitdubai.com/en/things-to-do', icon:'🏙️'},
-    {name:'WhatsOn', url:'https://whatson.ae/', icon:'📅'},
-    {name:'Platinumlist', url:'https://dubai.platinumlist.net/', icon:'🎫'},
-    {name:'Google Maps', url:'https://www.google.com/maps/search/things+to+do+near+JLT', icon:'📍'},
-    {name:'TripAdvisor', url:'https://www.tripadvisor.com/Attractions-g295424-Activities-Dubai.html', icon:'⭐'},
-  ];
-  el.innerHTML = sources.map(s => `<a class="ext-link" href="${escAttr(s.url)}" target="_blank">${escapeHtml(s.icon)} ${escapeHtml(s.name)}</a>`).join('');
-}
-function openSearch() {
-  const q = document.getElementById('osQuery').value.trim();
-  if (!q) return;
-  window.open('https://www.google.com/search?q=' + encodeURIComponent(q + ' Dubai 2026'), '_blank');
-}
-function openSearchQ(q) {
-  window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
-}
-
 // ==================== ME PAGE ====================
 function renderMePage() {
   renderProfile();
@@ -1350,19 +1193,14 @@ function renderGrowthSection() {
   const rep = growthReport(growthScope);
   const streak = growthStreak();
 
-  let html = '<div style="font-size:11px;color:var(--text2);margin-bottom:6px">💡 每天做一件让自己成长的小事，积累起来就是人生</div>';
+  // 「快速记录」chips 已经由 index.html 的 .growth-quicklog 静态渲染，这里不再重复
 
-  // 快速打卡
-  html += '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">';
-  ['reading','podcast','exercise','reflect','cooking','connect'].forEach(t => {
-    html += `<button class="log-chip" onclick="quickLog('${t}','${TYPE_LABELS[t].replace(/^\S+ /,'')}')">${TYPE_LABELS[t]}</button>`;
-  });
-  html += '</div>';
+  let html = '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">💡 每天做一件让自己成长的小事，积累起来就是人生</div>';
 
-  // 报告切换
+  // 报告切换（用 deal-tab 样式，原 cat-tab 已删）
   html += '<div style="display:flex;gap:4px;margin-bottom:8px">';
   [['week','本周'],['month','本月'],['all','累计']].forEach(([v,l]) => {
-    html += `<button class="cat-tab ${growthScope===v?'active':''}" onclick="setGrowthScope('${v}')">${l}</button>`;
+    html += `<button class="deal-tab ${growthScope===v?'active':''}" onclick="setGrowthScope('${v}')">${l}</button>`;
   });
   html += '</div>';
 
@@ -1382,7 +1220,7 @@ function renderGrowthSection() {
       const w = Math.round(n/max*100);
       html += `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;font-size:11px">
         <span style="min-width:80px">${escapeHtml(TYPE_LABELS[t] || t)}</span>
-        <div style="flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden"><div style="height:100%;width:${w}%;background:linear-gradient(90deg,var(--dim-grow),var(--accent2));border-radius:3px"></div></div>
+        <div style="flex:1;height:6px;background:rgba(15,23,42,.06);border-radius:3px;overflow:hidden"><div style="height:100%;width:${w}%;background:linear-gradient(90deg,var(--dim-grow),var(--accent2));border-radius:3px"></div></div>
         <span style="min-width:26px;text-align:right;font-weight:700">${n}</span>
       </div>`;
     });
@@ -1662,7 +1500,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // 导出所有全局函数（便于 HTML 内 onclick 调用）
 Object.assign(window, {
   showPage, toggleSec,
-  renderDashboard, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
+  renderDashboard, renderQuoteCard, reshuffleQuote, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
   setMode, setCatFilter, spin,
   changeStars, changeStatus, saveUserNote, confirmVisit,
   renderMonthlyPlan, generateMonthlyPlan,
@@ -1671,7 +1509,6 @@ Object.assign(window, {
   addKidsClass, delKidsClass,
   renderDeals, renderFeaturedDeals, setDealFilter,
   openAddDealModal, closeAddDealModal, saveUserDeal, deleteUserDeal,
-  initDiscover, setDcCat, setDcDist, openSearch, openSearchQ,
   renderMePage, saveProfile, removeVisitedAt, unsetStatus,
   setRecipeFilter, logRecipeMade, toggleWishRecipe, toggleSkillWeek,
   setGrowthScope,
