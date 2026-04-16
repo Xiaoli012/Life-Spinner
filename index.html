@@ -4,11 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0f0f1a">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#fef9f3">
 <link rel="manifest" href="manifest.json">
 <link rel="stylesheet" href="css/app.css">
-<title>Life Spinner — 充实生活</title>
+<title>充实生活 — 规划 · 灵感 · 意义</title>
 </head>
 <body>
 
@@ -16,7 +16,7 @@
 <div class="page active" id="pageHome">
   <div class="header">
     <h1>🏡 今日</h1>
-    <div class="sub">让每一天都值得过</div>
+    <div class="sub">规划生活 · 寻找灵感 · 走向意义</div>
   </div>
   <div class="dash-hero">
     <div class="dash-date" id="dashDate"></div>
@@ -30,6 +30,8 @@
     <span class="ww" id="wW"></span>
   </div>
   <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
+  <div class="pillars" id="pillarGrid"></div>
+  <div class="dims-label">今日的具体抓手 ↓</div>
   <div class="dims" id="dimGrid"></div>
   <div class="today-log" id="todayLog"></div>
   <div class="sec" id="todaySec">
@@ -106,9 +108,12 @@
 <div class="page" id="pageDeals">
   <div class="header"><h1>🏷️ 优惠</h1><div class="sub">折扣 · 会员卡 · 促销集合</div></div>
   <div class="deals-hero">
-    <h2>全网全平台折扣一览</h2>
-    <p>UAE 常用的会员卡/团购/餐饮/景点折扣入口 · 按分类查看 · 也能自己录入看到的优惠</p>
+    <h2>🔥 本周精选具体优惠</h2>
+    <p>每条都是「具体哪家店/景点的什么优惠」，点「去看」直接跳到搜索结果页 · 过期自动隐藏</p>
   </div>
+  <div class="featured-deals" id="featuredDeals"></div>
+
+  <div class="deals-section-h">📚 全网渠道汇总（会员卡 / 团购 / 平台）</div>
   <div class="deal-tabs" id="dealTabs"></div>
   <div class="deal-grid" id="dealGrid"></div>
   <button class="deal-add-btn" onclick="openAddDealModal()">➕ 录入你看到的折扣 / 优惠码</button>

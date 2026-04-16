@@ -3,7 +3,15 @@
 // 每条都有稳定 id；转盘/发现/Dashboard 共用
 // ============================================================
 
-// ==================== 四大人生维度 ====================
+// ==================== 三大人生支柱（顶层定位） ====================
+// 这个 App 的本质：帮你 规划生活 · 寻找灵感 · 走向意义
+const PILLARS = {
+  plan:    {id:'plan',    label:'规划', emoji:'📅', color:'var(--accent3)', desc:'让生活有方向，不再被日子推着走',     cta:'打开月计划', page:'pagePlan'},
+  inspire: {id:'inspire', label:'灵感', emoji:'✨', color:'var(--accent)',  desc:'不知道做什么时，让运气和清单帮你',   cta:'转一下',     page:'pageSpinner'},
+  meaning: {id:'meaning', label:'意义', emoji:'🌱', color:'var(--accent2)', desc:'把时间花在让自己变好的事上',         cta:'看成长',     page:'pageMe'}
+};
+
+// ==================== 四大人生维度（每日具体抓手） ====================
 const DIMENSIONS = {
   grow:    {id:'grow',    label:'成长', emoji:'🌱', color:'var(--dim-grow)',    desc:'读书 · 学习 · 思考'},
   passion: {id:'passion', label:'热爱', emoji:'🔥', color:'var(--dim-passion)', desc:'烹饪 · 运动 · 创作'},
@@ -140,6 +148,131 @@ const ACT_BY_NAME = Object.fromEntries(ACTIVITIES.map(a=>[a.name,a])); // for mi
 function actsFor(audience) {
   return ACTIVITIES.filter(a => a.audiences.includes(audience));
 }
+
+// ==================== 本周精选具体优惠 ====================
+// 与下方"渠道汇总"DEALS 不同，这里每条是「具体哪家店/景点的什么优惠」，
+// 带"去看"深链直接跳该平台的搜索结果页，找得到才真有用。
+// 维护方式：手动每周/每月更新一次；过期 (expiresAt) 自动隐藏。
+// `evergreen:true` 表示这是常年回收的优惠，不必非要带 expiresAt。
+const FEATURED_DEALS = [
+  // —— 餐饮：Brunch / 米其林 / 网红 ——
+  {id:'fd-bla-bla-brunch', emoji:'🥂', cat:'dining', evergreen:true,
+   title:'Bla Bla JBR · Friday Brunch BOGO',
+   venue:'Bla Bla Beach Club, JBR',
+   desc:'周五 Brunch 通过 Groupon 经常出 2 人套票 5-6 折，含无限酒水',
+   savings:'~50%', source:'Groupon',
+   url:'https://www.groupon.ae/coupons/dubayy?query=Bla+Bla+brunch'},
+
+  {id:'fd-atmosphere-bogo', emoji:'🌃', cat:'dining', evergreen:true,
+   title:'Atmosphere · Burj Khalifa 122F',
+   venue:'Atmosphere Restaurant',
+   desc:'通过 Entertainer App 主菜买一送一 · 适合纪念日/求婚',
+   savings:'BOGO 主菜', source:'Entertainer',
+   url:'https://www.theentertainerme.com/dubai/restaurants?search=atmosphere'},
+
+  {id:'fd-haidilao-fazaa', emoji:'🍲', cat:'dining', evergreen:true,
+   title:'海底捞 Dubai Mall · Fazaa 9 折',
+   venue:'Haidilao @ Chinatown, Dubai Mall',
+   desc:'Fazaa 卡常年 9-10% 折扣 · 等位免费小食/美甲/饮料',
+   savings:'~10%', source:'Fazaa',
+   url:'https://www.fazaa.ae/search?language=en&keyword=Haidilao'},
+
+  {id:'fd-hakkasan-yum-cha', emoji:'🥟', cat:'dining', expiresAt:'2026-05-31',
+   title:'Hakkasan Dubai · Yum Cha Brunch',
+   venue:'Hakkasan @ Atlantis The Palm',
+   desc:'周五/周六 Yum Cha brunch 套餐 295 AED 起，含点心+主菜',
+   savings:'套餐价 295 AED', source:'官方/Reserve Out',
+   url:'https://www.reserveout.com/en/dubai/restaurant/hakkasan-dubai'},
+
+  {id:'fd-coya-zomato', emoji:'🍷', cat:'dining', evergreen:true,
+   title:'COYA Dubai · Zomato Pro 8 折',
+   venue:'COYA @ Four Seasons DIFC / Restaurant Village',
+   desc:'秘鲁高端餐厅，Zomato Pro 会员 8 折，周一-周三全菜单适用',
+   savings:'~20%', source:'Zomato Pro',
+   url:'https://www.zomato.com/dubai/coya-difc'},
+
+  // —— 景点门票 ——
+  {id:'fd-burj-klook', emoji:'🏙️', cat:'tickets', evergreen:true,
+   title:'Burj Khalifa At The Top · Klook 8 折',
+   venue:'Burj Khalifa Levels 124+125',
+   desc:'Klook 比现场便宜 15-20%，含 skip-the-line 快速通道',
+   savings:'~20%', source:'Klook',
+   url:'https://www.klook.com/en-AE/search/result/?keyword=burj+khalifa'},
+
+  {id:'fd-aquarium-combo', emoji:'🐠', cat:'tickets', evergreen:true,
+   title:'Dubai Aquarium · Klook 套票',
+   venue:'Dubai Aquarium & Underwater Zoo',
+   desc:'水族馆 + 企鹅互动 + VR Zoo 套票，比单买省 30%',
+   savings:'~30%', source:'Klook',
+   url:'https://www.klook.com/en-AE/search/result/?keyword=dubai+aquarium'},
+
+  {id:'fd-img-kidzapp', emoji:'🎢', cat:'kids', evergreen:true,
+   title:'IMG Worlds · Kidzapp 8 折',
+   venue:'IMG Worlds of Adventure',
+   desc:'Kidzapp 会员预订主题乐园+水上乐园，家庭票最划算',
+   savings:'~20%', source:'Kidzapp',
+   url:'https://kidzapp.com/search?q=img+worlds'},
+
+  {id:'fd-wildwadi-twilight', emoji:'🌅', cat:'tickets', evergreen:true,
+   title:'Wild Wadi · 黄昏票 (3pm 后)',
+   venue:'Wild Wadi Waterpark',
+   desc:'下午 3 点后入场半价 (~150 AED)，正好凉快下来玩到关门',
+   savings:'~50% 后半天', source:'官方',
+   url:'https://www.wildwadi.com/tickets'},
+
+  {id:'fd-skidubai-kids', emoji:'⛄', cat:'kids', evergreen:true,
+   title:'Ski Dubai · Kids Snow Park (季节促)',
+   venue:'Ski Dubai @ Mall of the Emirates',
+   desc:'夏季常推 12 岁以下儿童免费 / 第二人半价，关注官网 Promo 页',
+   savings:'儿童免费窗口', source:'官方',
+   url:'https://www.skidxb.com/promotions'},
+
+  // —— Spa / 美容 ——
+  {id:'fd-spa-couple-groupon', emoji:'💆', cat:'dining', evergreen:true,
+   title:'JLT/Marina Spa 双人套餐 4-5 折',
+   venue:'多家酒店 Spa',
+   desc:'Groupon 长期有 60-90 分钟双人按摩+足浴套票，原价的 40-50%',
+   savings:'40-50%', source:'Groupon',
+   url:'https://www.groupon.ae/coupons/dubayy/health-and-beauty?query=couple+spa'},
+
+  // —— 酒店/Staycation ——
+  {id:'fd-atlantis-resident', emoji:'🏝️', cat:'travel', evergreen:true,
+   title:'Atlantis The Palm · Resident Rate',
+   venue:'Atlantis The Palm',
+   desc:'UAE 居民身份证预订工作日房价比游客低 30-40%，含 Aquaventure',
+   savings:'~35%', source:'官方',
+   url:'https://www.atlantis.com/atlantis-the-palm/special-offers'},
+
+  {id:'fd-hatta-staycation', emoji:'🏔️', cat:'travel', evergreen:true,
+   title:'Hatta Resorts · 周中房价',
+   venue:'Hatta Damani Lodges / Hatta Wadi Hub',
+   desc:'周日-周三入住价格不到周末一半，含皮划艇/徒步免费体验',
+   savings:'~50%', source:'官方',
+   url:'https://visithatta.com/stay'},
+
+  // —— 购物/超市 ——
+  {id:'fd-carrefour-thursday', emoji:'🛒', cat:'shopping', evergreen:true,
+   title:'Carrefour · 周四特价刊',
+   venue:'Carrefour 全 UAE 门店',
+   desc:'每周四 0 点刷新特价，肉/菜/乳制品/零食循环 30-50% 折',
+   savings:'30-50%', source:'Carrefour',
+   url:'https://www.carrefouruae.com/mafuae/en/c/promotions'},
+
+  {id:'fd-noon-yellow-fri', emoji:'📦', cat:'shopping', evergreen:true,
+   title:'Noon Yellow Friday · 月度大促',
+   venue:'Noon.com',
+   desc:'每月大促配合信用卡折扣码，电子产品/家居骨折价',
+   savings:'5 折起', source:'Noon',
+   url:'https://www.noon.com/uae-en/sale/'},
+
+  // —— 外卖/订阅 ——
+  {id:'fd-talabat-first', emoji:'🛵', cat:'dining', evergreen:true,
+   title:'Talabat 新用户首单 -50%',
+   venue:'Talabat 全平台',
+   desc:'新账号首单立减 50% (上限 30 AED)，每月新人福利',
+   savings:'最高 30 AED', source:'Talabat',
+   url:'https://www.talabat.com/uae/dubai/restaurants'},
+];
 
 // ==================== 优惠专区 ====================
 // 类型：membership(会员卡)/groupbuy(团购)/dining(餐饮)/tickets(景点票务)/shopping(购物)/kids(亲子)/travel(旅行)/bank(信用卡)
@@ -352,24 +485,44 @@ const WEEKDAYS = ['一','二','三','四'];
 function isWeekday(day){ return WEEKDAYS.includes(day); }
 
 // 激励性问候语（Dashboard 每日变换）
+// 三个方向：规划 / 灵感 / 意义
 const QUOTES = [
+  // —— 意义向 ——
   '真正的丰盛，不是塞满时间，而是把时间放在对的事上',
   '日复一日的小事，决定了你是谁',
   '记录，是给未来的自己留的信',
   '让今天比昨天多一点点意义',
-  '刻意练习，积少成多',
   '把时间给爱的人和爱的事',
-  '学一点新东西，哪怕只是一个词',
   '和孩子一起做的事，十年后还在记得',
-  '慢慢来，比较快',
+  '有意义的人生，不是没有痛苦，而是值得为之痛苦',
+  '人生不是要过得快，是要过得深',
+  '你最珍贵的不是经历，是你在经历里成为的那个人',
+  // —— 规划向 ——
+  '方向比速度重要，不慌不忙的人，活得最快',
   '你不是没时间，是没排序',
+  '提前一周想清楚周末，比临时刷手机找点子更踏实',
+  '一个能被规划的生活，才有自由可言',
+  '把未来想象一下，今天就会更清醒',
+  '今天的安排，是对昨天思考的兑现',
+  // —— 灵感向 ——
+  '无聊是创造的母亲，给空白留点位置',
+  '选不出来的时候，让运气替你做决定',
+  '换条路走走，世界就大了一圈',
+  '灵感不会等你，它只在你出门的时候出现',
+  '今天试一件没做过的小事',
+  // —— 行动向 ——
+  '刻意练习，积少成多',
+  '学一点新东西，哪怕只是一个词',
+  '慢慢来，比较快',
+  '完成胜过完美',
+  '先做五分钟，再决定要不要继续',
 ];
 
 // 把数据挂到全局以便其他脚本使用
 Object.assign(window, {
-  DIMENSIONS, CATEGORIES, CAT_BY_ID,
+  PILLARS, DIMENSIONS, CATEGORIES, CAT_BY_ID,
   ACTIVITIES, ACT_BY_ID, ACT_BY_NAME, actsFor,
-  DEAL_CATEGORIES, DEALS,
+  DEAL_CATEGORIES, DEALS, FEATURED_DEALS,
   RECIPES, RECIPE_CATS,
   SKILLS, LEARNING_POOL,
   DEFAULT_PLANNER, DAYS, WEEKDAYS, isWeekday, QUOTES, slugify

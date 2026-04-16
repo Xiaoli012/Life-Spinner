@@ -1,11 +1,11 @@
 {
-  "name": "Life Spinner - 生活转盘",
-  "short_name": "生活转盘",
-  "description": "随时转一转，生活不无聊 - 活动转盘 + 智能排期 + Fazaa优惠",
+  "name": "充实生活 — 规划 · 灵感 · 意义",
+  "short_name": "充实生活",
+  "description": "规划自己的生活，给自己灵感，过一个有意义的人生",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#0f0f1a",
-  "theme_color": "#0f0f1a",
+  "background_color": "#fef9f3",
+  "theme_color": "#fef9f3",
   "orientation": "portrait",
   "icons": [
     {

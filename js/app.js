@@ -57,10 +57,202 @@ function renderDashboard() {
   document.getElementById('dashQuote').textContent = '"' + quote + '"';
   document.getElementById('dashDate').textContent = dateStr;
 
+  renderPillarCards();
   renderDimCards();
   renderUpcomingReminders();
   renderTodayLog();
   renderTodayItems();
+}
+
+// ==================== 三大支柱卡片（顶层身份） ====================
+
+// —— 灵感卡的具体建议生成 —— //
+// 把多个 VENUES 分类合并成一个池子，daily-rotate 出一个具体地点
+function _venuePool(catKeys) {
+  if (typeof VENUES === 'undefined') return [];
+  const pool = [];
+  catKeys.forEach(k => { if (VENUES[k] && VENUES[k].items) pool.push(...VENUES[k].items); });
+  return pool;
+}
+// 「今晚吃」候选：JLT 优先 + Marina/JBR + 米其林中餐 + 平价 + 亚洲 + 网红咖啡
+const FOOD_VENUE_KEYS = ['jlt_food','marina_food','michelin_chinese','budget_food','asian_food','cafes'];
+// 「今天玩」候选：运动/亲子/自然/夜生活
+const PLAY_VENUE_KEYS = ['sports','kids_venues','nature','nightlife','daytrips'];
+
+// 根据 dayOfYear + 偏移量挑一条；不存在时回退到 ACTIVITIES
+function pickDailyEat(dayOfYear) {
+  const pool = _venuePool(FOOD_VENUE_KEYS);
+  if (!pool.length) return null;
+  return pool[dayOfYear % pool.length];
+}
+function pickDailyPlay(dayOfYear) {
+  const pool = _venuePool(PLAY_VENUE_KEYS);
+  if (pool.length) return pool[(dayOfYear * 7) % pool.length]; // 错位避免和 eat 同步
+  // 回退：从 ACTIVITIES 里选一条
+  return ACTIVITIES[(dayOfYear * 3) % ACTIVITIES.length];
+}
+
+function _shortLoc(addr) {
+  if (!addr) return '';
+  const parts = String(addr).split(',').map(s => s.trim()).filter(Boolean);
+  // 取最后一两段（区/城市）；长则截
+  const tail = parts.slice(-2).join(', ');
+  return tail.length > 28 ? tail.slice(0, 26) + '…' : tail;
+}
+
+function renderPillarCards() {
+  const el = document.getElementById('pillarGrid');
+  if (!el) return;
+  const state = Store.load();
+
+  // ========== 规划：本周固定 + 本月计划状态 ==========
+  const weeklyCount = (state.weeklyPlan || []).length;
+  const mp = state.monthlyPlan;
+  const hasMp = !!(mp && mp.weeks && mp.weeks.length);
+  const planLine = hasMp
+    ? `本周节奏 ${weeklyCount} 项 · 月计划已生成`
+    : (weeklyCount ? `本周节奏 ${weeklyCount} 项 · 还没生成月计划` : '还没安排，去定个节奏');
+
+  // ========== 灵感：3 条具体建议 ==========
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+  const eat = pickDailyEat(dayOfYear);
+  const play = pickDailyPlay(dayOfYear);
+  const learnItem = LEARNING_POOL[dayOfYear % LEARNING_POOL.length];
+
+  // 缓存到 window 方便点击时复用（避免再算一次/不一致）
+  window._dailyInspire = {eat, play, learnItem};
+
+  const eatRow = eat ? `
+    <div class="pillar-sugg" onclick="event.stopPropagation();openDailyEat()">
+      <span class="ps-tag">🍽️ 今晚吃</span>
+      <span class="ps-emoji">${escapeHtml(eat.emoji||'🍽️')}</span>
+      <span class="ps-name">${escapeHtml(eat.name)}</span>
+      <span class="ps-meta">${escapeHtml(_shortLoc(eat.addr))}${eat.cost?' · '+escapeHtml(eat.cost):''}</span>
+      <span class="ps-go">›</span>
+    </div>` : '';
+
+  const playName = play ? (play.name) : '';
+  const playLoc  = play ? (play.info?.loc || _shortLoc(play.addr || play.info?.addr)) : '';
+  const playCost = play ? (play.info?.cost || play.cost) : '';
+  const playRow = play ? `
+    <div class="pillar-sugg" onclick="event.stopPropagation();openDailyPlay()">
+      <span class="ps-tag">🎯 今天玩</span>
+      <span class="ps-emoji">${escapeHtml(play.emoji||'🎯')}</span>
+      <span class="ps-name">${escapeHtml(playName)}</span>
+      <span class="ps-meta">${escapeHtml(playLoc||'')}${playCost?' · '+escapeHtml(playCost):''}</span>
+      <span class="ps-go">›</span>
+    </div>` : '';
+
+  const learnRow = `
+    <div class="pillar-sugg" onclick="event.stopPropagation();quickLog('${escAttr(learnItem.type)}','${escAttr(learnItem.name)}')">
+      <span class="ps-tag">📚 学一点</span>
+      <span class="ps-emoji">${escapeHtml(learnItem.emoji)}</span>
+      <span class="ps-name">${escapeHtml(learnItem.name)}</span>
+      <span class="ps-meta">${escapeHtml(learnItem.desc||'')}</span>
+      <span class="ps-go">✓</span>
+    </div>`;
+
+  // ========== 意义：连续打卡 + 本周记录次数 ==========
+  const streak = growthStreak();
+  const wk = growthReport('week');
+  const meaningLine = streak > 0
+    ? `🔥 ${streak} 天连续 · 本周 ${wk.count} 次记录`
+    : (wk.count > 0 ? `本周已记录 ${wk.count} 次 · 继续呀` : '今天迈出第一步');
+
+  el.innerHTML = `
+    <div class="pillar-card plan" onclick="showPage('pagePlan',document.querySelectorAll('.nav-btn')[1])">
+      <div class="pillar-head">
+        <span class="pillar-emoji">${PILLARS.plan.emoji}</span>
+        <span class="pillar-title">${escapeHtml(PILLARS.plan.label)}</span>
+        <span class="pillar-arrow">›</span>
+      </div>
+      <div class="pillar-desc">${escapeHtml(PILLARS.plan.desc)}</div>
+      <div class="pillar-line">${escapeHtml(planLine)}<span class="pillar-cta">${escapeHtml(PILLARS.plan.cta)} →</span></div>
+    </div>
+
+    <div class="pillar-card inspire" onclick="showPage('pageSpinner',document.querySelectorAll('.nav-btn')[2])">
+      <div class="pillar-head">
+        <span class="pillar-emoji">${PILLARS.inspire.emoji}</span>
+        <span class="pillar-title">${escapeHtml(PILLARS.inspire.label)}</span>
+        <span class="pillar-arrow">›</span>
+      </div>
+      <div class="pillar-desc">${escapeHtml(PILLARS.inspire.desc)}</div>
+      <div class="pillar-suggs">${eatRow}${playRow}${learnRow}</div>
+      <div class="pillar-foot">
+        <button class="pillar-mini" onclick="event.stopPropagation();reshuffleInspire()">🎲 换一组</button>
+        <span class="pillar-cta">${escapeHtml(PILLARS.inspire.cta)} →</span>
+      </div>
+    </div>
+
+    <div class="pillar-card meaning" onclick="openPillarMeaning()">
+      <div class="pillar-head">
+        <span class="pillar-emoji">${PILLARS.meaning.emoji}</span>
+        <span class="pillar-title">${escapeHtml(PILLARS.meaning.label)}</span>
+        <span class="pillar-arrow">›</span>
+      </div>
+      <div class="pillar-desc">${escapeHtml(PILLARS.meaning.desc)}</div>
+      <div class="pillar-line">${escapeHtml(meaningLine)}<span class="pillar-cta">${escapeHtml(PILLARS.meaning.cta)} →</span></div>
+    </div>
+  `;
+}
+
+function openPillarMeaning() {
+  // 跳到「我的」并展开成长区（复用 openDimDetail 的逻辑）
+  openDimDetail('grow');
+}
+
+// 灵感卡 · 行点击：打开餐厅/活动地图，或快速打卡
+function openDailyEat() {
+  const v = window._dailyInspire?.eat;
+  if (!v) return;
+  const q = v.mapQ || encodeURIComponent(v.name + ' Dubai');
+  window.open(`https://www.google.com/maps/search/${q}`, '_blank');
+}
+function openDailyPlay() {
+  const v = window._dailyInspire?.play;
+  if (!v) return;
+  const q = v.mapQ || v.info?.mapQ || encodeURIComponent(v.name + ' Dubai');
+  window.open(`https://www.google.com/maps/search/${q}`, '_blank');
+}
+// 「换一组」：用随机偏移重新挑一组
+function reshuffleInspire() {
+  const el = document.getElementById('pillarGrid');
+  if (!el) return;
+  // 临时覆盖 dayOfYear 算法 — 直接重写卡片内容
+  const offset = Math.floor(Math.random() * 9999);
+  const eat = (function(){ const p = _venuePool(FOOD_VENUE_KEYS); return p.length? p[(offset*13)%p.length]:null; })();
+  const play = (function(){ const p = _venuePool(PLAY_VENUE_KEYS); return p.length? p[(offset*7)%p.length] : ACTIVITIES[(offset*3)%ACTIVITIES.length]; })();
+  const learnItem = LEARNING_POOL[(offset*5) % LEARNING_POOL.length];
+  window._dailyInspire = {eat, play, learnItem};
+  // 局部刷新灵感卡的内容部分
+  const card = el.querySelector('.pillar-card.inspire .pillar-suggs');
+  if (!card) { renderPillarCards(); return; }
+  const playName = play?.name || '';
+  const playLoc  = play ? (play.info?.loc || _shortLoc(play.addr || play.info?.addr)) : '';
+  const playCost = play ? (play.info?.cost || play.cost) : '';
+  card.innerHTML = `
+    ${eat ? `<div class="pillar-sugg" onclick="event.stopPropagation();openDailyEat()">
+      <span class="ps-tag">🍽️ 今晚吃</span>
+      <span class="ps-emoji">${escapeHtml(eat.emoji||'🍽️')}</span>
+      <span class="ps-name">${escapeHtml(eat.name)}</span>
+      <span class="ps-meta">${escapeHtml(_shortLoc(eat.addr))}${eat.cost?' · '+escapeHtml(eat.cost):''}</span>
+      <span class="ps-go">›</span>
+    </div>` : ''}
+    ${play ? `<div class="pillar-sugg" onclick="event.stopPropagation();openDailyPlay()">
+      <span class="ps-tag">🎯 今天玩</span>
+      <span class="ps-emoji">${escapeHtml(play.emoji||'🎯')}</span>
+      <span class="ps-name">${escapeHtml(playName)}</span>
+      <span class="ps-meta">${escapeHtml(playLoc||'')}${playCost?' · '+escapeHtml(playCost):''}</span>
+      <span class="ps-go">›</span>
+    </div>` : ''}
+    <div class="pillar-sugg" onclick="event.stopPropagation();quickLog('${escAttr(learnItem.type)}','${escAttr(learnItem.name)}')">
+      <span class="ps-tag">📚 学一点</span>
+      <span class="ps-emoji">${escapeHtml(learnItem.emoji)}</span>
+      <span class="ps-name">${escapeHtml(learnItem.name)}</span>
+      <span class="ps-meta">${escapeHtml(learnItem.desc||'')}</span>
+      <span class="ps-go">✓</span>
+    </div>
+  `;
 }
 
 function renderDimCards() {
@@ -852,7 +1044,46 @@ function delKidsClass(i) {
 }
 
 // ==================== DEALS PAGE ====================
+// 渲染「本周精选具体优惠」— 与下方"渠道汇总"分离
+function renderFeaturedDeals() {
+  const el = document.getElementById('featuredDeals');
+  if (!el) return;
+  const today = todayISO();
+  const list = (typeof FEATURED_DEALS !== 'undefined' ? FEATURED_DEALS : []).filter(d => {
+    if (d.expiresAt) return d.expiresAt >= today;
+    return true; // evergreen
+  });
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--text2);font-size:12px">本周精选暂无 — 都过期了，等下次更新</div>';
+    return;
+  }
+  el.innerHTML = list.map(d => {
+    let dayBadge = '';
+    if (d.evergreen) {
+      dayBadge = '<span class="fd-evergreen">常年</span>';
+    } else if (d.expiresAt) {
+      const daysLeft = Math.ceil((new Date(d.expiresAt).getTime() - Date.now()) / 86400000);
+      const cls = daysLeft <= 3 ? 'fd-soon' : 'fd-days';
+      dayBadge = `<span class="${cls}">${daysLeft <= 0 ? '今天截止' : '剩 ' + daysLeft + ' 天'}</span>`;
+    }
+    return `<div class="fd-card">
+      <div class="fd-emoji">${escapeHtml(d.emoji||'🏷️')}</div>
+      <div class="fd-body">
+        <div class="fd-title">${escapeHtml(d.title)} ${dayBadge}</div>
+        <div class="fd-venue">📍 ${escapeHtml(d.venue||'')}</div>
+        <div class="fd-desc">${escapeHtml(d.desc||'')}</div>
+        <div class="fd-meta">
+          ${d.savings?`<span class="fd-savings">💰 ${escapeHtml(d.savings)}</span>`:''}
+          ${d.source?`<span class="fd-source">via ${escapeHtml(d.source)}</span>`:''}
+        </div>
+      </div>
+      ${d.url?`<a class="fd-go" href="${escAttr(d.url)}" target="_blank" rel="noopener">去看 →</a>`:''}
+    </div>`;
+  }).join('');
+}
+
 function renderDeals() {
+  renderFeaturedDeals();
   const tabs = document.getElementById('dealTabs');
   const grid = document.getElementById('dealGrid');
   if (!tabs || !grid) return;
@@ -1431,14 +1662,14 @@ window.addEventListener('DOMContentLoaded', () => {
 // 导出所有全局函数（便于 HTML 内 onclick 调用）
 Object.assign(window, {
   showPage, toggleSec,
-  renderDashboard, openDimDetail, quickLog, toggleReminder,
+  renderDashboard, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
   setMode, setCatFilter, spin,
   changeStars, changeStatus, saveUserNote, confirmVisit,
   renderMonthlyPlan, generateMonthlyPlan,
   openPlanItemEdit, closePlanEdit, savePlanItem, deleteCurrentPlanItem,
   deletePlanItem, toggleMpReminder,
   addKidsClass, delKidsClass,
-  renderDeals, setDealFilter,
+  renderDeals, renderFeaturedDeals, setDealFilter,
   openAddDealModal, closeAddDealModal, saveUserDeal, deleteUserDeal,
   initDiscover, setDcCat, setDcDist, openSearch, openSearchQ,
   renderMePage, saveProfile, removeVisitedAt, unsetStatus,
