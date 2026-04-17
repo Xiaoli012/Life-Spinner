@@ -335,6 +335,9 @@ a.res-chip:hover{background:rgba(245,158,11,.15)}
 
 /* === SECTIONS === */
 .sec{margin:8px 16px;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 2px 10px rgba(15,23,42,.05);border:1px solid rgba(15,23,42,.04)}
+/* 📅 今日安排 — 永远在首页最显眼的位置 */
+.sec.sec-today{margin:10px 16px 6px;border:1px solid rgba(245,158,11,.25);box-shadow:0 4px 16px rgba(245,158,11,.10);background:linear-gradient(180deg,rgba(255,247,230,.95) 0%,var(--card) 60%)}
+.sec.sec-today .sec-h{background:transparent}
 .sec-h{padding:12px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;background:var(--card);border:none;width:100%}
 .sec-h h3{font-size:14px;font-weight:700}
 .sec-h .arrow{color:var(--text2);font-size:12px;transition:transform .3s}
