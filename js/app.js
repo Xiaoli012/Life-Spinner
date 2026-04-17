@@ -610,8 +610,8 @@ function renderTodayItems() {
     });
   }
   const combined = [
-    ...mpToday.map(m => ({time:m.time||'00:00', name:m.act?.name||m.name||'', emoji:m.act?.emoji||m.emoji||'🎯', note:m.note||'', fromMp:true})),
-    ...weekItems.map(t => ({time:t.time||'00:00', name:t.act||'', emoji:t.emoji||'🎯', note:t.note||'', fromFixed:true}))
+    ...mpToday.map(m => ({time:m.time||'00:00', name:m.act?.name||m.name||'', emoji:m.act?.emoji||m.emoji||'🎯', note:m.note||'', actId:m.act?.id||'', fromMp:true})),
+    ...weekItems.map(t => ({time:t.time||'00:00', name:t.act||'', emoji:t.emoji||'🎯', note:t.note||'', actId:'', fromFixed:true}))
   ];
 
   // 合并今日提醒（非计划内的独立提醒）
@@ -677,8 +677,10 @@ function openTodayDetail(idx) {
   const planKey = it.fromReminder ? (it.reminderKey||'') : `fixed:${dayName}:${it.time}:${it.name}`;
   const has = !it.fromReminder && Reminders.isSet(planKey);
 
-  // Look up full activity / venue data
-  const act = (typeof ACT_BY_NAME !== 'undefined' && ACT_BY_NAME[it.name]) || null;
+  // Look up full activity / venue data (by id first, then by name)
+  const act = (it.actId && typeof ACT_BY_ID !== 'undefined' && ACT_BY_ID[it.actId])
+           || (typeof ACT_BY_NAME !== 'undefined' && ACT_BY_NAME[it.name])
+           || null;
   const info = act?.info || {};
   const venue = !act ? _lookupVenueByName(it.name) : null;
   const vInfo = venue || {};
@@ -698,13 +700,17 @@ function openTodayDetail(idx) {
 
   const relDeals = (act || venue) ? _relatedDeals(it.name) : [];
 
+  const catLabel = act?.cat && typeof CAT_BY_ID !== 'undefined' ? CAT_BY_ID[act.cat]?.label : '';
+  const hasData  = !!(loc||addr||cost||hours||tip);
+  const searchQ  = mapQ || encodeURIComponent((it.name||'') + ' Dubai');
+
   const detail = document.getElementById('todayDetailContent');
   detail.innerHTML = `
     <div class="td-header">
       <span class="td-emoji">${escapeHtml(it.emoji||'🎯')}</span>
       <div class="td-info">
         <div class="td-name">${escapeHtml(it.name||'待定')}</div>
-        <div class="td-time">🕐 ${escapeHtml(it.time)}</div>
+        <div class="td-time">🕐 ${escapeHtml(it.time)}${catLabel?' · '+escapeHtml(catLabel):''}</div>
       </div>
       <button class="td-close-x" onclick="closeTodayDetail()">✕</button>
     </div>
@@ -714,11 +720,12 @@ function openTodayDetail(idx) {
     ${hours ? `<div class="td-row"><span class="td-icon">⏰</span><span class="td-val">${escapeHtml(hours)}${bestTime?' · 最佳: '+escapeHtml(bestTime):''}</span></div>` : ''}
     ${phone ? `<div class="td-row"><span class="td-icon">📞</span><a class="td-link" href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></div>` : ''}
     ${tip   ? `<div class="td-tip">💡 ${escapeHtml(tip)}</div>` : ''}
+    ${!hasData && !it.fromReminder ? `<div class="td-no-data">暂无详情 · 可在「安排」页编辑添加备注</div>` : ''}
     ${fazaaAct||fazaaVen ? `<div class="td-deal-row td-deal-fazaa"><span class="td-deal-emoji">🏷️</span><div><div class="td-deal-title">Fazaa 卡优惠</div><div class="td-deal-meta">${escapeHtml(fazaaVen||'享折扣')}</div></div></div>` : ''}
     ${relDeals.map(d=>`<div class="td-deal-row"><span class="td-deal-emoji">${escapeHtml(d.emoji||'🏷️')}</span><div><div class="td-deal-title">${escapeHtml(d.title)}</div><div class="td-deal-meta">${escapeHtml(d.savings||'')}${d.source?' · '+escapeHtml(d.source):''}</div></div>${d.url?`<a class="td-deal-go" href="${escapeHtml(d.url)}" target="_blank">›</a>`:''}</div>`).join('')}
     <div class="td-actions" style="margin-top:14px">
-      <button class="btn-primary" style="flex:1" onclick="tdStartNow()">▶ 现在做</button>
-      ${mapQ  ? `<button class="btn-ghost" onclick="window.open('https://www.google.com/maps/search/${mapQ}','_blank')">🗺️ 地图</button>` : ''}
+      ${!it.fromReminder ? `<button class="btn-primary" style="flex:1" onclick="tdStartNow()">▶ 现在做</button>` : ''}
+      <button class="btn-ghost" onclick="window.open('https://www.google.com/maps/search/${searchQ}','_blank')">🗺️ 地图</button>
       ${bookUrl ? `<button class="btn-ghost" onclick="window.open('${escapeHtml(bookUrl)}','_blank')">🔗 预订</button>` : ''}
       ${!it.fromReminder ? `<button class="btn-ghost" id="tdBellBtn" data-plan-key="${escAttr(planKey)}" data-time="${escAttr(it.time)}" data-name="${escAttr(it.name||'')}" data-emoji="${escAttr(it.emoji||'')}" onclick="tdBellToggle()">${has?'🔔 取消提醒':'🔕 设提醒'}</button>` : ''}
     </div>

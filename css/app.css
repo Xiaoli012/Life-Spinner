@@ -560,6 +560,7 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
 .td-deal-go{margin-left:auto;font-size:18px;color:var(--accent);text-decoration:none;font-weight:700;flex-shrink:0}
 .td-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:10px}
 .td-tag{font-size:10px;padding:2px 8px;background:var(--card2);border-radius:8px;color:var(--text2)}
+.td-no-data{font-size:11px;color:var(--text2);text-align:center;padding:10px 0;border-top:1px solid rgba(15,23,42,.05);margin-top:4px}
 .td-actions{display:flex;gap:8px;flex-wrap:wrap}
 
 /* === Utility === */
