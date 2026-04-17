@@ -620,6 +620,9 @@ function renderTodayItems() {
   const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
   reminders.forEach(r => {
     if (r.sent) return;
+    // 过滤系统自动提醒，只保留用户自己设的提醒
+    const k = r.key || r.planKey || '';
+    if (k.startsWith('sentinel:') || k.startsWith('diversity-nudge:')) return;
     const fireAt = new Date(r.fireAt).getTime();
     if (fireAt < now - 7200000 || fireAt > todayEnd.getTime()) return;
     const t = new Date(r.fireAt);
