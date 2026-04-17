@@ -1479,7 +1479,7 @@ function renderKidsSchedule() {
   if (!el) return;
   const ks = Store.get('kidsSchedule') || [];
   el.innerHTML = ks.map((k,i) =>
-    `<div class="ks-row"><span class="ks-day">${escapeHtml(k.day)}</span><span class="ks-time">${escapeHtml(k.start)}-${escapeHtml(k.end)}</span><span class="ks-act">${escapeHtml(k.name)}</span><button class="ks-del" onclick="delKidsClass(${i})">✕</button></div>`
+    `<div class="ks-row"><span class="ks-day">周${escapeHtml(k.day)}</span><span class="ks-time">${escapeHtml(k.start)}-${escapeHtml(k.end)}</span><span class="ks-act">${escapeHtml(k.name)}</span><button class="ks-del" onclick="delKidsClass(${i})">✕</button></div>`
   ).join('');
 }
 function addKidsClass() {
