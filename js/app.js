@@ -87,7 +87,7 @@ function renderQuickActionCard() {
   const learnItem = LEARNING_POOL[dayOfYear % LEARNING_POOL.length];
   window._dailyInspire = {eat, play, learnItem};
 
-  const eatRow = eat ? `<div class="qi-row" onclick="openDailyEat()">
+  const eatRow = eat ? `<div class="qi-row" onclick="openInspireDetail('eat')">
     <span class="qi-tag">🍽️ 今晚吃</span>
     <span class="qi-name">${escapeHtml(eat.name)}</span>
     <span class="qi-meta">${escapeHtml(_shortLoc(eat.addr))}${eat.cost?' · '+escapeHtml(eat.cost):''}</span>
@@ -97,18 +97,18 @@ function renderQuickActionCard() {
   const playName = play ? play.name : '';
   const playLoc  = play ? (play.info?.loc || _shortLoc(play.addr || play.info?.addr)) : '';
   const playCost = play ? (play.info?.cost || play.cost) : '';
-  const playRow  = play ? `<div class="qi-row" onclick="openDailyPlay()">
+  const playRow  = play ? `<div class="qi-row" onclick="openInspireDetail('play')">
     <span class="qi-tag">🎯 今天玩</span>
     <span class="qi-name">${escapeHtml(playName)}</span>
     <span class="qi-meta">${escapeHtml(playLoc||'')}${playCost?' · '+escapeHtml(playCost):''}</span>
     <span class="qi-go">›</span>
   </div>` : '';
 
-  const learnRow = `<div class="qi-row" onclick="quickLog('${escAttr(learnItem.type)}','${escAttr(learnItem.name)}')">
+  const learnRow = `<div class="qi-row" onclick="openInspireDetail('learn')">
     <span class="qi-tag">📚 学一点</span>
     <span class="qi-name">${escapeHtml(learnItem.name)}</span>
     <span class="qi-meta">${escapeHtml(learnItem.desc||'')}</span>
-    <span class="qi-go">✓</span>
+    <span class="qi-go">›</span>
   </div>`;
 
   el.innerHTML = `
@@ -145,7 +145,7 @@ function reshuffleInspireInCard() {
   window._dailyInspire = {eat, play, learnItem};
   const rows = document.getElementById('qiRows');
   if (!rows) { renderQuickActionCard(); return; }
-  const eatRow = eat ? `<div class="qi-row" onclick="openDailyEat()">
+  const eatRow = eat ? `<div class="qi-row" onclick="openInspireDetail('eat')">
     <span class="qi-tag">🍽️ 今晚吃</span>
     <span class="qi-name">${escapeHtml(eat.name)}</span>
     <span class="qi-meta">${escapeHtml(_shortLoc(eat.addr))}${eat.cost?' · '+escapeHtml(eat.cost):''}</span>
@@ -154,17 +154,17 @@ function reshuffleInspireInCard() {
   const playName = play ? play.name : '';
   const playLoc  = play ? (play.info?.loc || _shortLoc(play.addr || play.info?.addr)) : '';
   const playCost = play ? (play.info?.cost || play.cost) : '';
-  const playRow  = play ? `<div class="qi-row" onclick="openDailyPlay()">
+  const playRow  = play ? `<div class="qi-row" onclick="openInspireDetail('play')">
     <span class="qi-tag">🎯 今天玩</span>
     <span class="qi-name">${escapeHtml(playName)}</span>
     <span class="qi-meta">${escapeHtml(playLoc||'')}${playCost?' · '+escapeHtml(playCost):''}</span>
     <span class="qi-go">›</span>
   </div>` : '';
-  const learnRow = `<div class="qi-row" onclick="quickLog('${escAttr(learnItem.type)}','${escAttr(learnItem.name)}')">
+  const learnRow = `<div class="qi-row" onclick="openInspireDetail('learn')">
     <span class="qi-tag">📚 学一点</span>
     <span class="qi-name">${escapeHtml(learnItem.name)}</span>
     <span class="qi-meta">${escapeHtml(learnItem.desc||'')}</span>
-    <span class="qi-go">✓</span>
+    <span class="qi-go">›</span>
   </div>`;
   rows.innerHTML = eatRow + playRow + learnRow;
 }
@@ -728,6 +728,62 @@ function openTodayDetail(idx) {
 
 function closeTodayDetail() {
   document.getElementById('todayDetailModal').classList.remove('show');
+}
+
+function openInspireDetail(type) {
+  const inspire = window._dailyInspire || {};
+  const obj = type === 'eat' ? inspire.eat : type === 'play' ? inspire.play : inspire.learnItem;
+  if (!obj) return;
+
+  const emoji = obj.emoji || (type === 'eat' ? '🍽️' : type === 'play' ? '🎯' : '📚');
+  const name  = obj.name || '';
+  const desc  = obj.desc || '';
+  const tags  = obj.tags || [];
+  const rating = obj.rating || 0;
+
+  // 兼容 activity (info 子对象) 和 venue (直接字段)
+  const info  = obj.info || {};
+  const loc   = info.loc   || obj.addr  || '';
+  const dist  = info.dist  || '';
+  const cost  = info.cost  || obj.cost  || '';
+  const hours = info.hours || obj.hours || '';
+  const bestTime = info.time || '';
+  const phone = info.phone || obj.phone || '';
+  const tip   = info.tip   || obj.tip   || '';
+  const bookUrl = info.bookUrl || obj.bookUrl || '';
+  const mapQ  = info.mapQ  || obj.mapQ  || encodeURIComponent(name + ' Dubai');
+  const fazaa = obj.fazaa  || (typeof hasFazaa === 'function' && hasFazaa(obj) ? '享折扣' : '');
+  const relDeals = _relatedDeals(name);
+
+  const starsHtml = rating ? `<span style="font-size:11px;color:#f59e0b">${'★'.repeat(Math.round(rating))}${'☆'.repeat(5-Math.round(rating))}</span> <span style="font-size:11px;color:var(--text2)">${rating}</span>` : '';
+
+  document.getElementById('todayDetailContent').innerHTML = `
+    <div class="td-header">
+      <span class="td-emoji">${escapeHtml(emoji)}</span>
+      <div class="td-info">
+        <div class="td-name">${escapeHtml(name)}</div>
+        <div class="td-time">${starsHtml}</div>
+      </div>
+      <button class="td-close-x" onclick="closeTodayDetail()">✕</button>
+    </div>
+    ${desc ? `<div class="td-note">${escapeHtml(desc)}</div>` : ''}
+    ${tags.length ? `<div class="td-tags">${tags.slice(0,5).map(t=>`<span class="td-tag">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+    ${loc  ? `<div class="td-row"><span class="td-icon">📍</span><span class="td-val">${escapeHtml(loc)}${dist?' · '+escapeHtml(dist):''}</span></div>` : ''}
+    ${cost ? `<div class="td-row"><span class="td-icon">💰</span><span class="td-val">${escapeHtml(cost)}</span></div>` : ''}
+    ${hours? `<div class="td-row"><span class="td-icon">⏰</span><span class="td-val">${escapeHtml(hours)}${bestTime?' · 最佳: '+escapeHtml(bestTime):''}</span></div>` : ''}
+    ${phone? `<div class="td-row"><span class="td-icon">📞</span><a class="td-link" href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></div>` : ''}
+    ${tip  ? `<div class="td-tip">💡 ${escapeHtml(tip)}</div>` : ''}
+    ${fazaa ? `<div class="td-deal-row td-deal-fazaa"><span class="td-deal-emoji">🏷️</span><div><div class="td-deal-title">Fazaa 卡优惠</div><div class="td-deal-meta">${escapeHtml(typeof fazaa === 'string' ? fazaa : '享折扣')}</div></div></div>` : ''}
+    ${relDeals.map(d=>`<div class="td-deal-row"><span class="td-deal-emoji">${escapeHtml(d.emoji||'🏷️')}</span><div><div class="td-deal-title">${escapeHtml(d.title)}</div><div class="td-deal-meta">${escapeHtml(d.savings||'')}${d.source?' · '+escapeHtml(d.source):''}</div></div>${d.url?`<a class="td-deal-go" href="${escapeHtml(d.url)}" target="_blank">›</a>`:''}</div>`).join('')}
+    <div class="td-actions" style="margin-top:14px">
+      ${type === 'learn'
+        ? `<button class="btn-primary" style="flex:1" onclick="quickLog('${escAttr(obj.type||'learning')}','${escAttr(name)}');closeTodayDetail()">✓ 打卡记录</button>`
+        : `<button class="btn-primary" style="flex:1" onclick="startPlanItemNow('${escAttr(name)}','${escAttr(emoji)}',30);closeTodayDetail()">▶ 现在做</button>`}
+      ${mapQ   ? `<button class="btn-ghost" onclick="window.open('https://www.google.com/maps/search/${mapQ}','_blank')">🗺️ 地图</button>` : ''}
+      ${bookUrl? `<button class="btn-ghost" onclick="window.open('${escapeHtml(bookUrl)}','_blank')">🔗 预订</button>` : ''}
+    </div>
+  `;
+  document.getElementById('todayDetailModal').classList.add('show');
 }
 
 function tdBellToggle() {
@@ -2387,7 +2443,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // 导出所有全局函数（便于 HTML 内 onclick 调用）
 Object.assign(window, {
   showPage, toggleSec,
-  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, reshuffleInspireInCard, openDimDetail, quickLog, toggleReminder, openTodayDetail, closeTodayDetail, tdBellToggle, tdStartNow,
+  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, reshuffleInspireInCard, openInspireDetail, openDimDetail, quickLog, toggleReminder, openTodayDetail, closeTodayDetail, tdBellToggle, tdStartNow,
   renderQuickActionCard, reshuffleQuickAction, startQuickAction, completeQuickAction, cancelQuickAction, chainNextAction, finishQuickActionChain,
   renderDiversityCard,
   renderSentinelSettings, toggleSentinel, toggleSentinelHour, toggleDiversityNudge, setDiversityHour, testSentinelNudge,
