@@ -26,20 +26,16 @@
     <div class="qc-text" id="dashQuote">…</div>
     <div class="qc-author" id="dashQuoteAuthor"></div>
   </div>
-  <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
-  <!-- 现在就来一个 -->
-  <div class="qa-card" id="qaCard"></div>
-  <!-- 今日多元化 -->
-  <div class="div-card" id="divCard"></div>
-  <!-- 习惯进度（每周/每日） -->
-  <div class="hab-card" id="habCard"></div>
-  <div class="app-shortcuts" id="appShortcuts"></div>
+  <!-- 今日安排（含接下来提醒，合并展示） -->
   <div class="sec" id="todaySec">
     <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent);font-size:13px">📅 今日安排</h3><span class="arrow open" id="todayList-arrow">▼</span></div>
     <div class="sec-body show" id="todayList-body">
       <div id="todayItems"></div>
     </div>
   </div>
+  <!-- 现在就来一个 -->
+  <div class="qa-card" id="qaCard"></div>
+  <div class="app-shortcuts" id="appShortcuts"></div>
   <div class="pillars" id="pillarGrid"></div>
 </div>
 
@@ -121,6 +117,16 @@
 <div class="page" id="pageMe">
   <div class="header"><h1>👤 我的</h1><div class="sub">个人信息 · 成长 · 烹饪 · 技能 · 管理</div></div>
 
+  <!-- 今日多元化 -->
+  <div class="sec">
+    <div class="sec-h" onclick="toggleSec('divSec')"><h3 style="color:var(--accent)">🌈 今日多元化</h3><span class="arrow" id="divSec-arrow">▼</span></div>
+    <div class="sec-body" id="divSec-body"><div id="divCard" style="margin:0 0 4px"></div></div>
+  </div>
+  <!-- 习惯进度 -->
+  <div class="sec">
+    <div class="sec-h" onclick="toggleSec('habSec')"><h3 style="color:#10b981">📿 习惯进度</h3><span class="arrow" id="habSec-arrow">▼</span></div>
+    <div class="sec-body" id="habSec-body"><div id="habCard" style="margin:0 0 4px"></div></div>
+  </div>
   <div class="sec" id="sec-profile">
     <div class="sec-h" onclick="toggleSec('prof')"><h3 style="color:var(--accent)">📝 个人信息</h3><span class="arrow open" id="prof-arrow">▼</span></div>
     <div class="sec-body show" id="prof-body">
@@ -226,7 +232,6 @@
   <button class="nav-btn active" onclick="showPage('pageHome',this)"><span class="nav-icon">🏡</span>今日</button>
   <button class="nav-btn" onclick="showPage('pagePlan',this)"><span class="nav-icon">📅</span>安排</button>
   <button class="nav-btn" onclick="showPage('pageSpinner',this)"><span class="nav-icon">🎰</span>转盘</button>
-  <button class="nav-btn" onclick="showPage('pageDeals',this)"><span class="nav-icon">🏷️</span>优惠</button>
   <button class="nav-btn" onclick="showPage('pageMe',this)"><span class="nav-icon">👤</span>我的</button>
 </div>
 
@@ -439,6 +444,25 @@
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Today item detail modal -->
+<div class="edit-modal" id="todayDetailModal" onclick="if(event.target===this)closeTodayDetail()">
+  <div class="edit-modal-card">
+    <div class="td-header">
+      <span id="tdEmoji" class="td-emoji">🎯</span>
+      <div class="td-info">
+        <div id="tdName" class="td-name"></div>
+        <div id="tdTime" class="td-time"></div>
+      </div>
+    </div>
+    <div id="tdNote" class="td-note"></div>
+    <div class="td-actions">
+      <button class="btn-primary" style="flex:1" onclick="tdStartNow()">▶ 现在做</button>
+      <button class="btn-ghost" id="tdBellBtn" onclick="tdBellToggle()">🔕 设提醒</button>
+      <button class="btn-ghost" onclick="closeTodayDetail()">关闭</button>
+    </div>
+  </div>
+</div>
 
 <!-- Scripts order matters: data → core → discover-data → app -->
 <script src="js/data.js"></script>

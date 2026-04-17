@@ -51,13 +51,10 @@ function renderDashboard() {
   document.getElementById('dashDate').textContent = dateStr;
 
   renderQuoteCard();
+  renderTodayItems();
   renderQuickActionCard();
-  renderDiversityCard();
-  renderHabitsCard();
   renderAppShortcuts();
   renderPillarCards();
-  renderUpcomingReminders();
-  renderTodayItems();
 }
 
 // ==================== "现在就来一个" ====================
@@ -531,39 +528,101 @@ function renderTodayItems() {
   if (!el) return;
   const state = Store.load();
   const dayName = todayDayName();
-  const todayItems = state.weeklyPlan.filter(p => p.day === dayName);
-  // 也检查月计划中今天的项
+  const weekItems = state.weeklyPlan.filter(p => p.day === dayName);
   const mp = state.monthlyPlan;
   const mpToday = [];
   if (mp && mp.weeks) {
-    const todayStr = fmtDate(new Date(), 'M/D').replace(/^0/,'').replace('/0','/');
     const todayMD = `${new Date().getMonth()+1}/${new Date().getDate()}`;
-    mp.weeks.forEach((w,wi) => {
+    mp.weeks.forEach((w, wi) => {
       DAYS.forEach(d => {
         if (w.dates[d] === todayMD && w.plan[d]) {
-          w.plan[d].forEach((it,idx) => mpToday.push({...it, wi, day:d, idx}));
+          w.plan[d].forEach((it, idx) => mpToday.push({...it, _wi:wi, _day:d, _idx:idx}));
         }
       });
     });
   }
-  const combined = [...mpToday.map(m=>({time:m.time, name:m.act?.name||m.name, emoji:m.act?.emoji||m.emoji, fromMp:true})),
-                    ...todayItems.map(t=>({time:t.time, name:t.act, emoji:t.emoji, fromFixed:true}))];
+  const combined = [
+    ...mpToday.map(m => ({time:m.time||'00:00', name:m.act?.name||m.name||'', emoji:m.act?.emoji||m.emoji||'🎯', note:m.note||'', fromMp:true})),
+    ...weekItems.map(t => ({time:t.time||'00:00', name:t.act||'', emoji:t.emoji||'🎯', note:t.note||'', fromFixed:true}))
+  ];
+
+  // 合并今日提醒（非计划内的独立提醒）
+  const reminders = Store.get('reminders') || [];
+  const now = Date.now();
+  const todayEnd = new Date(); todayEnd.setHours(23,59,59,999);
+  reminders.forEach(r => {
+    if (r.sent) return;
+    const fireAt = new Date(r.fireAt).getTime();
+    if (fireAt < now - 7200000 || fireAt > todayEnd.getTime()) return;
+    const t = new Date(r.fireAt);
+    const timeStr = t.getHours().toString().padStart(2,'0') + ':' + t.getMinutes().toString().padStart(2,'0');
+    if (combined.some(c => c.time === timeStr && c.name === r.title)) return;
+    combined.push({time:timeStr, name:r.title||'提醒', emoji:'🔔', note:'', fromReminder:true, reminderKey:r.key});
+  });
+
   combined.sort((a,b) => a.time.localeCompare(b.time));
+  window._todayItemsList = combined;
+
   if (!combined.length) {
-    el.innerHTML = '<div class="today-empty">今天还没有安排 — 给自己留点空白也挺好</div>';
+    el.innerHTML = '<div class="today-empty">今天还没有安排 — 去「安排」页添加</div>';
     return;
   }
-  el.innerHTML = combined.map(it => {
-    const planKey = `fixed:${dayName}:${it.time}:${it.name}`;
-    const has = Reminders.isSet(planKey);
-    return `<div class="mp-item">
+  el.innerHTML = combined.map((it, idx) => {
+    const planKey = it.fromReminder ? (it.reminderKey||'') : `fixed:${dayName}:${it.time}:${it.name}`;
+    const has = !it.fromReminder && Reminders.isSet(planKey);
+    return `<div class="mp-item td-clickable" onclick="openTodayDetail(${idx})">
       <span class="mi-time">${escapeHtml(it.time)}</span>
       <span class="mi-emoji">${escapeHtml(it.emoji||'🎯')}</span>
       <span class="mi-name">${escapeHtml(it.name||'待定')}</span>
-      <button class="now-btn" onclick="startPlanItemNow('${escAttr(it.name||'')}','${escAttr(it.emoji||'')}',30)">▶ 现在做</button>
-      <span class="mi-bell ${has?'on':''}" onclick="toggleReminder('${escAttr(planKey)}','${escAttr(it.time)}','${escAttr(it.name||'')}','${escAttr(it.emoji||'')}')" title="${has?'取消提醒':'设置提醒'}">${has?'🔔':'🔕'}</span>
+      ${has ? '<span class="mi-bell on" style="pointer-events:none">🔔</span>' : ''}
     </div>`;
   }).join('');
+}
+
+let _todayDetailItem = null;
+
+function openTodayDetail(idx) {
+  const items = window._todayItemsList || [];
+  const it = items[idx];
+  if (!it) return;
+  _todayDetailItem = it;
+  const dayName = todayDayName();
+  const planKey = it.fromReminder ? (it.reminderKey||'') : `fixed:${dayName}:${it.time}:${it.name}`;
+  const has = !it.fromReminder && Reminders.isSet(planKey);
+
+  document.getElementById('tdEmoji').textContent = it.emoji || '🎯';
+  document.getElementById('tdName').textContent = it.name || '待定';
+  document.getElementById('tdTime').textContent = it.time;
+  const noteEl = document.getElementById('tdNote');
+  noteEl.textContent = it.note || '';
+  noteEl.style.display = it.note ? '' : 'none';
+
+  const bellBtn = document.getElementById('tdBellBtn');
+  bellBtn.textContent = has ? '🔔 取消提醒' : '🔕 设提醒';
+  bellBtn.dataset.planKey = planKey;
+  bellBtn.dataset.time = it.time;
+  bellBtn.dataset.name = it.name || '';
+  bellBtn.dataset.emoji = it.emoji || '';
+  bellBtn.style.display = it.fromReminder ? 'none' : '';
+
+  document.getElementById('todayDetailModal').classList.add('show');
+}
+
+function closeTodayDetail() {
+  document.getElementById('todayDetailModal').classList.remove('show');
+}
+
+function tdBellToggle() {
+  const btn = document.getElementById('tdBellBtn');
+  toggleReminder(btn.dataset.planKey, btn.dataset.time, btn.dataset.name, btn.dataset.emoji);
+  renderTodayItems();
+  closeTodayDetail();
+}
+
+function tdStartNow() {
+  if (!_todayDetailItem) return;
+  startPlanItemNow(_todayDetailItem.name||'', _todayDetailItem.emoji||'🎯', 30);
+  closeTodayDetail();
 }
 
 function openDimDetail(dim) {
@@ -1393,6 +1452,8 @@ function deleteUserDeal(id) {
 // ==================== ME PAGE ====================
 function renderMePage() {
   renderProfile();
+  renderDiversityCard();
+  renderHabitsCard();
   renderHabitsSettings();
   renderSentinelSettings();
   renderWishlist();
@@ -1410,8 +1471,8 @@ function renderHabitsCard() {
   const habits = (Habits.all() || []).filter(h => h.active);
   if (!habits.length) {
     el.innerHTML = `
-      <div class="hc-empty" onclick="showPage('pageMe', document.querySelectorAll('.nav-btn')[4])">
-        📿 还没有习惯 — 点击去「我的」设置
+      <div class="hc-empty">
+        📿 还没有习惯 — 在下方「我的习惯」里添加
       </div>
     `;
     return;
@@ -1548,7 +1609,7 @@ function saveHabit() {
   else Habits.add(data);
   closeHabitModal();
   renderHabitsSettings();
-  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+  if (document.getElementById('pageMe')?.classList.contains('active')) renderHabitsCard();
   toast(_editingHabitId ? '✅ 已更新' : '✅ 已添加');
 }
 
@@ -1556,7 +1617,7 @@ function deleteHabit(id) {
   if (!confirm('删除这个习惯？历史记录不会丢。')) return;
   Habits.remove(id);
   renderHabitsSettings();
-  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+  if (document.getElementById('pageMe')?.classList.contains('active')) renderHabitsCard();
 }
 
 function deleteCurrentHabit() {
@@ -1565,7 +1626,7 @@ function deleteCurrentHabit() {
   Habits.remove(_editingHabitId);
   closeHabitModal();
   renderHabitsSettings();
-  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+  if (document.getElementById('pageMe')?.classList.contains('active')) renderHabitsCard();
 }
 
 function toggleHabitActive(id) {
@@ -1573,7 +1634,7 @@ function toggleHabitActive(id) {
   if (!h) return;
   Habits.update(id, {active: !h.active});
   renderHabitsSettings();
-  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+  if (document.getElementById('pageMe')?.classList.contains('active')) renderHabitsCard();
 }
 
 // ==================== 反刷视频 · 易沉迷时段设置 ====================
@@ -2207,7 +2268,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // 导出所有全局函数（便于 HTML 内 onclick 调用）
 Object.assign(window, {
   showPage, toggleSec,
-  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
+  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder, openTodayDetail, closeTodayDetail, tdBellToggle, tdStartNow,
   renderQuickActionCard, reshuffleQuickAction, startQuickAction, completeQuickAction, cancelQuickAction, chainNextAction, finishQuickActionChain,
   renderDiversityCard,
   renderSentinelSettings, toggleSentinel, toggleSentinelHour, toggleDiversityNudge, setDiversityHour, testSentinelNudge,

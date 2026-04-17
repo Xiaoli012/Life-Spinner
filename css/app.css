@@ -524,6 +524,19 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
 .confetti-container{position:fixed;inset:0;pointer-events:none;z-index:500;overflow:hidden}
 .confetti{position:absolute}
 
+/* === Today item clickable === */
+.td-clickable{cursor:pointer;transition:opacity .15s}
+.td-clickable:hover{opacity:.75}
+
+/* === Today detail modal === */
+.td-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.td-emoji{font-size:36px;line-height:1}
+.td-info{flex:1}
+.td-name{font-size:16px;font-weight:800;color:var(--text)}
+.td-time{font-size:12px;color:var(--text2);margin-top:2px}
+.td-note{font-size:12px;color:var(--text2);padding:8px 10px;background:var(--card2);border-radius:8px;margin-bottom:12px}
+.td-actions{display:flex;gap:8px;flex-wrap:wrap}
+
 /* === Utility === */
 .hide{display:none !important}
 .muted{color:var(--text2)}
