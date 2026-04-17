@@ -27,6 +27,12 @@
     <div class="qc-author" id="dashQuoteAuthor"></div>
   </div>
   <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
+  <!-- 现在就来一个 -->
+  <div class="qa-card" id="qaCard"></div>
+  <!-- 今日多元化 -->
+  <div class="div-card" id="divCard"></div>
+  <!-- 习惯进度（每周/每日） -->
+  <div class="hab-card" id="habCard"></div>
   <div class="app-shortcuts" id="appShortcuts"></div>
   <div class="sec" id="todaySec">
     <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent);font-size:13px">📅 今日安排</h3><span class="arrow open" id="todayList-arrow">▼</span></div>
@@ -51,6 +57,8 @@
   <div style="margin:0 16px 10px">
     <button class="gen-btn" onclick="generateMonthlyPlan()">⚡ 一键生成本月4周计划</button>
   </div>
+  <!-- 习惯达成预测 -->
+  <div id="habCoverage" class="hab-cov"></div>
   <div id="mpContent"></div>
 
   <div class="sec">
@@ -124,6 +132,24 @@
         <div class="pf-row"><span class="pf-label">Fazaa</span><select id="pf_fazaa" onchange="saveProfile()"><option value="">没有</option><option value="yes">有Fazaa卡</option></select></div>
         <div class="pf-row"><span class="pf-label">Entertainer</span><select id="pf_entertainer" onchange="saveProfile()"><option value="">没有</option><option value="yes">有Entertainer</option></select></div>
       </div>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-habits">
+    <div class="sec-h" onclick="toggleSec('habits')"><h3 style="color:#10b981">📿 我的习惯 <span class="badge" style="background:#10b981" id="habCount">0</span></h3><span class="arrow open" id="habits-arrow">▼</span></div>
+    <div class="sec-body show" id="habits-body">
+      <div id="habitsList"></div>
+      <button class="wish-add-btn" onclick="openHabitModal()">➕ 添加一个习惯</button>
+      <div style="font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5">
+        💡 习惯会在「现在就来一个」里以 <b style="color:#10b981">最高优先级</b> 推荐落后的项；月计划生成器也会优先满足。
+      </div>
+    </div>
+  </div>
+
+  <div class="sec" id="sec-sentinel">
+    <div class="sec-h" onclick="toggleSec('sentinel')"><h3 style="color:#ef4444">📵 反刷视频设置 <span class="badge" style="background:#ef4444">主动提醒</span></h3><span class="arrow open" id="sentinel-arrow">▼</span></div>
+    <div class="sec-body show" id="sentinel-body">
+      <div id="sentinelContent"></div>
     </div>
   </div>
 
@@ -361,6 +387,53 @@
       <button class="btn-primary" onclick="saveWishlistItem()">💾 保存</button>
       <button class="btn-danger" id="wlDeleteBtn" onclick="deleteCurrentWishlist()" style="display:none">🗑️</button>
       <button class="btn-ghost" onclick="closeWishlistModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 习惯编辑弹窗 -->
+<div class="edit-modal" id="habitModal" onclick="if(event.target===this)closeHabitModal()">
+  <div class="edit-modal-card">
+    <h3 id="habitModalTitle">📿 新习惯</h3>
+    <div class="edit-row-split">
+      <div class="edit-row" style="flex:0 0 70px"><label>图标</label><input id="hbEmoji" maxlength="2" value="📿" style="text-align:center;font-size:18px"></div>
+      <div class="edit-row"><label>名称 *</label><input id="hbName" placeholder="如: 读书"></div>
+    </div>
+    <div class="edit-row">
+      <label>关联类型（逗号分隔，与"成长记录"对齐）</label>
+      <input id="hbTypes" placeholder="reading,book">
+    </div>
+    <div class="edit-row-split">
+      <div class="edit-row"><label>频次</label><select id="hbCadence">
+        <option value="daily">每天</option>
+        <option value="weekly">每周</option>
+      </select></div>
+      <div class="edit-row"><label>目标次数</label><input id="hbTarget" type="number" min="1" value="1"></div>
+      <div class="edit-row"><label>每次分钟</label><input id="hbDuration" type="number" min="1" value="30"></div>
+    </div>
+    <div class="edit-row-split">
+      <div class="edit-row"><label>建议时间</label><input id="hbTime" type="time" value="19:30"></div>
+      <div class="edit-row"><label>建议日期（仅每周）</label><input id="hbDays" placeholder="一,三,五"></div>
+    </div>
+    <div class="edit-row"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="hbActive" checked> 启用</label></div>
+    <div class="edit-actions">
+      <button class="btn-primary" onclick="saveHabit()">💾 保存</button>
+      <button class="btn-danger" id="hbDeleteBtn" onclick="deleteCurrentHabit()" style="display:none">🗑️</button>
+      <button class="btn-ghost" onclick="closeHabitModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 快速行动倒计时 -->
+<div class="qa-overlay" id="qaTimerOverlay" onclick="if(event.target===this)cancelQuickAction()">
+  <div class="qa-timer-card">
+    <div class="qa-t-emoji" id="qaTEmoji">🎯</div>
+    <div class="qa-t-label" id="qaTLabel">…</div>
+    <div class="qa-t-clock" id="qaTClock">00:00</div>
+    <div class="qa-t-hint">把手机放下，做完再回来</div>
+    <div class="qa-t-actions">
+      <button class="btn-primary" onclick="completeQuickAction()">✅ 做完了</button>
+      <button class="btn-ghost" onclick="cancelQuickAction()">取消</button>
     </div>
   </div>
 </div>

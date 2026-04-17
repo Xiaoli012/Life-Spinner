@@ -26,7 +26,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (id === 'pageHome')     renderDashboard();
-  if (id === 'pagePlan')     { renderMonthlyPlan(); renderKidsSchedule(); }
+  if (id === 'pagePlan')     { renderMonthlyPlan(); renderKidsSchedule(); renderHabitCoverage(); }
   if (id === 'pageDeals')    renderDeals();
   if (id === 'pageMe')       renderMePage();
   updateFab();
@@ -51,10 +51,219 @@ function renderDashboard() {
   document.getElementById('dashDate').textContent = dateStr;
 
   renderQuoteCard();
+  renderQuickActionCard();
+  renderDiversityCard();
+  renderHabitsCard();
   renderAppShortcuts();
   renderPillarCards();
   renderUpcomingReminders();
   renderTodayItems();
+}
+
+// ==================== "现在就来一个" ====================
+let _qaCurrent = null;          // 当前推荐
+let _qaTimerEnd = 0;            // 倒计时截止时间戳
+let _qaTimerHandle = null;
+
+const QA_SOURCE_LABEL = {
+  static:'',           // 静态库不显示标签
+  wish:'💭 心愿',
+  plan:'📅 今日计划',
+  recipe:'🍳 心愿菜谱',
+  learning:'📚 学习池',
+  deal:'🏷️ 限时优惠',
+  skill:'🎯 技能',
+  venue:'📍 地点'
+};
+
+function renderQuickActionCard() {
+  const el = document.getElementById('qaCard');
+  if (!el) return;
+  if (!_qaCurrent) _qaCurrent = QuickAction.pick();
+  const a = _qaCurrent;
+  const srcLabel = QA_SOURCE_LABEL[a.source] || '';
+  const srcCls = a.source && a.source !== 'static' ? a.source : '';
+  el.innerHTML = `
+    <div class="qa-head">
+      <span class="qa-tag">📵 别刷了，来一个</span>
+      <button class="qa-shuffle" onclick="reshuffleQuickAction()" title="换一个">🔄</button>
+    </div>
+    <div class="qa-body" onclick="startQuickAction()">
+      <div class="qa-emoji">${escapeHtml(a.emoji)}</div>
+      <div class="qa-text">
+        <div class="qa-label">${escapeHtml(a.label)}${srcLabel?`<span class="qa-source ${srcCls}">${escapeHtml(srcLabel)}</span>`:''}${a.trend?`<span class="qa-trend">${escapeHtml(a.trend)}</span>`:''}</div>
+        <div class="qa-meta">⏱️ ${a.minutes} 分钟 · 点击开始</div>
+      </div>
+      <div class="qa-go">▶</div>
+    </div>
+    <div class="qa-filters">
+      <button class="qa-fb" onclick="reshuffleQuickAction('short')">≤10 分钟</button>
+      <button class="qa-fb" onclick="reshuffleQuickAction('medium')">10-30 分钟</button>
+      <button class="qa-fb" onclick="reshuffleQuickAction('long')">>30 分钟</button>
+    </div>
+  `;
+}
+
+function reshuffleQuickAction(filter) {
+  _qaCurrent = QuickAction.pick(filter);
+  renderQuickActionCard();
+}
+
+function startQuickAction() {
+  if (!_qaCurrent) return;
+  const a = _qaCurrent;
+  _qaTimerEnd = Date.now() + a.minutes * 60000;
+  document.getElementById('qaTEmoji').textContent = a.emoji;
+  document.getElementById('qaTLabel').textContent = a.label;
+  document.getElementById('qaTimerOverlay').classList.add('show');
+  _tickQaTimer();
+  if (_qaTimerHandle) clearInterval(_qaTimerHandle);
+  _qaTimerHandle = setInterval(_tickQaTimer, 1000);
+}
+
+function _tickQaTimer() {
+  const remain = Math.max(0, _qaTimerEnd - Date.now());
+  const m = Math.floor(remain / 60000);
+  const s = Math.floor((remain % 60000) / 1000);
+  const cl = document.getElementById('qaTClock');
+  if (cl) cl.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  if (remain <= 0) {
+    if (_qaTimerHandle) { clearInterval(_qaTimerHandle); _qaTimerHandle = null; }
+    if (cl) cl.textContent = '🎉 时间到!';
+    if (navigator.vibrate) navigator.vibrate([300,150,300]);
+    if ('Notification' in window && Notification.permission === 'granted') {
+      try { new Notification('🎉 时间到', {body:_qaCurrent?.label||'记一下吧', icon:'icon-192.png'}); } catch(e) {}
+    }
+  }
+}
+
+function completeQuickAction() {
+  if (!_qaCurrent) return;
+  QuickAction.log(_qaCurrent, true);
+  if (_qaTimerHandle) { clearInterval(_qaTimerHandle); _qaTimerHandle = null; }
+  toast(`✅ +${_qaCurrent.minutes} 分钟「${_qaCurrent.label}」`);
+
+  // 链式：补未覆盖的多元化维度
+  const next = QuickAction.pickNextForMissingDim();
+  const dims = todayDiversityScore();
+  const missingCount = dims.filter(d => !d.done).length;
+
+  if (next && missingCount > 0) {
+    _showChainPrompt(next, missingCount);
+    _qaCurrent = next;
+  } else {
+    document.getElementById('qaTimerOverlay').classList.remove('show');
+    _qaCurrent = null;
+    renderDashboard();
+  }
+}
+
+function _showChainPrompt(next, missingCount) {
+  const card = document.querySelector('.qa-timer-card');
+  if (!card) return;
+  const srcLabel = QA_SOURCE_LABEL[next.source] || '';
+  card.innerHTML = `
+    <div class="qa-t-emoji">🎉</div>
+    <div class="qa-t-label">已记上 — 今天还差 ${missingCount} 个维度</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:14px">补完一个维度更接近平衡：</div>
+    <div style="background:#fef9f3;border-radius:14px;padding:12px;margin-bottom:14px;display:flex;align-items:center;gap:10px;text-align:left">
+      <div style="font-size:36px">${escapeHtml(next.emoji)}</div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:14px;color:var(--text)">${escapeHtml(next.label)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">⏱️ ${next.minutes} 分钟${srcLabel?' · '+escapeHtml(srcLabel):''}</div>
+      </div>
+    </div>
+    <div class="qa-t-actions">
+      <button class="btn-primary" onclick="chainNextAction()" style="flex:1">▶ 接着做</button>
+      <button class="btn-ghost" onclick="finishQuickActionChain()">先这样</button>
+    </div>
+  `;
+}
+
+function chainNextAction() {
+  if (!_qaCurrent) return;
+  // 重置弹窗为标准计时态
+  _restoreQaOverlay();
+  startQuickAction();
+}
+
+function finishQuickActionChain() {
+  document.getElementById('qaTimerOverlay').classList.remove('show');
+  _restoreQaOverlay();
+  _qaCurrent = null;
+  renderDashboard();
+}
+
+function _restoreQaOverlay() {
+  const card = document.querySelector('.qa-timer-card');
+  if (!card) return;
+  card.innerHTML = `
+    <div class="qa-t-emoji" id="qaTEmoji">🎯</div>
+    <div class="qa-t-label" id="qaTLabel">…</div>
+    <div class="qa-t-clock" id="qaTClock">00:00</div>
+    <div class="qa-t-hint">把手机放下，做完再回来</div>
+    <div class="qa-t-actions">
+      <button class="btn-primary" onclick="completeQuickAction()">✅ 做完了</button>
+      <button class="btn-ghost" onclick="cancelQuickAction()">取消</button>
+    </div>
+  `;
+}
+
+function cancelQuickAction() {
+  if (_qaTimerHandle) { clearInterval(_qaTimerHandle); _qaTimerHandle = null; }
+  document.getElementById('qaTimerOverlay').classList.remove('show');
+  _restoreQaOverlay();
+}
+
+// —— 任意来源一键开始 ——
+function startWishlistNow(id) {
+  const w = (Store.get('wishlist') || []).find(x => x.id === id);
+  if (!w) return;
+  _qaCurrent = {
+    type: w.cat || 'explore',
+    label: w.title,
+    emoji: w.emoji || '💭',
+    minutes: 30,
+    source: 'wish',
+    sourceData: w
+  };
+  startQuickAction();
+}
+
+function startPlanItemNow(name, emoji, mins) {
+  _qaCurrent = {
+    type: 'plan',
+    label: name || '今日计划',
+    emoji: emoji || '📅',
+    minutes: parseInt(mins) || 30,
+    source: 'plan'
+  };
+  startQuickAction();
+}
+
+// ==================== 今日多元化 ====================
+function renderDiversityCard() {
+  const el = document.getElementById('divCard');
+  if (!el) return;
+  const dims = todayDiversityScore();
+  const done = dims.filter(d => d.done).length;
+  const tone = done >= 4 ? 'good' : done >= 2 ? 'mid' : 'low';
+  el.className = `div-card ${tone}`;
+  el.innerHTML = `
+    <div class="div-head">
+      <span class="div-title">🌈 今日多元化</span>
+      <span class="div-score">${done}/${dims.length}</span>
+    </div>
+    <div class="div-pills">
+      ${dims.map(d => `
+        <button class="div-pill ${d.done?'done':''}" onclick="quickLog('${escAttr(d.matchTypes[0])}','${escAttr(d.label)}')" title="${d.done?'今天做过了':'点击记录'}">
+          <span class="dp-emoji">${escapeHtml(d.emoji)}</span>
+          <span class="dp-label">${escapeHtml(d.label)}</span>
+          <span class="dp-mark">${d.done?'✓':'＋'}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
 }
 
 // ==================== 一键打开外部 App ====================
@@ -351,6 +560,7 @@ function renderTodayItems() {
       <span class="mi-time">${escapeHtml(it.time)}</span>
       <span class="mi-emoji">${escapeHtml(it.emoji||'🎯')}</span>
       <span class="mi-name">${escapeHtml(it.name||'待定')}</span>
+      <button class="now-btn" onclick="startPlanItemNow('${escAttr(it.name||'')}','${escAttr(it.emoji||'')}',30)">▶ 现在做</button>
       <span class="mi-bell ${has?'on':''}" onclick="toggleReminder('${escAttr(planKey)}','${escAttr(it.time)}','${escAttr(it.name||'')}','${escAttr(it.emoji||'')}')" title="${has?'取消提醒':'设置提醒'}">${has?'🔔':'🔕'}</span>
     </div>`;
   }).join('');
@@ -741,6 +951,66 @@ function renderMonthlyPlan() {
   container.innerHTML = html;
 }
 
+// —— 习惯达成预测：扫描当前月计划，看每个习惯能否被安排满足 ——
+function renderHabitCoverage() {
+  const el = document.getElementById('habCoverage');
+  if (!el) return;
+  const habits = (Habits.all() || []).filter(h => h.active);
+  if (!habits.length) { el.innerHTML = ''; return; }
+  const mp = Store.get('monthlyPlan');
+  if (!mp || !mp.weeks || !mp.weeks.length) {
+    el.innerHTML = `<div class="hcov-empty">📿 设了 ${habits.length} 个习惯。生成计划后，这里会预测能否达成。</div>`;
+    return;
+  }
+  // 对每个习惯，统计 4 周里被覆盖的次数
+  function matchHabit(habit, item) {
+    const name = (item.act && item.act.name) || item.name || '';
+    const note = item.note || '';
+    const cat = item.act && item.act.cat;
+    const text = (name + ' ' + note + ' ' + (cat||'')).toLowerCase();
+    // 名字/note 包含习惯名 → 命中
+    if (text.includes(habit.name.toLowerCase())) return true;
+    // cat 在 types 里
+    if (cat && habit.types && habit.types.includes(cat)) return true;
+    // 名字关键字（粗略中文匹配）
+    const kw = {reading:['书','阅','读'], book:['书'], exercise:['跑','骑','游','网球','篮球','健身','运动','骑行','攀岩','瑜伽','拉伸','散步'], sports:['网球','篮球','足球','跑'], cooking:['做饭','烹饪','烤','煮','菜'], reflect:['冥想','日记','内省','深聊','静坐'], writing:['日记','写'], connect:['家庭','陪','父母','聊','深聊','电影夜'], family:['家庭','陪','父母'], podcast:['播客'], documentary:['纪录'], video:['看片'], course:['课','学习'], language:['英语','阿拉伯语']};
+    for (const t of (habit.types||[])) {
+      const arr = kw[t] || [];
+      if (arr.some(k => text.includes(k))) return true;
+    }
+    return false;
+  }
+  const stats = habits.map(h => {
+    const total = h.cadence === 'daily' ? 28 * h.target : 4 * h.target;
+    let hits = 0;
+    mp.weeks.forEach(w => {
+      DAYS.forEach(d => (w.plan[d] || []).forEach(it => {
+        if (matchHabit(h, it)) hits++;
+      }));
+    });
+    return {h, hits, total, ok: hits >= total, ratio: hits / Math.max(1, total)};
+  });
+  const ok = stats.filter(s => s.ok).length;
+  el.innerHTML = `
+    <div class="hcov-head">
+      <span>📿 习惯达成预测（4周）</span>
+      <span class="hcov-score ${ok===habits.length?'all':''}">${ok}/${habits.length} 满足</span>
+    </div>
+    <div class="hcov-list">
+      ${stats.map(({h,hits,total,ok,ratio}) => {
+        const pct = Math.min(100, Math.round(ratio*100));
+        return `<div class="hcov-row ${ok?'ok':'short'}" title="计划命中 ${hits}/${total}">
+          <span class="hcov-emoji">${escapeHtml(h.emoji)}</span>
+          <span class="hcov-name">${escapeHtml(h.name)}</span>
+          <span class="hcov-bar"><span class="hcov-fill" style="width:${pct}%"></span></span>
+          <span class="hcov-num">${hits}/${total}</span>
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="hcov-hint">💡 命中算法：计划项的名字、备注或分类匹配习惯名/关联类型/关键字。差太多就改计划或调习惯目标。</div>
+  `;
+}
+
 function _nextMondayOrToday() {
   const today = new Date();
   const dow = today.getDay();
@@ -748,6 +1018,30 @@ function _nextMondayOrToday() {
   const d = new Date(today);
   d.setDate(today.getDate() + daysToMon);
   return d;
+}
+
+// —— 工具：选一个不与孩子忙碌时段冲突的时间 ——
+function _slotConflicts(day, time, durationMin, kidBusy) {
+  const busy = kidBusy[day] || [];
+  if (!busy.length) return false;
+  const [h, m] = time.split(':').map(Number);
+  const start = h*60 + m;
+  const end = start + (durationMin || 60);
+  return busy.some(b => {
+    const [bh, bm] = b.start.split(':').map(Number);
+    const [eh, em] = b.end.split(':').map(Number);
+    const bs = bh*60 + bm, be = eh*60 + em;
+    return start < be && end > bs;
+  });
+}
+function pickAvailableTime(day, preferred, kidBusy, durationMin=60) {
+  if (!_slotConflicts(day, preferred, durationMin, kidBusy)) return preferred;
+  // 退路：尝试常用替代时段
+  const fallbacks = ['21:15','21:30','22:00','17:30','18:00','08:00','07:30'];
+  for (const c of fallbacks) {
+    if (!_slotConflicts(day, c, durationMin, kidBusy)) return c;
+  }
+  return preferred;
 }
 
 function generateMonthlyPlan() {
@@ -800,13 +1094,13 @@ function generateMonthlyPlan() {
       d.setDate(weekStart.getDate() + i);
       weekDates[day] = `${d.getMonth()+1}/${d.getDate()}`;
     });
-    plan['一'] = [{time:'19:30', act:monSport, note:'JLT运动', jlt:true}];
+    plan['一'] = [{time: pickAvailableTime('一','19:30',kidBusy,60), act:monSport, note:'JLT运动', jlt:true}];
     const tueLearn = pickBalanced(learningOrReflect, null, w%2===0);
-    plan['二'] = [{time:'19:30', act:tueLearn, note:'JLT学习/内省', jlt:true}];
-    plan['三'] = [{time:'19:30', act:wedSport, note:'JLT运动', jlt:true}];
+    plan['二'] = [{time: pickAvailableTime('二','19:30',kidBusy,60), act:tueLearn, note:'JLT学习/内省', jlt:true}];
+    plan['三'] = [{time: pickAvailableTime('三','19:30',kidBusy,60), act:wedSport, note:'JLT运动', jlt:true}];
     const thuLeis = pickBalanced(leisure, null, w%2===1);
-    plan['四'] = [{time:'19:30', act:thuLeis, note:'JLT休闲', jlt:true}];
-    plan['五'] = [{time:'20:00', act:{id:'fri-tennis',emoji:'🎾',name:'网球 + 夫妻晚餐',outdoor:true}, note:'固定', jlt:false}];
+    plan['四'] = [{time: pickAvailableTime('四','19:30',kidBusy,60), act:thuLeis, note:'JLT休闲', jlt:true}];
+    plan['五'] = [{time: pickAvailableTime('五','20:00',kidBusy,90), act:{id:'fri-tennis',emoji:'🎾',name:'网球 + 夫妻晚餐',outdoor:true}, note:'固定', jlt:false}];
     const satFar = w%2 === 0;
     const satMorning = pickBalanced(fam, usedWeekend, true, satFar);
     const satAft = pickBalanced(fam, [...usedWeekend, satMorning], !isOutdoor(satMorning), !satFar);
@@ -828,6 +1122,7 @@ function generateMonthlyPlan() {
   Store.set('monthlyPlan', {startDate: startDate.toISOString(), weeks});
   mpCursorDate = startDate;
   renderMonthlyPlan();
+  renderHabitCoverage();
   toast('✅ 已生成本月4周计划，可点 ✏️ 编辑，🔔 设提醒');
 }
 
@@ -1098,12 +1393,285 @@ function deleteUserDeal(id) {
 // ==================== ME PAGE ====================
 function renderMePage() {
   renderProfile();
+  renderHabitsSettings();
+  renderSentinelSettings();
   renderWishlist();
   renderStats();
   renderVisited();
   renderGrowthSection();
   renderCookingSection();
   renderSkillsSection();
+}
+
+// ==================== 习惯进度卡（首页） ====================
+function renderHabitsCard() {
+  const el = document.getElementById('habCard');
+  if (!el) return;
+  const habits = (Habits.all() || []).filter(h => h.active);
+  if (!habits.length) {
+    el.innerHTML = `
+      <div class="hc-empty" onclick="showPage('pageMe', document.querySelectorAll('.nav-btn')[4])">
+        📿 还没有习惯 — 点击去「我的」设置
+      </div>
+    `;
+    return;
+  }
+  // 按 落后 > 即将达成 > 已达成 排序
+  const rows = habits.map(h => {
+    const p = Habits.progressFor(h);
+    const def = Math.max(0, p.target - p.current);
+    return {h, p, def};
+  }).sort((a,b) => {
+    if (a.p.done !== b.p.done) return a.p.done ? 1 : -1;
+    return b.def - a.def;
+  });
+  const doneCount = rows.filter(r => r.p.done).length;
+  el.innerHTML = `
+    <div class="hc-head">
+      <span class="hc-title">📿 我的习惯</span>
+      <span class="hc-score">${doneCount}/${habits.length} 达成</span>
+    </div>
+    <div class="hc-list">
+      ${rows.map(({h,p,def}) => {
+        const pct = Math.min(100, Math.round(p.current / Math.max(1,p.target) * 100));
+        const cls = p.done ? 'done' : (def === p.target ? 'behind' : 'mid');
+        return `
+        <button class="hc-row ${cls}" onclick="startHabitNow('${escAttr(h.id)}')" title="${p.done?'今日/本周已达成':'立刻做一次'}">
+          <span class="hr-emoji">${escapeHtml(h.emoji)}</span>
+          <span class="hr-body">
+            <span class="hr-name">${escapeHtml(h.name)}</span>
+            <span class="hr-meta">${escapeHtml(p.period)} ${p.current}/${p.target}${h.duration?` · ${h.duration}分钟`:''}</span>
+          </span>
+          <span class="hr-bar"><span class="hr-fill" style="width:${pct}%"></span></span>
+          <span class="hr-go">${p.done?'✓':'▶'}</span>
+        </button>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
+
+// 一键以习惯开始 quick action
+function startHabitNow(id) {
+  const h = (Habits.all() || []).find(x => x.id === id);
+  if (!h) return;
+  _qaCurrent = {
+    type: (h.types && h.types[0]) || 'plan',
+    label: h.name,
+    emoji: h.emoji,
+    minutes: h.duration || 30,
+    source: 'habit',
+    sourceData: h
+  };
+  startQuickAction();
+}
+
+// ==================== 习惯设置（我的页） ====================
+let _editingHabitId = null;
+function renderHabitsSettings() {
+  const habits = Habits.all() || [];
+  const countEl = document.getElementById('habCount');
+  if (countEl) countEl.textContent = habits.length;
+  const el = document.getElementById('habitsList');
+  if (!el) return;
+  if (!habits.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text2);font-size:12px;padding:14px 8px">还没有习惯</div>';
+    return;
+  }
+  el.innerHTML = habits.map(h => {
+    const p = Habits.progressFor(h);
+    const streak = h.cadence === 'daily' ? Habits.streakFor(h) : 0;
+    const days = (h.preferredDays || []).join('、');
+    return `
+      <div class="hb-item ${p.done?'done':''} ${h.active?'':'off'}">
+        <div class="hb-emoji">${escapeHtml(h.emoji)}</div>
+        <div class="hb-body">
+          <div class="hb-name">
+            ${escapeHtml(h.name)}
+            <span class="hb-tag">${h.cadence==='daily'?'每天':'每周'} · ${h.target} 次 · ${h.duration||30}分钟</span>
+            ${streak>0?`<span class="hb-streak">🔥 ${streak} 天连续</span>`:''}
+          </div>
+          <div class="hb-meta">
+            ${escapeHtml(p.period)} ${p.current}/${p.target}${p.done?' ✓':''}${h.preferredTime?' · ⏰ '+escapeHtml(h.preferredTime):''}${days?' · '+escapeHtml(days):''}
+          </div>
+          <div class="hb-actions">
+            <button class="now-btn" onclick="startHabitNow('${escAttr(h.id)}')">▶ 现在做</button>
+            <button class="wi-btn" onclick="openHabitModal('${escAttr(h.id)}')">✏️</button>
+            <button class="wi-btn" onclick="toggleHabitActive('${escAttr(h.id)}')">${h.active?'⏸️ 暂停':'▶ 启用'}</button>
+            <button class="wi-btn del" onclick="deleteHabit('${escAttr(h.id)}')">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openHabitModal(id) {
+  _editingHabitId = id || null;
+  const h = id ? (Habits.all() || []).find(x => x.id === id) : null;
+  document.getElementById('habitModalTitle').textContent = h ? '✏️ 编辑习惯' : '📿 新习惯';
+  document.getElementById('hbEmoji').value    = h?.emoji    || '📿';
+  document.getElementById('hbName').value     = h?.name     || '';
+  document.getElementById('hbTypes').value    = (h?.types || []).join(',');
+  document.getElementById('hbCadence').value  = h?.cadence  || 'daily';
+  document.getElementById('hbTarget').value   = h?.target   || 1;
+  document.getElementById('hbDuration').value = h?.duration || 30;
+  document.getElementById('hbTime').value     = h?.preferredTime || '19:30';
+  document.getElementById('hbDays').value     = (h?.preferredDays || []).join(',');
+  document.getElementById('hbActive').checked = h ? !!h.active : true;
+  document.getElementById('hbDeleteBtn').style.display = h ? '' : 'none';
+  document.getElementById('habitModal').classList.add('show');
+}
+
+function closeHabitModal() {
+  document.getElementById('habitModal').classList.remove('show');
+  _editingHabitId = null;
+}
+
+function saveHabit() {
+  const name = document.getElementById('hbName').value.trim();
+  if (!name) { toast('⚠️ 请填名称'); return; }
+  const types = document.getElementById('hbTypes').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean);
+  if (!types.length) { toast('⚠️ 至少一个关联类型'); return; }
+  const data = {
+    emoji: document.getElementById('hbEmoji').value.trim() || '📿',
+    name,
+    types,
+    cadence: document.getElementById('hbCadence').value,
+    target: parseInt(document.getElementById('hbTarget').value) || 1,
+    duration: parseInt(document.getElementById('hbDuration').value) || 30,
+    preferredTime: document.getElementById('hbTime').value,
+    preferredDays: document.getElementById('hbDays').value.split(/[,，]/).map(s=>s.trim()).filter(Boolean),
+    active: document.getElementById('hbActive').checked
+  };
+  if (_editingHabitId) Habits.update(_editingHabitId, data);
+  else Habits.add(data);
+  closeHabitModal();
+  renderHabitsSettings();
+  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+  toast(_editingHabitId ? '✅ 已更新' : '✅ 已添加');
+}
+
+function deleteHabit(id) {
+  if (!confirm('删除这个习惯？历史记录不会丢。')) return;
+  Habits.remove(id);
+  renderHabitsSettings();
+  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+}
+
+function deleteCurrentHabit() {
+  if (!_editingHabitId) return;
+  if (!confirm('删除这个习惯？')) return;
+  Habits.remove(_editingHabitId);
+  closeHabitModal();
+  renderHabitsSettings();
+  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+}
+
+function toggleHabitActive(id) {
+  const h = (Habits.all() || []).find(x => x.id === id);
+  if (!h) return;
+  Habits.update(id, {active: !h.active});
+  renderHabitsSettings();
+  if (document.getElementById('pageHome')?.classList.contains('active')) renderHabitsCard();
+}
+
+// ==================== 反刷视频 · 易沉迷时段设置 ====================
+function renderSentinelSettings() {
+  const el = document.getElementById('sentinelContent');
+  if (!el) return;
+  const cfg = Store.get('sentinel') || {};
+  const div = Store.get('diversityNudge') || {};
+  const wd = (cfg.weekdayHours || []).join('、') || '（无）';
+  const we = (cfg.weekendHours || []).join('、') || '（无）';
+  el.innerHTML = `
+    <div style="font-size:11px;color:var(--text2);line-height:1.6;margin-bottom:10px">
+      <b style="color:#ef4444">易沉迷时段</b> 到点会推送系统通知，提醒你做点别的（不是关掉视频，而是把"做点别的"端到你面前）。
+    </div>
+    <div class="sn-row">
+      <label class="sn-l"><input type="checkbox" id="snEnabled" ${cfg.enabled?'checked':''} onchange="toggleSentinel(this.checked)"> 启用易沉迷时段提醒</label>
+    </div>
+    <div class="sn-block">
+      <div class="sn-blab">📅 工作日时段：<span class="sn-cur">${escapeHtml(wd)}</span></div>
+      <div class="sn-chips">
+        ${['12:30','17:30','19:30','20:30','21:30','22:30'].map(t => `
+          <button class="sn-chip ${(cfg.weekdayHours||[]).includes(t)?'on':''}" onclick="toggleSentinelHour('weekday','${t}')">${t}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="sn-block">
+      <div class="sn-blab">🎉 周末时段：<span class="sn-cur">${escapeHtml(we)}</span></div>
+      <div class="sn-chips">
+        ${['10:00','14:00','16:00','19:30','21:30','22:30'].map(t => `
+          <button class="sn-chip ${(cfg.weekendHours||[]).includes(t)?'on':''}" onclick="toggleSentinelHour('weekend','${t}')">${t}</button>
+        `).join('')}
+      </div>
+    </div>
+    <div class="sn-divider"></div>
+    <div class="sn-row">
+      <label class="sn-l"><input type="checkbox" id="dnEnabled" ${div.enabled?'checked':''} onchange="toggleDiversityNudge(this.checked)"> 启用每晚多元化提醒</label>
+    </div>
+    <div class="sn-block">
+      <div class="sn-blab">⏰ 晚间提醒时间：<b style="color:var(--accent)">${div.hour||21}:00</b></div>
+      <div class="sn-chips">
+        ${[19,20,21,22].map(h => `
+          <button class="sn-chip ${div.hour===h?'on':''}" onclick="setDiversityHour(${h})">${h}:00</button>
+        `).join('')}
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text2);margin-top:10px;line-height:1.5">
+      💡 提醒只在你打开过 App 后才能触发。第一次需同意系统通知权限。
+      ${cfg.lastScheduledDate ? `<br>今天的提醒已安排（${escapeHtml(cfg.lastScheduledDate)}）。` : ''}
+    </div>
+    <button class="btn-primary" style="margin-top:10px;padding:8px 14px;font-size:12px" onclick="testSentinelNudge()">🔔 立刻试一下通知</button>
+  `;
+}
+
+function toggleSentinel(on) {
+  Store.update(s => { s.sentinel.enabled = on; });
+  if (on) Sentinel.scheduleToday();
+  toast(on ? '✅ 已启用' : '🔕 已关闭');
+}
+
+function toggleSentinelHour(scope, hm) {
+  Store.update(s => {
+    const k = scope === 'weekday' ? 'weekdayHours' : 'weekendHours';
+    const arr = s.sentinel[k] || [];
+    const i = arr.indexOf(hm);
+    if (i >= 0) arr.splice(i, 1); else arr.push(hm);
+    arr.sort();
+    s.sentinel[k] = arr;
+    s.sentinel.lastScheduledDate = null; // 让今日重排
+  });
+  // 取消今天对应该时段已排但未发的（如果取消了某时段）
+  Reminders.cleanup();
+  Sentinel.scheduleToday();
+  renderSentinelSettings();
+}
+
+function toggleDiversityNudge(on) {
+  Store.update(s => { s.diversityNudge.enabled = on; s.diversityNudge.lastScheduledDate = null; });
+  if (on) DiversityNudge.scheduleToday();
+  toast(on ? '✅ 已启用每晚提醒' : '🔕 已关闭');
+}
+
+function setDiversityHour(h) {
+  Store.update(s => { s.diversityNudge.hour = h; s.diversityNudge.lastScheduledDate = null; });
+  DiversityNudge.scheduleToday();
+  renderSentinelSettings();
+}
+
+async function testSentinelNudge() {
+  const ok = await Reminders.requestPermission();
+  if (!ok) { toast('⚠️ 浏览器拒绝了通知权限'); return; }
+  toast('🔔 30 秒后会推送一条测试通知');
+  Reminders.schedule({
+    planKey: `test-nudge-${Date.now()}`,
+    fireAt: new Date(Date.now() + 30000).toISOString(),
+    title: '📵 这是一条测试通知',
+    body: '通知正常工作了',
+    leadMin: 0
+  });
 }
 
 // ==================== 心愿单（想做的事） ====================
@@ -1132,6 +1700,7 @@ function renderWishlist() {
         ${(w.when||w.cost)?`<div class="wi-meta">${w.when?'⏰ '+escapeHtml(w.when):''}${w.when&&w.cost?' · ':''}${w.cost?'💰 '+escapeHtml(w.cost):''}</div>`:''}
         ${w.notes?`<div class="wi-notes">💡 ${escapeHtml(w.notes)}</div>`:''}
         <div class="wi-actions">
+          <button class="now-btn" onclick="startWishlistNow('${escAttr(w.id)}')" title="立刻开始 30 分钟">▶ 现在做</button>
           ${w.url?`<a class="wi-link" href="${escAttr(w.url)}" target="_blank" rel="noopener">🔗 链接</a>`:''}
           <button class="wi-btn" onclick="completeWishlist('${escAttr(w.id)}')" title="完成">✅ 做了</button>
           <button class="wi-btn" onclick="openWishlistModal('${escAttr(w.id)}')" title="编辑">✏️</button>
@@ -1614,6 +2183,7 @@ window.addEventListener('DOMContentLoaded', () => {
   Store.load();            // 加载 + 迁移
   loadUserActivities();    // 合并用户自定义活动
   cleanupExpiredDeals();   // 清理过期折扣
+  Habits.ensureDefaults(); // 首次种入 6 个默认习惯（必须在 renderDashboard 前）
   // 每日一句轮换
   Store.update(s => { s.lastDashQuote = (s.lastDashQuote + 1) % QUOTES.length; });
   fetchWeather();
@@ -1623,6 +2193,11 @@ window.addEventListener('DOMContentLoaded', () => {
   // Reminders
   Reminders.start();
   Reminders.cleanup();
+  // 反刷视频：每天首次开 App 自动排今日哨兵 + 多元化提醒
+  Sentinel.scheduleToday();
+  DiversityNudge.scheduleToday();
+  // 第一次见到 App 时静默请求一次通知权限（用户没拒过才会问）
+  Reminders.requestPermission().catch(()=>{});
   // 导入文件监听
   document.getElementById('importFile')?.addEventListener('change', handleImportFile);
   // Service Worker
@@ -1633,6 +2208,12 @@ window.addEventListener('DOMContentLoaded', () => {
 Object.assign(window, {
   showPage, toggleSec,
   renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder,
+  renderQuickActionCard, reshuffleQuickAction, startQuickAction, completeQuickAction, cancelQuickAction, chainNextAction, finishQuickActionChain,
+  renderDiversityCard,
+  renderSentinelSettings, toggleSentinel, toggleSentinelHour, toggleDiversityNudge, setDiversityHour, testSentinelNudge,
+  startWishlistNow, startPlanItemNow, startHabitNow,
+  renderHabitsCard, renderHabitsSettings, openHabitModal, closeHabitModal, saveHabit, deleteHabit, deleteCurrentHabit, toggleHabitActive,
+  renderHabitCoverage,
   setMode, setCatFilter, spin,
   changeStars, changeStatus, saveUserNote, confirmVisit,
   renderMonthlyPlan, generateMonthlyPlan,

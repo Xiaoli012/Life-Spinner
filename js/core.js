@@ -24,7 +24,24 @@ const DEFAULT_STATE = {
   skillProgress: {},    // {skillId: {startedAt, weeksDone:[...]}}
   userDeals: [],        // 用户自己录入的折扣
   lastDashQuote: -1,
-  migratedFromV1: false
+  migratedFromV1: false,
+  // —— 反刷视频三件套 ——
+  sentinel: {
+    enabled: true,
+    weekdayHours: ['19:30','21:30'],     // 工作日易刷视频时段
+    weekendHours: ['14:00','21:30'],     // 周末易刷视频时段
+    lastScheduledDate: null              // 'YYYY-MM-DD'，避免重复排期
+  },
+  diversityNudge: {
+    enabled: true,
+    hour: 21,                            // 几点提醒
+    minScore: 3,                         // 当日 < 该值才提醒
+    lastScheduledDate: null
+  },
+  quickActionLog: [],                    // [{date, type, label, minutes, completed}]
+  // —— 习惯（一等公民） ——
+  habits: [],                            // [{id, name, emoji, types[], cadence, target, duration, preferredDays[], preferredTime, active, createdAt}]
+  habitsSeeded: false                    // 首次运行时填充默认 6 习惯
 };
 
 // 深度合并默认状态（向后兼容新字段）
@@ -381,6 +398,466 @@ function growthReport(scope='week') {
   };
 }
 
+// ==================== 反刷视频三件套 ====================
+
+// —— 多元化维度（与「成长记录」的快速记录按钮对齐） ——
+const DIVERSITY_DIMS = [
+  {key:'reading',  emoji:'📖', label:'读书',   matchTypes:['reading','book']},
+  {key:'podcast',  emoji:'🎙️', label:'听学',   matchTypes:['podcast','documentary','video','course','language','app','ted']},
+  {key:'exercise', emoji:'🏃', label:'运动',   matchTypes:['exercise','sports','sport']},
+  {key:'reflect',  emoji:'🧘', label:'内省',   matchTypes:['reflect','writing','meditate','journal']},
+  {key:'cooking',  emoji:'🍳', label:'做饭',   matchTypes:['cooking']},
+  {key:'connect',  emoji:'💞', label:'陪家人', matchTypes:['connect','family']}
+];
+
+// 计算今日多元化覆盖
+function todayDiversityScore() {
+  const log = Store.get('growthLog') || [];
+  const today = todayISO();
+  const todayTypes = new Set(log.filter(l => l.date === today).map(l => l.type));
+  return DIVERSITY_DIMS.map(d => ({
+    ...d,
+    done: d.matchTypes.some(t => todayTypes.has(t))
+  }));
+}
+
+// —— 快速行动建议库（"现在就来一个"） ——
+const QUICK_ACTIONS = [
+  // type, label, emoji, minutes, energy(low/mid/high), timeOk(数组或'all')
+  {type:'reading',  label:'读 15 页书',         emoji:'📖', minutes:15, energy:'low',  timeOk:'all'},
+  {type:'reading',  label:'读 5 分钟（开个头）', emoji:'📖', minutes:5,  energy:'low',  timeOk:'all'},
+  {type:'reflect',  label:'写 10 分钟日记',     emoji:'📝', minutes:10, energy:'low',  timeOk:[6,7,8,21,22,23]},
+  {type:'reflect',  label:'冥想 10 分钟',       emoji:'🧘', minutes:10, energy:'low',  timeOk:'all'},
+  {type:'reflect',  label:'写 3 件感恩的事',    emoji:'🌅', minutes:5,  energy:'low',  timeOk:[20,21,22,23]},
+  {type:'exercise', label:'JLT 湖边走 20 分钟', emoji:'🚶', minutes:20, energy:'mid',  timeOk:[6,7,8,9,17,18,19,20]},
+  {type:'exercise', label:'家里拉伸 5 分钟',    emoji:'🤸', minutes:5,  energy:'low',  timeOk:'all'},
+  {type:'exercise', label:'10 分钟核心训练',    emoji:'💪', minutes:10, energy:'mid',  timeOk:[6,7,8,9,10,17,18,19,20]},
+  {type:'connect',  label:'给爸妈打个电话',     emoji:'📞', minutes:15, energy:'low',  timeOk:[10,11,12,13,14,15,16,17,18,19,20]},
+  {type:'connect',  label:'和家人聊 10 分钟',   emoji:'💞', minutes:10, energy:'low',  timeOk:'all'},
+  {type:'connect',  label:'给老朋友发消息',     emoji:'💬', minutes:5,  energy:'low',  timeOk:'all'},
+  {type:'cooking',  label:'计划明天的一顿饭',   emoji:'🍳', minutes:10, energy:'low',  timeOk:'all'},
+  {type:'cooking',  label:'整理冰箱 / 食材清单', emoji:'🧊', minutes:15, energy:'low',  timeOk:[9,10,11,17,18,19,20]},
+  {type:'podcast',  label:'听一集 18 分钟播客', emoji:'🎙️', minutes:18, energy:'low',  timeOk:'all'},
+  {type:'podcast',  label:'看一个 TED 演讲',    emoji:'💡', minutes:18, energy:'low',  timeOk:'all'},
+  {type:'language', label:'Duolingo 5 分钟',    emoji:'🦉', minutes:5,  energy:'low',  timeOk:'all'},
+  {type:'writing',  label:'随手写 200 字',      emoji:'✍️', minutes:15, energy:'mid',  timeOk:'all'},
+];
+
+const QuickAction = {
+  // 综合所有数据源生成候选 — 这是"行动路线"的核心
+  candidates() {
+    const out = [];
+    const now = new Date();
+    const h = now.getHours();
+
+    // 0. 落后的习惯（最高权重 — 比心愿单还高）
+    Habits.behindSchedule().forEach(hb => {
+      const def = Habits.deficit(hb);
+      const prog = Habits.progressFor(hb);
+      out.push({
+        type: (hb.types && hb.types[0]) || 'plan',
+        label: hb.name + (def > 1 ? `（还差 ${def} 次）` : ''),
+        emoji: hb.emoji,
+        minutes: hb.duration || 30,
+        source: 'habit',
+        sourceData: hb,
+        trend: hb.cadence === 'daily' ? '今日未做' : `本周 ${prog.current}/${prog.target}`,
+        weight: 5
+      });
+    });
+
+    // 1. 静态种子库（按当前时段过滤）
+    QUICK_ACTIONS.forEach(a => {
+      if (a.timeOk !== 'all' && !a.timeOk.includes(h)) return;
+      out.push({...a, source:'static', weight:1});
+    });
+
+    // 2. 心愿单 — 用户自己想做的，最高权重 + 等待时长趋势
+    const wish = Store.get('wishlist') || [];
+    wish.forEach(w => {
+      const days = w.createdAt ? Math.floor((Date.now() - new Date(w.createdAt))/86400000) : 0;
+      let trend = null;
+      if (days >= 30) trend = `心愿等了 ${days} 天`;
+      else if (days >= 14) trend = `等了 ${days} 天`;
+      out.push({
+        type: w.cat || 'explore',
+        label: w.title,
+        emoji: w.emoji || '💭',
+        minutes: 30,
+        source: 'wish',
+        sourceId: w.id,
+        sourceData: w,
+        trend,
+        weight: 4
+      });
+    });
+
+    // 3. 今日计划（每周固定 + 月计划）
+    const dayName = todayDayName();
+    const fixed = (Store.get('weeklyPlan') || []).filter(p => p.day === dayName);
+    fixed.forEach(p => {
+      out.push({
+        type: 'plan',
+        label: p.act,
+        emoji: p.emoji || '📅',
+        minutes: 30,
+        source: 'plan',
+        sourceData: p,
+        trend: `今日 ${p.time}`,
+        weight: 3
+      });
+    });
+    const mp = Store.get('monthlyPlan');
+    if (mp && mp.weeks && typeof DAYS !== 'undefined') {
+      const todayMD = `${now.getMonth()+1}/${now.getDate()}`;
+      mp.weeks.forEach((w) => {
+        DAYS.forEach(d => {
+          if (w.dates && w.dates[d] === todayMD && w.plan && w.plan[d]) {
+            w.plan[d].forEach(it => {
+              const name = it.act?.name || it.name;
+              const emoji = it.act?.emoji || it.emoji || '📅';
+              if (!name) return;
+              out.push({
+                type: 'plan',
+                label: name,
+                emoji,
+                minutes: 30,
+                source: 'plan',
+                sourceData: it,
+                trend: `今日 ${it.time||''}`.trim(),
+                weight: 3
+              });
+            });
+          }
+        });
+      });
+    }
+
+    // 4. 烹饪心愿菜谱
+    const cookWish = Store.get('cookingWishlist') || [];
+    if (typeof RECIPES !== 'undefined') {
+      cookWish.slice(0, 6).forEach(rid => {
+        const r = RECIPES.find(x => x.id === rid);
+        if (!r) return;
+        out.push({
+          type: 'cooking',
+          label: '做：' + r.name,
+          emoji: r.emoji || '🍳',
+          minutes: r.minutes || 45,
+          source: 'recipe',
+          sourceData: r,
+          trend: '心愿菜谱',
+          weight: 2
+        });
+      });
+    }
+
+    // 5. 学习池
+    if (typeof LEARNING_POOL !== 'undefined') {
+      LEARNING_POOL.forEach(l => {
+        out.push({
+          type: l.type,
+          label: l.name,
+          emoji: l.emoji,
+          minutes: l.minutes || 15,
+          source: 'learning',
+          sourceData: l,
+          weight: 1
+        });
+      });
+    }
+
+    // 6. 限时优惠（≤7 天过期的，紧迫感）
+    if (typeof FEATURED_DEALS !== 'undefined') {
+      FEATURED_DEALS.forEach(d => {
+        if (!d.expiresAt) return;
+        const left = (new Date(d.expiresAt) - Date.now()) / 86400000;
+        if (left < 0 || left > 7) return;
+        out.push({
+          type: 'explore',
+          label: d.name,
+          emoji: d.emoji || '🏷️',
+          minutes: 60,
+          source: 'deal',
+          sourceData: d,
+          trend: left < 2 ? '今晚最后机会' : `还剩 ${Math.ceil(left)} 天`,
+          weight: 2
+        });
+      });
+    }
+
+    // 7. 技能下一周
+    const skProg = Store.get('skillProgress') || {};
+    if (typeof SKILLS !== 'undefined') {
+      Object.entries(skProg).forEach(([sid, p]) => {
+        const sk = SKILLS.find(s => s.id === sid);
+        if (!sk || !sk.plan) return;
+        const next = sk.plan.findIndex((_, i) => !(p.weeksDone || []).includes(i));
+        if (next < 0) return;
+        out.push({
+          type: 'skill',
+          label: `${sk.name} 第${next+1}周`,
+          emoji: sk.emoji || '🎯',
+          minutes: 30,
+          source: 'skill',
+          sourceData: {sk, weekIdx: next},
+          trend: '技能进度',
+          weight: 2
+        });
+      });
+    }
+
+    // 8. VENUES 每日轮换 2 个
+    const dayOfYear = Math.floor((Date.now() - new Date(now.getFullYear(),0,0)) / 86400000);
+    if (typeof VENUES !== 'undefined') {
+      const pool = [];
+      Object.keys(VENUES).forEach(k => (VENUES[k].items || []).forEach(v => pool.push(v)));
+      if (pool.length) {
+        [3, 7].forEach(off => {
+          const v = pool[(dayOfYear * off) % pool.length];
+          if (!v) return;
+          out.push({
+            type: 'explore',
+            label: '去：' + v.name,
+            emoji: v.emoji || '📍',
+            minutes: 90,
+            source: 'venue',
+            sourceData: v,
+            weight: 1
+          });
+        });
+      }
+    }
+
+    return out;
+  },
+
+  // 优先推荐：时长 + 类型多元化 + 加权随机
+  pick(durationFilter) {
+    const all = this.candidates();
+    const log = Store.get('growthLog') || [];
+    const today = todayISO();
+    const todayTypes = new Set(log.filter(l => l.date === today).map(l => l.type));
+
+    let pool = all;
+    if (durationFilter === 'short') pool = pool.filter(a => a.minutes <= 10);
+    else if (durationFilter === 'medium') pool = pool.filter(a => a.minutes > 10 && a.minutes <= 30);
+    else if (durationFilter === 'long') pool = pool.filter(a => a.minutes > 30);
+    if (!pool.length) pool = all;
+
+    // 多元化：优先未覆盖的维度
+    const fresh = pool.filter(a => !todayTypes.has(a.type));
+    if (fresh.length >= 3) pool = fresh;
+
+    // 加权随机
+    const total = pool.reduce((s,a) => s + (a.weight || 1), 0);
+    if (total === 0) return pool[0];
+    let r = Math.random() * total;
+    for (const a of pool) {
+      r -= (a.weight || 1);
+      if (r <= 0) return a;
+    }
+    return pool[pool.length - 1];
+  },
+
+  // 链式：完成一个后挑下一个，专门补未覆盖的多元化维度
+  pickNextForMissingDim() {
+    const dims = todayDiversityScore();
+    const missing = dims.filter(d => !d.done);
+    if (!missing.length) return null;
+    const wantedTypes = new Set(missing.flatMap(d => d.matchTypes));
+    const all = this.candidates().filter(a => wantedTypes.has(a.type));
+    if (!all.length) return null;
+    const total = all.reduce((s,a) => s + (a.weight || 1), 0);
+    let r = Math.random() * total;
+    for (const a of all) {
+      r -= (a.weight || 1);
+      if (r <= 0) return a;
+    }
+    return all[0];
+  },
+
+  log(action, completed) {
+    Store.update(s => {
+      if (!s.quickActionLog) s.quickActionLog = [];
+      s.quickActionLog.unshift({
+        date: todayISO(),
+        time: new Date().toISOString(),
+        type: action.type,
+        label: action.label,
+        minutes: action.minutes,
+        completed: !!completed
+      });
+      if (s.quickActionLog.length > 500) s.quickActionLog.length = 500;
+    });
+    if (completed) {
+      logGrowth({type: action.type, refId: 'qa-'+action.type, refName: action.label, minutes: action.minutes, note:'快速行动'});
+    }
+  }
+};
+
+// ==================== 习惯（一等公民） ====================
+// 6 个默认习惯 — 与多元化维度完全对齐，首次开 App 自动种入
+const DEFAULT_HABITS = [
+  {name:'读书',     emoji:'📖', types:['reading','book'],                                              cadence:'daily',  target:1, duration:15, preferredTime:'21:00'},
+  {name:'听学/看片', emoji:'🎙️', types:['podcast','documentary','video','course','language','app','ted'], cadence:'weekly', target:3, duration:30, preferredTime:'07:30'},
+  {name:'运动',     emoji:'🏃', types:['exercise','sports','sport'],                                   cadence:'weekly', target:3, duration:30, preferredDays:['一','三','五'], preferredTime:'19:30'},
+  {name:'内省',     emoji:'🧘', types:['reflect','writing','meditate','journal'],                      cadence:'daily',  target:1, duration:10, preferredTime:'22:00'},
+  {name:'做饭',     emoji:'🍳', types:['cooking'],                                                     cadence:'weekly', target:4, duration:45, preferredTime:'18:30'},
+  {name:'陪家人',   emoji:'💞', types:['connect','family'],                                            cadence:'daily',  target:1, duration:30, preferredTime:'19:30'}
+];
+
+// 周一为本周开始
+function _startOfWeek(d) {
+  d = d || new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? 6 : day - 1;
+  const s = new Date(d);
+  s.setDate(d.getDate() - diff);
+  s.setHours(0,0,0,0);
+  return s;
+}
+
+const Habits = {
+  all() { return Store.get('habits') || []; },
+
+  ensureDefaults() {
+    const seeded = Store.get('habitsSeeded');
+    if (seeded) return;
+    const cur = this.all();
+    if (cur.length > 0) {
+      Store.update(s => { s.habitsSeeded = true; });
+      return;
+    }
+    Store.update(s => {
+      s.habits = DEFAULT_HABITS.map(h => ({
+        id: 'h_' + uid(),
+        active: true,
+        createdAt: new Date().toISOString(),
+        preferredDays: [],
+        ...h
+      }));
+      s.habitsSeeded = true;
+    });
+  },
+
+  add(habit) {
+    Store.update(s => {
+      if (!s.habits) s.habits = [];
+      s.habits.push({
+        id: 'h_' + uid(),
+        active: true,
+        createdAt: new Date().toISOString(),
+        preferredDays: [],
+        ...habit
+      });
+    });
+  },
+
+  update(id, patch) {
+    Store.update(s => {
+      const h = (s.habits || []).find(x => x.id === id);
+      if (h) Object.assign(h, patch);
+    });
+  },
+
+  remove(id) {
+    Store.update(s => { s.habits = (s.habits || []).filter(x => x.id !== id); });
+  },
+
+  // 当前周期完成进度
+  progressFor(habit) {
+    const log = Store.get('growthLog') || [];
+    const types = new Set(habit.types || []);
+    if (habit.cadence === 'daily') {
+      const today = todayISO();
+      const count = log.filter(l => l.date === today && types.has(l.type)).length;
+      return {current: count, target: habit.target || 1, period: '今日', done: count >= (habit.target || 1)};
+    } else {
+      const start = _startOfWeek();
+      const count = log.filter(l => new Date(l.date) >= start && types.has(l.type)).length;
+      return {current: count, target: habit.target || 1, period: '本周', done: count >= (habit.target || 1)};
+    }
+  },
+
+  // 缺多少次
+  deficit(habit) {
+    const p = this.progressFor(habit);
+    return Math.max(0, p.target - p.current);
+  },
+
+  // 落后的习惯（用于 QuickAction 优先推荐）
+  behindSchedule() {
+    return this.all().filter(h => h.active && this.deficit(h) > 0);
+  },
+
+  // 连续达成天数（仅 daily 习惯）
+  streakFor(habit) {
+    if (habit.cadence !== 'daily') return 0;
+    const log = Store.get('growthLog') || [];
+    const types = new Set(habit.types || []);
+    const dates = new Set(log.filter(l => types.has(l.type)).map(l => l.date));
+    let streak = 0;
+    const d = new Date();
+    while (dates.has(fmtDate(d))) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    }
+    return streak;
+  }
+};
+
+// —— 易沉迷时段哨兵：每天最多排一次 ——
+const Sentinel = {
+  scheduleToday() {
+    const cfg = Store.get('sentinel');
+    if (!cfg || !cfg.enabled) return;
+    const today = todayISO();
+    if (cfg.lastScheduledDate === today) return;
+    // Dubai 周末是 Sat/Sun（5/6/0 中以本地为准；这里用 Sat=6, Sun=0）
+    const dow = new Date().getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const hours = isWeekend ? (cfg.weekendHours || []) : (cfg.weekdayHours || []);
+    const now = Date.now();
+    hours.forEach(hm => {
+      const m = String(hm).match(/^(\d{1,2}):(\d{2})$/);
+      if (!m) return;
+      const fireAt = new Date();
+      fireAt.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0);
+      if (fireAt.getTime() <= now + 60000) return; // 已过或马上到的跳过
+      Reminders.schedule({
+        planKey: `sentinel:${today}:${hm}`,
+        fireAt: fireAt.toISOString(),
+        title: '📵 易刷视频的点',
+        body: '换一个 15 分钟的事？打开 App 看看推荐',
+        leadMin: 0
+      });
+    });
+    Store.update(s => { s.sentinel.lastScheduledDate = today; });
+  }
+};
+
+// —— 多元化晚间提醒 ——
+const DiversityNudge = {
+  scheduleToday() {
+    const cfg = Store.get('diversityNudge');
+    if (!cfg || !cfg.enabled) return;
+    const today = todayISO();
+    if (cfg.lastScheduledDate === today) return;
+    const fireAt = new Date();
+    fireAt.setHours(cfg.hour || 21, 0, 0, 0);
+    if (fireAt.getTime() <= Date.now() + 60000) return;
+    Reminders.schedule({
+      planKey: `diversity-nudge:${today}`,
+      fireAt: fireAt.toISOString(),
+      title: '🌈 今日多元化',
+      body: '看看今天还差几个维度 — 打开 App 补一个',
+      leadMin: 0
+    });
+    Store.update(s => { s.diversityNudge.lastScheduledDate = today; });
+  }
+};
+
 // 清理过期的用户折扣
 function cleanupExpiredDeals() {
   const today = todayISO();
@@ -421,7 +898,8 @@ function importDataFromFile(file) {
 
 // 挂到全局
 Object.assign(window, {
-  Store, Reminders,
+  Store, Reminders, Sentinel, DiversityNudge, QuickAction, Habits,
+  DIVERSITY_DIMS, todayDiversityScore, DEFAULT_HABITS,
   escapeHtml, escAttr, toast, fmtDate, todayISO,
   todayDayName, dayIdxToName,
   getDistMin, isNearby, isOutdoor, uid,
