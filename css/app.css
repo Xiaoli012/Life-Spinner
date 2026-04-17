@@ -34,6 +34,34 @@ body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:linear-gradi
 .dm-date{}
 .dm-w{font-weight:700;color:var(--accent)}
 
+/* Philosophy band — 哲学带：家庭/夫妻/工作 → 快乐/幸福/惊喜 */
+.philosophy-band{
+  margin:4px 16px 10px;padding:8px 12px;border-radius:14px;
+  text-align:center;line-height:1.6;
+  font-size:11px;font-weight:600;letter-spacing:.3px;color:var(--text2);
+  background:linear-gradient(110deg,rgba(255,237,213,.7) 0%,rgba(255,228,236,.7) 50%,rgba(224,231,255,.7) 100%);
+  border:1px solid rgba(245,158,11,.14);
+  box-shadow:0 1px 6px rgba(245,158,11,.06) inset;
+}
+.philosophy-band .pb-unit{white-space:nowrap;display:inline-block}
+.philosophy-band .pb-sep{margin:0 6px;color:rgba(15,23,42,.25);font-weight:400}
+.philosophy-band .pb-arrow{margin:0 8px;color:rgba(245,158,11,.75);font-weight:700}
+.philosophy-band .pb-feel-w{
+  background:linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%);
+  background-size:200% 200%;
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  font-weight:800;letter-spacing:.5px;white-space:nowrap;display:inline-block;
+  animation:pb-shimmer 8s ease-in-out infinite;
+}
+.philosophy-band .pb-feel-w:nth-of-type(2){animation-delay:-2.7s}
+.philosophy-band .pb-feel-w:nth-of-type(3){animation-delay:-5.3s}
+@keyframes pb-shimmer{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+}
+@media (prefers-reduced-motion:reduce){.philosophy-band .pb-feel-w{animation:none}}
+@media (max-width:340px){.philosophy-band{font-size:10.5px}}
+
 /* 名言卡（主界面灵魂） */
 .quote-card{margin:6px 16px 12px;padding:18px 20px 14px;border-radius:18px;background:linear-gradient(135deg,#fff4d6 0%,#fdd9e8 50%,#e3e0ff 100%);border:1px solid rgba(245,158,11,.2);box-shadow:0 4px 18px rgba(245,158,11,.1);cursor:pointer;position:relative;overflow:hidden;transition:transform .15s}
 .quote-card:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(245,158,11,.18)}
@@ -276,6 +304,18 @@ canvas#wheel{width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;curs
 .rl a:hover{background:rgba(245,158,11,.15)}
 .fazaa-badge{background:linear-gradient(135deg,rgba(22,163,74,.18),rgba(34,197,94,.12));color:#15803d;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700}
 .fazaa-link{background:rgba(22,163,74,.1) !important;color:#15803d !important}
+
+/* Resources (apps / sites / music / processes) */
+.res-block{padding:10px 16px 4px;border-top:1px solid rgba(15,23,42,.05)}
+.res-h{font-size:11px;color:var(--text2);margin-bottom:8px;font-weight:600;letter-spacing:.3px}
+.res-chips{display:flex;gap:6px;flex-wrap:wrap}
+.res-chip{padding:7px 10px;background:var(--card2);border-radius:8px;font-size:11px;color:var(--text);text-decoration:none;display:inline-flex;align-items:center;gap:5px;line-height:1.35;border:1px solid rgba(15,23,42,.04);max-width:100%}
+a.res-chip{color:var(--accent)}
+a.res-chip:hover{background:rgba(245,158,11,.15)}
+.res-chip .res-name{font-weight:600}
+.res-chip .res-desc{color:var(--text2);font-weight:400}
+.res-chip.res-flow{background:rgba(34,197,94,.08);color:#15803d;border-color:rgba(34,197,94,.18)}
+.res-chip.res-flow .res-desc{color:#15803d;opacity:.85}
 
 /* Rating */
 .rating-section{padding:10px 16px;border-top:1px solid rgba(15,23,42,.05)}

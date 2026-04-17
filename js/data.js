@@ -4,18 +4,21 @@
 // ============================================================
 
 // ==================== 三大人生支柱（顶层定位） ====================
-// 这个 App 的本质：帮你 规划生活 · 寻找灵感 · 走向意义
+// 哲学：在 家庭 · 夫妻 · 工作 之间，为自己留出 快乐 · 幸福 · 惊喜
+//   规划 → 幸福（节奏与平衡里长出的踏实）
+//   灵感 → 惊喜（一点意外，今天就被点亮）
+//   意义 → 快乐（今天比昨天好一点点，是最长久的快乐）
 const PILLARS = {
-  plan:    {id:'plan',    label:'规划', emoji:'📅', color:'var(--accent3)', desc:'让生活有方向，不再被日子推着走',     cta:'打开月计划', page:'pagePlan'},
-  inspire: {id:'inspire', label:'灵感', emoji:'✨', color:'var(--accent)',  desc:'不知道做什么时，让运气和清单帮你',   cta:'转一下',     page:'pageSpinner'},
-  meaning: {id:'meaning', label:'意义', emoji:'🌱', color:'var(--accent2)', desc:'把时间花在让自己变好的事上',         cta:'看成长',     page:'pageMe'}
+  plan:    {id:'plan',    label:'规划', emoji:'📅', color:'var(--accent3)', desc:'在家与工作之间留出节奏 · 把时间还给重要的人',         cta:'打开月计划', page:'pagePlan'},
+  inspire: {id:'inspire', label:'灵感', emoji:'✨', color:'var(--accent)',  desc:'一点意外的小事，今天就被点亮',                       cta:'转一下',     page:'pageSpinner'},
+  meaning: {id:'meaning', label:'意义', emoji:'🌱', color:'var(--accent2)', desc:'今天比昨天多一点点 — 长久的快乐，住在小坚持里',       cta:'看成长',     page:'pageMe'}
 };
 
 // ==================== 四大人生维度（每日具体抓手） ====================
 const DIMENSIONS = {
   grow:    {id:'grow',    label:'成长', emoji:'🌱', color:'var(--dim-grow)',    desc:'读书 · 学习 · 思考'},
   passion: {id:'passion', label:'热爱', emoji:'🔥', color:'var(--dim-passion)', desc:'烹饪 · 运动 · 创作'},
-  connect: {id:'connect', label:'关系', emoji:'💞', color:'var(--dim-connect)', desc:'家庭 · 朋友 · 长辈'},
+  connect: {id:'connect', label:'关系', emoji:'💞', color:'var(--dim-connect)', desc:'家人 · 伴侣 · 朋友 · 长辈'},
   explore: {id:'explore', label:'探索', emoji:'✨', color:'var(--dim-explore)', desc:'户外 · 美食 · 文化'}
 };
 
@@ -115,15 +118,28 @@ const ACTIVITIES_RAW = [
   {name:'画画/手工时间', emoji:'🎨', audiences:['family'], cat:'learning', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'主题绘画：今天画一样让你开心的东西'}},
   {name:'乐器练习', emoji:'🎹', audiences:['family'], cat:'skill', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'固定时间练30分钟'}},
   {name:'亲子编程/学习', emoji:'💻', audiences:['family'], cat:'learning', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'Scratch/Khan Academy/Duolingo'}},
-  {name:'JLT湖边瑜伽', emoji:'🧘', audiences:['family','couple'], cat:'reflect', outdoor:true, jlt:true, info:{loc:'JLT湖边',cost:'免费',tip:'清晨或日落前，15分钟拉伸+呼吸'}},
+  {name:'JLT湖边瑜伽', emoji:'🧘', audiences:['family','couple'], cat:'reflect', outdoor:true, jlt:true, info:{loc:'JLT湖边',cost:'免费',tip:'清晨或日落前，15分钟拉伸+呼吸',resources:[
+    {emoji:'🧘', name:'Down Dog',       desc:'瑜伽 App，可定制时长/难度', url:'https://www.downdogapp.com'},
+    {emoji:'🌬️', name:'潮汐 Tide',      desc:'呼吸引导（4-7-8 / 箱式）',  url:'https://tide.fm'},
+    {emoji:'🎵', name:'Yoga Lofi 歌单', desc:'Spotify · 户外瑜伽配乐',    url:'https://open.spotify.com/playlist/37i9dQZF1DX9uKNf5jGX6m'},
+    {emoji:'🔁', name:'JLT 15min 流程', desc:'5 min 拉伸 → 5 min 流瑜伽 → 5 min 静坐 + 看湖'},
+  ]}},
   {name:'楼下踢球/运动', emoji:'⚽', audiences:['family'], cat:'sports', outdoor:true, jlt:true, info:{loc:'JLT小区',cost:'免费',tip:'30分钟户外运动'}},
   {name:'全家一起做饭', emoji:'🍳', audiences:['family','couple'], cat:'cooking', outdoor:false, jlt:true, info:{loc:'在家',cost:'材料费',tip:'让孩子负责一道菜，从选菜到上桌'}},
   {name:'日记/写作时间', emoji:'📝', audiences:['family','couple'], cat:'reflect', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'记录今天3件感恩的事'}},
   {name:'纪录片之夜', emoji:'📺', audiences:['family','couple'], cat:'learning', outdoor:false, jlt:true, info:{loc:'在家',cost:'订阅费',tip:'BBC Planet Earth / 舌尖上的中国'}},
   {name:'国际象棋/围棋', emoji:'♟️', audiences:['family','friend'], cat:'skill', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'锻炼思维，可以教孩子基础'}},
   {name:'家庭KTV', emoji:'🎤', audiences:['family','friend'], cat:'family_ritual', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'每人轮流点一首'}},
-  {name:'写给未来的信', emoji:'✉️', audiences:['family','couple'], cat:'reflect', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'每季度一次，和孩子一起写给明年的自己'}},
-  {name:'感恩三件事', emoji:'🙏', audiences:['family','couple'], cat:'reflect', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'晚餐时每人说3件今天感恩的事'}},
+  {name:'写给未来的信', emoji:'✉️', audiences:['family','couple'], cat:'reflect', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'每季度一次，和孩子一起写给明年的自己',resources:[
+    {emoji:'✉️', name:'FutureMe',      desc:'写信给未来的自己，到日期自动发邮件', url:'https://www.futureme.org'},
+    {emoji:'📓', name:'Notion · 信件库',desc:'按年份归档，每年除夕回看',           url:'https://www.notion.so'},
+    {emoji:'🔁', name:'4 个问题模板',  desc:'今年最骄傲的事 / 最难的关 / 学到的 / 想对未来说的话'},
+  ]}},
+  {name:'感恩三件事', emoji:'🙏', audiences:['family','couple'], cat:'reflect', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'晚餐时每人说3件今天感恩的事',resources:[
+    {emoji:'🙏', name:'Gratitude App',  desc:'每日感恩 + 提醒推送',     url:'https://gratitude.plus'},
+    {emoji:'📓', name:'Day One',        desc:'当作家庭感恩日记长期记录', url:'https://dayoneapp.com'},
+    {emoji:'🔁', name:'Three Good Things', desc:'积极心理学方法：每晚 3 件好事 + 1 句"为什么"'},
+  ]}},
   {name:'长辈电话/视频', emoji:'📞', audiences:['family','couple'], cat:'connect' in {} ? 'connect':'family_ritual', outdoor:false, jlt:true, info:{loc:'在家',cost:'免费',tip:'每周固定打给父母，别只发消息'}},
   {name:'两人深聊时间', emoji:'💑', audiences:['couple'], cat:'family_ritual', outdoor:false, jlt:true, info:{loc:'阳台/客厅',cost:'免费',tip:'睡前30分钟，不看手机，聊这周感受'}},
 ];
@@ -571,6 +587,95 @@ const QUOTES = [
   {text:'最大的浪漫，是把日子过成自己想要的样子'},
 ];
 
+// ==================== 活动配套资源（App / 网站 / 音乐 / 流程） ====================
+// 让"做什么"有现成入口：按类别给一组工具，特殊活动可在 info.resources 里覆盖
+// 每条: {emoji, name, desc, url?} — url 省略表示是「流程/方法」而不是链接
+const CATEGORY_RESOURCES = {
+  reflect: [
+    {emoji:'🧘', name:'Calm',           desc:'冥想引导 + 睡眠故事',      url:'https://www.calm.com'},
+    {emoji:'🌬️', name:'潮汐 Tide',       desc:'呼吸 / 专注 / 助眠',      url:'https://tide.fm'},
+    {emoji:'📓', name:'Day One',        desc:'日记 App，可加图片定位',   url:'https://dayoneapp.com'},
+    {emoji:'🎵', name:'Lofi Focus 歌单', desc:'Spotify · 写日记/冥想',    url:'https://open.spotify.com/playlist/0vvXsWCC9xrXsKd4FyS8kM'},
+    {emoji:'🔁', name:'5 分钟内省流程',  desc:'呼吸 3min → 3 件感恩 → 今日最满意一刻 → 明天 1 个小目标'},
+  ],
+  reading: [
+    {emoji:'📖', name:'微信读书',        desc:'中文电子书 + 划线笔记',    url:'https://weread.qq.com'},
+    {emoji:'📚', name:'Kindle',          desc:'英文电子书',              url:'https://read.amazon.ae'},
+    {emoji:'⭐', name:'Goodreads',       desc:'书单 + 朋友推荐',         url:'https://www.goodreads.com'},
+    {emoji:'🎧', name:'喜马拉雅',        desc:'听书，通勤/散步用',       url:'https://www.ximalaya.com'},
+    {emoji:'🔁', name:'番茄读书法',      desc:'25 min 专注 → 5 min 写一句话笔记'},
+  ],
+  cooking: [
+    {emoji:'🍳', name:'下厨房',          desc:'中文菜谱第一',            url:'https://www.xiachufang.com'},
+    {emoji:'🎬', name:'YouTube · 王刚',  desc:'家常菜视频步骤',          url:'https://www.youtube.com/@SichuanCuisinemaster'},
+    {emoji:'🛒', name:'Carrefour 配送',  desc:'食材当天送',              url:'https://www.carrefouruae.com'},
+    {emoji:'🔁', name:'菜谱 → 清单 → 买', desc:'周日定 3 道新菜 → 写采购单 → 一次买齐'},
+  ],
+  learning: [
+    {emoji:'🦉', name:'Duolingo',        desc:'语言学习',                url:'https://www.duolingo.com'},
+    {emoji:'🎓', name:'Khan Academy',    desc:'数学/科学免费课',         url:'https://www.khanacademy.org'},
+    {emoji:'📺', name:'Coursera',        desc:'大学公开课',              url:'https://www.coursera.org'},
+    {emoji:'💡', name:'得到',            desc:'中文知识音频',            url:'https://www.dedao.cn'},
+    {emoji:'🔁', name:'30/30 学习法',    desc:'30 min 学 + 30 min 用/输出'},
+  ],
+  skill: [
+    {emoji:'🎬', name:'YouTube 教程',    desc:'任何技能搜 "basics"',     url:'https://www.youtube.com'},
+    {emoji:'🎨', name:'Skillshare',      desc:'创意技能短课',            url:'https://www.skillshare.com'},
+    {emoji:'♟️', name:'Chess.com',       desc:'国际象棋练习',            url:'https://www.chess.com'},
+    {emoji:'🔁', name:'每日 15 分钟',    desc:'同一时间 + 同一地点 = 自动化'},
+  ],
+  sports: [
+    {emoji:'💪', name:'Keep',            desc:'居家健身视频',            url:'https://www.gotokeep.com'},
+    {emoji:'🏃', name:'Strava',          desc:'跑步 / 骑行记录',         url:'https://www.strava.com'},
+    {emoji:'🏋️', name:'Nike Training',   desc:'免费训练计划',            url:'https://www.nike.com/ntc-app'},
+    {emoji:'🎵', name:'Workout 歌单',    desc:'Spotify · 燃脂节奏',      url:'https://open.spotify.com/genre/0JQ5DAtjkXrh2SbwUQzQfc'},
+  ],
+  family_ritual: [
+    {emoji:'📞', name:'微信视频',        desc:'每周固定打给长辈',        url:'weixin://'},
+    {emoji:'🎲', name:'BoardGameGeek',   desc:'桌游排行 / 选游戏',       url:'https://boardgamegeek.com'},
+    {emoji:'🍿', name:'Disney+',         desc:'家庭电影夜片单',          url:'https://www.disneyplus.com'},
+    {emoji:'🔁', name:'家庭仪式日历',    desc:'每月固定 1 次（电影夜/桌游夜/外出夜）'},
+  ],
+  food: [
+    {emoji:'🛵', name:'Talabat',         desc:'外卖 App',                url:'https://www.talabat.com'},
+    {emoji:'🍽️', name:'Zomato Dubai',    desc:'餐厅评分 / 菜单',         url:'https://www.zomato.com/dubai'},
+    {emoji:'📅', name:'Reserve Out',     desc:'迪拜餐厅订位',            url:'https://www.reserveout.com'},
+  ],
+  entertainment: [
+    {emoji:'🎫', name:'Klook',           desc:'景点门票折扣',            url:'https://www.klook.com/en-AE'},
+    {emoji:'🎬', name:'VOX Cinemas',     desc:'电影排片 / 订票',         url:'https://uae.voxcinemas.com'},
+    {emoji:'🎢', name:'Platinumlist',    desc:'演出 / 活动门票',         url:'https://uae.platinumlist.net'},
+  ],
+  nature: [
+    {emoji:'🗺️', name:'AllTrails',       desc:'徒步路线 + 难度评分',     url:'https://www.alltrails.com'},
+    {emoji:'☀️', name:'Windy',           desc:'风/温度/降雨详细预报',    url:'https://www.windy.com'},
+    {emoji:'🦩', name:'eBird',           desc:'观鸟点 / 物种记录',       url:'https://ebird.org'},
+  ],
+  culture: [
+    {emoji:'🎭', name:'Dubai Opera',     desc:'演出排期 / 订票',         url:'https://www.dubaiopera.com'},
+    {emoji:'🖼️', name:'Alserkal Online', desc:'画廊 / 展览日历',         url:'https://alserkal.online'},
+    {emoji:'📚', name:'Visit Dubai',     desc:'本地文化活动汇总',        url:'https://www.visitdubai.com/en/things-to-do/culture'},
+  ],
+  leisure: [
+    {emoji:'🌴', name:'Time Out Dubai',  desc:'本周新店 / 活动',         url:'https://www.timeoutdubai.com'},
+    {emoji:'🌊', name:'Beach Conditions',desc:'迪拜海滩状况 / 旗帜',     url:'https://www.dubaiairports.ae/getting-to-and-from/dubai-info/beach-flags'},
+  ],
+  nightlife: [
+    {emoji:'🥂', name:'Time Out · Bars', desc:'酒吧 / Rooftop 指南',     url:'https://www.timeoutdubai.com/bars-pubs'},
+    {emoji:'🎤', name:'Lucky Voice',     desc:'KTV 包房预订',            url:'https://luckyvoicedubai.com'},
+  ],
+  daytrip: [
+    {emoji:'🗺️', name:'Google Maps',     desc:'路线 / 油费估算',         url:'https://www.google.com/maps'},
+    {emoji:'🏨', name:'Booking.com',     desc:'就近订酒店',              url:'https://www.booking.com'},
+    {emoji:'⛽', name:'ENOC App',        desc:'最近加油站 / 油价',       url:'https://www.enoc.com'},
+  ],
+};
+
+function getActivityResources(act) {
+  if (act?.info?.resources?.length) return act.info.resources;
+  return CATEGORY_RESOURCES[act?.cat] || [];
+}
+
 // ==================== 一键打开外部 App ====================
 // 每条 {id, label, emoji, scheme, web}
 // scheme = 手机端 URL scheme（装了直接打开），web = 浏览器回退
@@ -587,6 +692,7 @@ const APP_SHORTCUTS = [
 // 把数据挂到全局以便其他脚本使用
 Object.assign(window, {
   PILLARS, DIMENSIONS, CATEGORIES, CAT_BY_ID, APP_SHORTCUTS,
+  CATEGORY_RESOURCES, getActivityResources,
   ACTIVITIES, ACT_BY_ID, ACT_BY_NAME, actsFor,
   DEAL_CATEGORIES, DEALS, FEATURED_DEALS,
   RECIPES, RECIPE_CATS,

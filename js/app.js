@@ -799,10 +799,24 @@ function showResAct(act) {
     ${info.hours?`<div class="ir"><span class="ii">🕐</span><span class="il">营业</span><span>${escapeHtml(info.hours)}</span></div>`:''}
     ${info.tip?`<div class="ir"><span class="ii">💡</span><span class="il">贴士</span><span>${escapeHtml(info.tip)}</span></div>`:''}
   </div>
+  ${renderResources(act)}
   ${renderRatingSection(act)}
   <div class="rl">${lk}</div>`;
   card.classList.add('show');
   card.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderResources(act) {
+  const list = (typeof getActivityResources === 'function') ? getActivityResources(act) : [];
+  if (!list.length) return '';
+  const chips = list.map(r => {
+    const isFlow = !r.url;
+    const inner = `<span class="res-name">${escapeHtml(r.emoji||'')} ${escapeHtml(r.name||'')}</span>${r.desc?`<span class="res-desc"> · ${escapeHtml(r.desc)}</span>`:''}`;
+    return isFlow
+      ? `<span class="res-chip res-flow">${inner}</span>`
+      : `<a class="res-chip" href="${escAttr(r.url)}" target="_blank" rel="noopener">${inner}</a>`;
+  }).join('');
+  return `<div class="res-block"><div class="res-h">🔗 工具 · 网站 · 音乐 · 流程</div><div class="res-chips">${chips}</div></div>`;
 }
 
 function renderRatingSection(act) {
