@@ -21,6 +21,12 @@
       <span class="dm-w" id="wMini">⏳ --°</span>
     </span>
   </div>
+  <!-- 鸡汤：紧跟问候语，开个好头 -->
+  <div class="quote-card" id="quoteCard" onclick="reshuffleQuote()">
+    <div class="qc-mark">"</div>
+    <div class="qc-text" id="dashQuote">…</div>
+    <div class="qc-author" id="dashQuoteAuthor"></div>
+  </div>
   <!-- 📅 今日安排：永远在最显眼的位置 -->
   <div class="sec sec-today" id="todaySec">
     <div class="sec-h" onclick="toggleSec('todayList')"><h3 style="color:var(--accent);font-size:14px">📅 今日安排</h3><span class="arrow open" id="todayList-arrow">▼</span></div>
@@ -46,12 +52,6 @@
   <div class="sec" id="pillarSec">
     <div class="sec-h" onclick="toggleSec('pillar')"><h3>✨ 灵感 · 🌱 意义</h3><span class="sec-meta" id="pillar-meta">每日推荐</span><span class="arrow" id="pillar-arrow">▼</span></div>
     <div class="sec-body" id="pillar-body"><div class="pillars" id="pillarGrid"></div></div>
-  </div>
-  <!-- 名言放底部，看完所有正事再读一句 -->
-  <div class="quote-card" id="quoteCard" onclick="reshuffleQuote()">
-    <div class="qc-mark">"</div>
-    <div class="qc-text" id="dashQuote">…</div>
-    <div class="qc-author" id="dashQuoteAuthor"></div>
   </div>
 </div>
 
@@ -435,6 +435,14 @@
       <button class="btn-danger" id="hbDeleteBtn" onclick="deleteCurrentHabit()" style="display:none">🗑️</button>
       <button class="btn-ghost" onclick="closeHabitModal()">取消</button>
     </div>
+  </div>
+</div>
+
+<!-- 活动详情弹窗（点击今日安排/计划项展开） -->
+<div class="qa-overlay" id="actDetailOverlay" onclick="if(event.target===this)closeActDetail()">
+  <div class="act-detail-card">
+    <button class="act-detail-close" onclick="closeActDetail()" aria-label="关闭">×</button>
+    <div id="actDetailBody"></div>
   </div>
 </div>
 

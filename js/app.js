@@ -141,19 +141,46 @@ function startQuickAction() {
   _qaTimerHandle = setInterval(_tickQaTimer, 1000);
 }
 
+// 别名：habit.types 等用的同义词 → CATEGORY_RESOURCES 的 key
+const _RES_TYPE_ALIAS = {
+  exercise:'sports', sport:'sports', workout:'sports', running:'sports',
+  journal:'reflect', writing:'reflect', meditate:'reflect', meditation:'reflect',
+  podcast:'learning', documentary:'learning', video:'learning', course:'learning', language:'learning', ted:'learning', app:'learning',
+  family:'family_ritual', connect:'family_ritual',
+  book:'reading',
+  recipe:'cooking', baking:'cooking',
+};
+
+function _normalizeResType(t) {
+  if (!t) return null;
+  if (CATEGORY_RESOURCES?.[t]) return t;
+  return _RES_TYPE_ALIAS[t] || null;
+}
+
 // 倒计时弹窗里的「一键打开工具」资源条
 function _resourcesForCurrent(cur) {
   if (!cur) return [];
+  // 标签可能带后缀如「（还差 3 次）」「（本周 0/3）」 — 剥掉再查活动
+  const cleanLabel = (cur.label || '').replace(/\s*[（(].*?[）)]\s*$/, '').trim();
   // 1) 名字匹配到具体活动 → 用活动级 resources（含活动 override）
-  if (typeof ACT_BY_NAME !== 'undefined' && cur.label && ACT_BY_NAME[cur.label]) {
-    const list = (typeof getActivityResources === 'function') ? getActivityResources(ACT_BY_NAME[cur.label]) : [];
+  if (typeof ACT_BY_NAME !== 'undefined' && cleanLabel && ACT_BY_NAME[cleanLabel]) {
+    const list = (typeof getActivityResources === 'function') ? getActivityResources(ACT_BY_NAME[cleanLabel]) : [];
     if (list && list.length) return list;
   }
   // 2) sourceData 上有 cat（心愿单等）
-  const cat1 = cur.sourceData?.cat;
+  const cat1 = _normalizeResType(cur.sourceData?.cat);
   if (cat1 && CATEGORY_RESOURCES?.[cat1]) return CATEGORY_RESOURCES[cat1];
-  // 3) type 直接当作 cat（QuickAction 池：reading/cooking/reflect/sports/...）
-  if (cur.type && CATEGORY_RESOURCES?.[cur.type]) return CATEGORY_RESOURCES[cur.type];
+  // 3) habit.types 是数组，找第一个能匹配的
+  const types = cur.sourceData?.types;
+  if (Array.isArray(types)) {
+    for (const t of types) {
+      const k = _normalizeResType(t);
+      if (k && CATEGORY_RESOURCES[k]) return CATEGORY_RESOURCES[k];
+    }
+  }
+  // 4) cur.type 直接或经别名映射当作 cat
+  const cat2 = _normalizeResType(cur.type);
+  if (cat2 && CATEGORY_RESOURCES?.[cat2]) return CATEGORY_RESOURCES[cat2];
   return [];
 }
 
@@ -161,13 +188,14 @@ function _renderQaResources(cur) {
   const el = document.getElementById('qaTRes');
   if (!el) return;
   const list = _resourcesForCurrent(cur).slice(0, 4);
+  window._qaResList = list;
   if (!list.length) { el.innerHTML = ''; return; }
-  const chips = list.map(r => {
-    const flow = !r.url;
+  const chips = list.map((r, i) => {
+    const flow = !r.url && !r.scheme;
     const label = `${escapeHtml(r.emoji||'')} ${escapeHtml(r.name||'')}`;
     return flow
       ? `<span class="qa-t-res-chip flow" title="${escAttr(r.desc||'')}">${label}</span>`
-      : `<a class="qa-t-res-chip" href="${escAttr(r.url)}" target="_blank" rel="noopener" title="${escAttr(r.desc||'')}">${label}</a>`;
+      : `<button type="button" class="qa-t-res-chip" onclick="launchResource(${i},'qa')" title="${escAttr(r.desc||'')}">${label}</button>`;
   }).join('');
   el.innerHTML = `<div class="qa-t-res-h">🚀 一键打开</div><div class="qa-t-res-chips">${chips}</div>`;
 }
@@ -236,6 +264,86 @@ function chainNextAction() {
   // 重置弹窗为标准计时态
   _restoreQaOverlay();
   startQuickAction();
+}
+
+// 中文关键词 → category，自定义计划名也能拿到资源
+const _KEYWORD_TO_CAT = [
+  [/网球|足球|篮球|羽毛球|乒乓|游泳|跑步|骑行|健身|瑜伽|爬山|徒步|踢球|攀岩|划船|冲浪|滑雪|蹦床|高尔夫|padel/i, 'sports'],
+  [/做饭|烹饪|烘焙|烤|煮|蒸|炖|菜谱/, 'cooking'],
+  [/读书|看书|阅读|读 \d/, 'reading'],
+  [/学习|学英语|学 \w|课程|网课|公开课|背单词/, 'learning'],
+  [/冥想|日记|感恩|内省|反思|静坐|呼吸/, 'reflect'],
+  [/散步|聊天|陪伴|陪家人|陪伴侣|视频|电话|父母|长辈|约会|晚餐|聚餐/, 'family_ritual'],
+  [/吃|餐厅|brunch|外卖|喝/i, 'food'],
+  [/电影|看片|游戏|乐园|看展|演出/, 'entertainment'],
+  [/海滩|公园|湖|户外/, 'nature'],
+  [/博物馆|画廊|艺术|展览/, 'culture'],
+];
+function _inferCatFromName(name) {
+  if (!name) return null;
+  for (const [re, cat] of _KEYWORD_TO_CAT) if (re.test(name)) return cat;
+  return null;
+}
+
+// 计划项 / 今日安排点击 → 弹活动详情（地点、贴士、资源）
+function openActDetail(name, emoji) {
+  const cleanName = (name || '').replace(/\s*[（(].*?[）)]\s*$/, '').trim();
+  let act = (typeof ACT_BY_NAME !== 'undefined') ? ACT_BY_NAME[cleanName] : null;
+  if (!act) {
+    const inferredCat = _inferCatFromName(cleanName);
+    act = { name: cleanName || name || '活动', emoji: emoji || '🎯', info: {}, cat: inferredCat };
+  }
+  const info = act.info || {};
+  const cat = (typeof CAT_BY_ID !== 'undefined') ? CAT_BY_ID[act.cat] : null;
+  // 资源：先按活动 → 再按 cat → 都没有就空
+  const resList = (typeof getActivityResources === 'function') ? getActivityResources(act) : [];
+  window._adResList = resList;
+  const resHtml = resList.length ? `
+    <div class="ad-res">
+      <div class="ad-res-h">🚀 一键打开</div>
+      <div class="ad-res-chips">
+        ${resList.map((r, i) => {
+          const inner = `<span>${escapeHtml(r.emoji||'')} ${escapeHtml(r.name||'')}</span>${r.desc?`<small> · ${escapeHtml(r.desc)}</small>`:''}`;
+          const flow = !r.url && !r.scheme;
+          return flow
+            ? `<span class="ad-res-chip flow">${inner}</span>`
+            : `<button type="button" class="ad-res-chip" onclick="launchResource(${i},'ad')">${inner}</button>`;
+        }).join('')}
+      </div>
+    </div>` : '';
+  // 链接：地图、预订、电话
+  const links = [];
+  if (info.mapQ) links.push(`<a href="https://www.google.com/maps/search/${encodeURIComponent(info.mapQ)}" target="_blank">📍 地图</a>`);
+  if (info.bookUrl) links.push(`<a href="${escAttr(info.bookUrl)}" target="_blank">🎫 预订</a>`);
+  if (info.phone) links.push(`<a href="tel:${escAttr(info.phone)}">📞 电话</a>`);
+  links.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(act.name+' Dubai')}" target="_blank">🔍 搜索</a>`);
+  const linksHtml = `<div class="ad-links">${links.join('')}</div>`;
+  // 信息行
+  const rows = [];
+  if (info.loc)  rows.push(['📍','地点',info.loc]);
+  if (info.addr) rows.push(['🏠','地址',info.addr]);
+  if (info.dist) rows.push(['🚗','距离','从 JLT '+info.dist]);
+  if (info.cost) rows.push(['💰','预算',info.cost]);
+  if (info.age)  rows.push(['👧','适龄',info.age]);
+  if (info.time) rows.push(['⏰','建议',info.time]);
+  if (info.hours)rows.push(['🕐','营业',info.hours]);
+  if (info.tip)  rows.push(['💡','贴士',info.tip]);
+  const infoHtml = rows.length ? `<div class="ad-info">${rows.map(([i,l,v]) =>
+    `<div class="ad-row"><span class="ad-i">${i}</span><span class="ad-l">${escapeHtml(l)}</span><span>${escapeHtml(v)}</span></div>`
+  ).join('')}</div>` : '<div class="ad-empty">这个活动还没有详细信息 — 但下面的工具能帮你开始</div>';
+  // 头部 + 现在做按钮
+  const head = `<div class="ad-head">
+    <div class="ad-emoji">${escapeHtml(act.emoji||'🎯')}</div>
+    <div class="ad-name">${escapeHtml(act.name)}</div>
+    ${cat?`<div class="ad-cat">${escapeHtml(cat.emoji)} ${escapeHtml(cat.label)}</div>`:''}
+  </div>`;
+  const goBtn = `<button class="btn-primary ad-go" onclick="closeActDetail();startPlanItemNow('${escAttr(act.name)}','${escAttr(act.emoji||'🎯')}',30)">▶ 现在就做（30 分钟）</button>`;
+  document.getElementById('actDetailBody').innerHTML = head + infoHtml + resHtml + linksHtml + goBtn;
+  document.getElementById('actDetailOverlay').classList.add('show');
+}
+
+function closeActDetail() {
+  document.getElementById('actDetailOverlay').classList.remove('show');
 }
 
 function finishQuickActionChain() {
@@ -338,20 +446,49 @@ function renderAppShortcuts() {
 function launchApp(id) {
   const a = APP_SHORTCUTS.find(x => x.id === id);
   if (!a) return;
+  _launchWithFallback({scheme:a.scheme, web:a.web});
+}
+
+// 通用的"先 scheme，没装就跳应用商店/网页"启动器
+// opts: {scheme, appStore, playStore, web}
+function _launchWithFallback(opts) {
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isAndroid = /Android/i.test(ua);
+  // 没有 scheme 就直接打开 web 或商店链接
+  if (!opts.scheme) {
+    const target = (isIOS && opts.appStore) || (isAndroid && opts.playStore) || opts.web;
+    if (target) window.open(target, '_blank', 'noopener');
+    return;
+  }
   const t0 = Date.now();
-  // iOS Safari 对 anchor click 比 window.location 更稳
   const anchor = document.createElement('a');
-  anchor.href = a.scheme;
+  anchor.href = opts.scheme;
   anchor.style.display = 'none';
   document.body.appendChild(anchor);
-  try { anchor.click(); } catch(e) { window.location.href = a.scheme; }
+  try { anchor.click(); } catch(e) { window.location.href = opts.scheme; }
   document.body.removeChild(anchor);
   setTimeout(() => {
-    // 若 1.5s 内页面没被切走（说明 scheme 没装/没响应），打开 web 回退
+    // 若 1.5s 内页面没被切走（说明 scheme 没装/没响应），跳商店/网页
     if (!document.hidden && Date.now() - t0 < 2500) {
-      window.open(a.web, '_blank');
+      // 优先跳应用商店，没有商店链接就开网页
+      const fallback = (isIOS && opts.appStore) || (isAndroid && opts.playStore) || opts.web;
+      if (fallback) window.open(fallback, '_blank', 'noopener');
     }
   }, 1500);
+}
+
+// 资源 chip 点击：如果资源带 scheme/appStore，走 app 启动逻辑；否则普通新标签
+function launchResource(idx, src) {
+  // src: 'qa' (timer modal) 或 'ad' (activity detail modal)
+  const list = (src === 'ad') ? (window._adResList || []) : (window._qaResList || []);
+  const r = list[idx];
+  if (!r) return;
+  if (r.scheme || r.appStore || r.playStore) {
+    _launchWithFallback({scheme:r.scheme, appStore:r.appStore, playStore:r.playStore, web:r.url});
+  } else if (r.url) {
+    window.open(r.url, '_blank', 'noopener');
+  }
 }
 
 function renderQuoteCard() {
@@ -623,8 +760,8 @@ function renderTodayItems() {
     const has = Reminders.isSet(planKey);
     return `<div class="mp-item">
       <span class="mi-time">${escapeHtml(it.time)}</span>
-      <span class="mi-emoji">${escapeHtml(it.emoji||'🎯')}</span>
-      <span class="mi-name">${escapeHtml(it.name||'待定')}</span>
+      <span class="mi-emoji mi-clickable" onclick="openActDetail('${escAttr(it.name||'')}','${escAttr(it.emoji||'')}')" title="查看详情">${escapeHtml(it.emoji||'🎯')}</span>
+      <span class="mi-name mi-clickable" onclick="openActDetail('${escAttr(it.name||'')}','${escAttr(it.emoji||'')}')" title="查看详情">${escapeHtml(it.name||'待定')}</span>
       <button class="now-btn" onclick="startPlanItemNow('${escAttr(it.name||'')}','${escAttr(it.emoji||'')}',30)">▶ 现在做</button>
       <span class="mi-bell ${has?'on':''}" onclick="toggleReminder('${escAttr(planKey)}','${escAttr(it.time)}','${escAttr(it.name||'')}','${escAttr(it.emoji||'')}')" title="${has?'取消提醒':'设置提醒'}">${has?'🔔':'🔕'}</span>
     </div>`;
@@ -2300,6 +2437,7 @@ Object.assign(window, {
   renderDiversityCard,
   renderSentinelSettings, toggleSentinel, toggleSentinelHour, toggleDiversityNudge, setDiversityHour, testSentinelNudge,
   startWishlistNow, startPlanItemNow, startHabitNow,
+  openActDetail, closeActDetail, launchResource,
   renderHabitsCard, renderHabitsSettings, openHabitModal, closeHabitModal, saveHabit, deleteHabit, deleteCurrentHabit, toggleHabitActive,
   renderHabitCoverage,
   setMode, setCatFilter, spin,
