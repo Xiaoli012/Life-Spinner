@@ -581,6 +581,25 @@ function renderTodayItems() {
 
 let _todayDetailItem = null;
 
+function _lookupVenueByName(name) {
+  if (typeof VENUES === 'undefined') return null;
+  for (const catKey of Object.keys(VENUES)) {
+    const found = (VENUES[catKey]?.items || []).find(v => v.name === name);
+    if (found) return found;
+  }
+  return null;
+}
+
+function _relatedDeals(name) {
+  if (typeof FEATURED_DEALS === 'undefined') return [];
+  const n = name.toLowerCase();
+  return FEATURED_DEALS.filter(d => {
+    if (d.expiresAt && new Date(d.expiresAt) < new Date()) return false;
+    const v = (d.venue || d.title || '').toLowerCase();
+    return v.includes(n.slice(0,4)) || n.includes((d.venue||'').toLowerCase().split(' ')[0].slice(0,4));
+  }).slice(0, 3);
+}
+
 function openTodayDetail(idx) {
   const items = window._todayItemsList || [];
   const it = items[idx];
@@ -590,21 +609,52 @@ function openTodayDetail(idx) {
   const planKey = it.fromReminder ? (it.reminderKey||'') : `fixed:${dayName}:${it.time}:${it.name}`;
   const has = !it.fromReminder && Reminders.isSet(planKey);
 
-  document.getElementById('tdEmoji').textContent = it.emoji || '🎯';
-  document.getElementById('tdName').textContent = it.name || '待定';
-  document.getElementById('tdTime').textContent = it.time;
-  const noteEl = document.getElementById('tdNote');
-  noteEl.textContent = it.note || '';
-  noteEl.style.display = it.note ? '' : 'none';
+  // Look up full activity / venue data
+  const act = (typeof ACT_BY_NAME !== 'undefined' && ACT_BY_NAME[it.name]) || null;
+  const info = act?.info || {};
+  const venue = !act ? _lookupVenueByName(it.name) : null;
+  const vInfo = venue || {};
 
-  const bellBtn = document.getElementById('tdBellBtn');
-  bellBtn.textContent = has ? '🔔 取消提醒' : '🔕 设提醒';
-  bellBtn.dataset.planKey = planKey;
-  bellBtn.dataset.time = it.time;
-  bellBtn.dataset.name = it.name || '';
-  bellBtn.dataset.emoji = it.emoji || '';
-  bellBtn.style.display = it.fromReminder ? 'none' : '';
+  const loc      = info.loc  || vInfo.addr  || '';
+  const addr     = info.addr || '';
+  const dist     = info.dist || '';
+  const cost     = info.cost || vInfo.cost  || '';
+  const hours    = info.hours|| vInfo.hours || '';
+  const bestTime = info.time || '';
+  const phone    = info.phone|| vInfo.phone || '';
+  const tip      = info.tip  || vInfo.tip   || '';
+  const bookUrl  = info.bookUrl || vInfo.bookUrl || '';
+  const mapQ     = info.mapQ || ((act||venue) ? encodeURIComponent(it.name+' Dubai') : '');
+  const fazaaAct = act && typeof hasFazaa === 'function' && hasFazaa(act);
+  const fazaaVen = venue?.fazaa || '';
 
+  const relDeals = (act || venue) ? _relatedDeals(it.name) : [];
+
+  const detail = document.getElementById('todayDetailContent');
+  detail.innerHTML = `
+    <div class="td-header">
+      <span class="td-emoji">${escapeHtml(it.emoji||'🎯')}</span>
+      <div class="td-info">
+        <div class="td-name">${escapeHtml(it.name||'待定')}</div>
+        <div class="td-time">🕐 ${escapeHtml(it.time)}</div>
+      </div>
+      <button class="td-close-x" onclick="closeTodayDetail()">✕</button>
+    </div>
+    ${it.note ? `<div class="td-note">📝 ${escapeHtml(it.note)}</div>` : ''}
+    ${loc||addr ? `<div class="td-row"><span class="td-icon">📍</span><span class="td-val">${escapeHtml(loc||addr)}${dist?' · '+escapeHtml(dist):''}</span></div>` : ''}
+    ${cost  ? `<div class="td-row"><span class="td-icon">💰</span><span class="td-val">${escapeHtml(cost)}</span></div>` : ''}
+    ${hours ? `<div class="td-row"><span class="td-icon">⏰</span><span class="td-val">${escapeHtml(hours)}${bestTime?' · 最佳: '+escapeHtml(bestTime):''}</span></div>` : ''}
+    ${phone ? `<div class="td-row"><span class="td-icon">📞</span><a class="td-link" href="tel:${escapeHtml(phone)}">${escapeHtml(phone)}</a></div>` : ''}
+    ${tip   ? `<div class="td-tip">💡 ${escapeHtml(tip)}</div>` : ''}
+    ${fazaaAct||fazaaVen ? `<div class="td-deal-row td-deal-fazaa"><span class="td-deal-emoji">🏷️</span><div><div class="td-deal-title">Fazaa 卡优惠</div><div class="td-deal-meta">${escapeHtml(fazaaVen||'享折扣')}</div></div></div>` : ''}
+    ${relDeals.map(d=>`<div class="td-deal-row"><span class="td-deal-emoji">${escapeHtml(d.emoji||'🏷️')}</span><div><div class="td-deal-title">${escapeHtml(d.title)}</div><div class="td-deal-meta">${escapeHtml(d.savings||'')}${d.source?' · '+escapeHtml(d.source):''}</div></div>${d.url?`<a class="td-deal-go" href="${escapeHtml(d.url)}" target="_blank">›</a>`:''}</div>`).join('')}
+    <div class="td-actions" style="margin-top:14px">
+      <button class="btn-primary" style="flex:1" onclick="tdStartNow()">▶ 现在做</button>
+      ${mapQ  ? `<button class="btn-ghost" onclick="window.open('https://www.google.com/maps/search/${mapQ}','_blank')">🗺️ 地图</button>` : ''}
+      ${bookUrl ? `<button class="btn-ghost" onclick="window.open('${escapeHtml(bookUrl)}','_blank')">🔗 预订</button>` : ''}
+      ${!it.fromReminder ? `<button class="btn-ghost" id="tdBellBtn" data-plan-key="${escAttr(planKey)}" data-time="${escAttr(it.time)}" data-name="${escAttr(it.name||'')}" data-emoji="${escAttr(it.emoji||'')}" onclick="tdBellToggle()">${has?'🔔 取消提醒':'🔕 设提醒'}</button>` : ''}
+    </div>
+  `;
   document.getElementById('todayDetailModal').classList.add('show');
 }
 
@@ -614,6 +664,7 @@ function closeTodayDetail() {
 
 function tdBellToggle() {
   const btn = document.getElementById('tdBellBtn');
+  if (!btn) return;
   toggleReminder(btn.dataset.planKey, btn.dataset.time, btn.dataset.name, btn.dataset.emoji);
   renderTodayItems();
   closeTodayDetail();

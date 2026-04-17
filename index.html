@@ -448,19 +448,7 @@
 <!-- Today item detail modal -->
 <div class="edit-modal" id="todayDetailModal" onclick="if(event.target===this)closeTodayDetail()">
   <div class="edit-modal-card">
-    <div class="td-header">
-      <span id="tdEmoji" class="td-emoji">🎯</span>
-      <div class="td-info">
-        <div id="tdName" class="td-name"></div>
-        <div id="tdTime" class="td-time"></div>
-      </div>
-    </div>
-    <div id="tdNote" class="td-note"></div>
-    <div class="td-actions">
-      <button class="btn-primary" style="flex:1" onclick="tdStartNow()">▶ 现在做</button>
-      <button class="btn-ghost" id="tdBellBtn" onclick="tdBellToggle()">🔕 设提醒</button>
-      <button class="btn-ghost" onclick="closeTodayDetail()">关闭</button>
-    </div>
+    <div id="todayDetailContent"></div>
   </div>
 </div>
 
