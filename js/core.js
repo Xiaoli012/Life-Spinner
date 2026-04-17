@@ -225,6 +225,10 @@ const Reminders = {
       createdAt: new Date().toISOString()
     });
     Store.set('reminders', filtered);
+    // 真实活动加入后，让位附近的 sentinel
+    if (!String(planKey || '').startsWith('sentinel:') && typeof Sentinel !== 'undefined') {
+      Sentinel.pruneConflictsWith(new Date(fireAt).getTime());
+    }
     return filtered[filtered.length-1];
   },
 
@@ -808,7 +812,20 @@ const Habits = {
 };
 
 // —— 易沉迷时段哨兵：每天最多排一次 ——
+// 与真实活动冲突时（±30 分钟内已有非 sentinel 提醒）让位，不提示
 const Sentinel = {
+  CONFLICT_WINDOW_MS: 30 * 60 * 1000,
+
+  _hasRealReminderNear(targetMs) {
+    const list = Store.get('reminders') || [];
+    return list.some(r => {
+      if (!r || r.sent) return false;
+      if (String(r.planKey || '').startsWith('sentinel:')) return false;
+      const t = new Date(r.fireAt).getTime();
+      return Math.abs(t - targetMs) <= this.CONFLICT_WINDOW_MS;
+    });
+  },
+
   scheduleToday() {
     const cfg = Store.get('sentinel');
     if (!cfg || !cfg.enabled) return;
@@ -825,8 +842,14 @@ const Sentinel = {
       const fireAt = new Date();
       fireAt.setHours(parseInt(m[1]), parseInt(m[2]), 0, 0);
       if (fireAt.getTime() <= now + 60000) return; // 已过或马上到的跳过
+      const planKey = `sentinel:${today}:${hm}`;
+      // 真实活动已在 ±30min 内：让位，并清掉之前可能排过的同一 sentinel
+      if (this._hasRealReminderNear(fireAt.getTime())) {
+        Reminders.cancel(planKey);
+        return;
+      }
       Reminders.schedule({
-        planKey: `sentinel:${today}:${hm}`,
+        planKey,
         fireAt: fireAt.toISOString(),
         title: '📵 易刷视频的点',
         body: '换一个 15 分钟的事？打开 App 看看推荐',
@@ -834,6 +857,17 @@ const Sentinel = {
       });
     });
     Store.update(s => { s.sentinel.lastScheduledDate = today; });
+  },
+
+  // 真实活动新增后，主动清掉 ±30min 内的 sentinel
+  pruneConflictsWith(realFireAtMs) {
+    const list = Store.get('reminders') || [];
+    const kept = list.filter(r => {
+      if (!String(r.planKey || '').startsWith('sentinel:')) return true;
+      const t = new Date(r.fireAt).getTime();
+      return Math.abs(t - realFireAtMs) > this.CONFLICT_WINDOW_MS;
+    });
+    if (kept.length !== list.length) Store.set('reminders', kept);
   }
 };
 

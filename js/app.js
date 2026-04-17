@@ -498,8 +498,17 @@ function renderUpcomingReminders() {
   if (!el) return;
   const reminders = Store.get('reminders') || [];
   const now = Date.now();
-  const upcoming = reminders
-    .filter(r => !r.sent && new Date(r.fireAt).getTime() - now < 24*3600000 && new Date(r.fireAt).getTime() > now - 3600000)
+  const window30 = 30 * 60 * 1000;
+  const isSentinel = r => String(r.planKey || '').startsWith('sentinel:');
+  const inWindow = reminders.filter(r =>
+    !r.sent &&
+    new Date(r.fireAt).getTime() - now < 24*3600000 &&
+    new Date(r.fireAt).getTime() > now - 3600000
+  );
+  // 真实活动 ±30min 内的 sentinel 让位（防呆：兜住已写入 store 的旧数据）
+  const realTimes = inWindow.filter(r => !isSentinel(r)).map(r => new Date(r.fireAt).getTime());
+  const upcoming = inWindow
+    .filter(r => !isSentinel(r) || !realTimes.some(t => Math.abs(t - new Date(r.fireAt).getTime()) <= window30))
     .sort((a,b) => new Date(a.fireAt) - new Date(b.fireAt))
     .slice(0, 3);
   if (!upcoming.length) { el.innerHTML = ''; el.style.display='none'; return; }
