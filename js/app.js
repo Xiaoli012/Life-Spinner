@@ -1104,7 +1104,7 @@ function renderMonthlyPlan() {
     if (state.monthlyPlan && state.monthlyPlan.startDate) {
       mpCursorDate = new Date(state.monthlyPlan.startDate);
     } else {
-      mpCursorDate = _nextMondayOrToday();
+      mpCursorDate = _thisWeekMonday();
     }
   }
   const mp = state.monthlyPlan;
@@ -1227,12 +1227,14 @@ function renderHabitCoverage() {
   `;
 }
 
-function _nextMondayOrToday() {
+function _thisWeekMonday() {
+  // 返回本周一（如果今天是周日，回到上周一以涵盖整周；否则回退到本周一）
   const today = new Date();
-  const dow = today.getDay();
-  const daysToMon = dow === 0 ? 1 : dow === 1 ? 0 : (8 - dow);
+  const dow = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  const daysSinceMon = dow === 0 ? 6 : dow - 1;
   const d = new Date(today);
-  d.setDate(today.getDate() + daysToMon);
+  d.setDate(today.getDate() - daysSinceMon);
+  d.setHours(0, 0, 0, 0);
   return d;
 }
 
@@ -1264,7 +1266,7 @@ function generateMonthlyPlan() {
   const state = Store.load();
   const fam = actsFor('family');
   const cou = actsFor('couple');
-  const startDate = _nextMondayOrToday();
+  const startDate = _thisWeekMonday();
   const kidBusy = {};
   state.kidsSchedule.forEach(k => { if(!kidBusy[k.day])kidBusy[k.day]=[]; kidBusy[k.day].push(k); });
 
