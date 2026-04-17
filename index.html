@@ -33,20 +33,31 @@
     <span class="pb-arrow">→</span>
     <span class="pb-feel-w">快乐</span><span class="pb-sep">·</span><span class="pb-feel-w">幸福</span><span class="pb-sep">·</span><span class="pb-feel-w">惊喜</span>
   </div>
+  <!-- 现在就做一个：默认展开，行动主入口 -->
+  <div class="qa-card" id="qaCard"></div>
+  <!-- 以下默认折叠，点开看详情 -->
+  <div class="sec" id="divSec">
+    <div class="sec-h" onclick="toggleSec('div')"><h3>🌈 今日多元化</h3><span class="sec-meta" id="div-meta">—</span><span class="arrow" id="div-arrow">▼</span></div>
+    <div class="sec-body" id="div-body"><div class="div-card" id="divCard"></div></div>
+  </div>
+  <div class="sec" id="habSec">
+    <div class="sec-h" onclick="toggleSec('hab')"><h3>📿 我的习惯</h3><span class="sec-meta" id="hab-meta">—</span><span class="arrow" id="hab-arrow">▼</span></div>
+    <div class="sec-body" id="hab-body"><div class="hab-card" id="habCard"></div></div>
+  </div>
+  <div class="sec" id="appsSec">
+    <div class="sec-h" onclick="toggleSec('apps')"><h3>📱 一键打开</h3><span class="sec-meta" id="apps-meta">—</span><span class="arrow" id="apps-arrow">▼</span></div>
+    <div class="sec-body" id="apps-body"><div class="app-shortcuts" id="appShortcuts"></div></div>
+  </div>
+  <div class="sec" id="pillarSec">
+    <div class="sec-h" onclick="toggleSec('pillar')"><h3>✨ 灵感 · 🌱 意义</h3><span class="sec-meta" id="pillar-meta">每日推荐</span><span class="arrow" id="pillar-arrow">▼</span></div>
+    <div class="sec-body" id="pillar-body"><div class="pillars" id="pillarGrid"></div></div>
+  </div>
+  <!-- 名言放底部，看完所有正事再读一句 -->
   <div class="quote-card" id="quoteCard" onclick="reshuffleQuote()">
     <div class="qc-mark">"</div>
     <div class="qc-text" id="dashQuote">…</div>
     <div class="qc-author" id="dashQuoteAuthor"></div>
   </div>
-  <div class="dash-upcoming" id="dashUpcoming" style="display:none"></div>
-  <!-- 现在就来一个 -->
-  <div class="qa-card" id="qaCard"></div>
-  <!-- 今日多元化 -->
-  <div class="div-card" id="divCard"></div>
-  <!-- 习惯进度（每周/每日） -->
-  <div class="hab-card" id="habCard"></div>
-  <div class="app-shortcuts" id="appShortcuts"></div>
-  <div class="pillars" id="pillarGrid"></div>
 </div>
 
 <!-- ========== PAGE 2: MONTHLY PLAN ========== -->
@@ -110,17 +121,19 @@
 
 <!-- ========== PAGE 4: DEALS (优惠专区) ========== -->
 <div class="page" id="pageDeals">
-  <div class="header"><h1>🏷️ 优惠</h1><div class="sub">折扣 · 会员卡 · 促销集合</div></div>
-  <div class="deals-hero">
-    <h2>🔥 本周精选具体优惠</h2>
-    <p>每条都是「具体哪家店/景点的什么优惠」，点「去看」直接跳到搜索结果页 · 过期自动隐藏</p>
+  <div class="header"><h1>🏷️ 优惠</h1><div class="sub">本周精选 · 全网渠道</div></div>
+  <div class="sec sec-today" id="featuredSec">
+    <div class="sec-h" onclick="toggleSec('featured')"><h3>🔥 本周精选</h3><span class="sec-meta" id="featured-meta">—</span><span class="arrow open" id="featured-arrow">▼</span></div>
+    <div class="sec-body show" id="featured-body"><div class="featured-deals" id="featuredDeals"></div></div>
   </div>
-  <div class="featured-deals" id="featuredDeals"></div>
-
-  <div class="deals-section-h">📚 全网渠道汇总（会员卡 / 团购 / 平台）</div>
-  <div class="deal-tabs" id="dealTabs"></div>
-  <div class="deal-grid" id="dealGrid"></div>
-  <button class="deal-add-btn" onclick="openAddDealModal()">➕ 录入你看到的折扣 / 优惠码</button>
+  <div class="sec" id="channelsSec">
+    <div class="sec-h" onclick="toggleSec('channels')"><h3>📚 全网渠道</h3><span class="sec-meta" id="channels-meta">会员卡 · 团购 · 平台</span><span class="arrow" id="channels-arrow">▼</span></div>
+    <div class="sec-body" id="channels-body">
+      <div class="deal-tabs" id="dealTabs"></div>
+      <div class="deal-grid" id="dealGrid"></div>
+      <button class="deal-add-btn" onclick="openAddDealModal()">➕ 录入你看到的折扣 / 优惠码</button>
+    </div>
+  </div>
 </div>
 
 <!-- ========== PAGE 5: ME ========== -->

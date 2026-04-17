@@ -27,15 +27,34 @@ function showPage(id, btn) {
   if (btn) btn.classList.add('active');
   if (id === 'pageHome')     renderDashboard();
   if (id === 'pagePlan')     { renderMonthlyPlan(); renderKidsSchedule(); renderHabitCoverage(); }
-  if (id === 'pageDeals')    renderDeals();
+  if (id === 'pageDeals')    { renderDeals(); restoreSecStates(); }
   if (id === 'pageMe')       renderMePage();
   updateFab();
 }
 function toggleSec(id) {
   const b = document.getElementById(id+'-body');
   const a = document.getElementById(id+'-arrow');
-  if (b) b.classList.toggle('show');
-  if (a) a.classList.toggle('open');
+  if (!b) return;
+  const open = b.classList.toggle('show');
+  if (a) a.classList.toggle('open', open);
+  try {
+    const map = JSON.parse(localStorage.getItem('collapseState') || '{}');
+    map[id] = open;
+    localStorage.setItem('collapseState', JSON.stringify(map));
+  } catch(e) {}
+}
+
+// 把 localStorage 中保存的折叠状态还原到 DOM；render 后调用
+function restoreSecStates() {
+  let map = {};
+  try { map = JSON.parse(localStorage.getItem('collapseState') || '{}'); } catch(e) {}
+  Object.entries(map).forEach(([id, open]) => {
+    const b = document.getElementById(id+'-body');
+    const a = document.getElementById(id+'-arrow');
+    if (!b) return;
+    b.classList.toggle('show', !!open);
+    if (a) a.classList.toggle('open', !!open);
+  });
 }
 
 // ==================== DASHBOARD (新主页) ====================
@@ -56,8 +75,8 @@ function renderDashboard() {
   renderHabitsCard();
   renderAppShortcuts();
   renderPillarCards();
-  renderUpcomingReminders();
   renderTodayItems();
+  restoreSecStates();
 }
 
 // ==================== "现在就来一个" ====================
@@ -282,6 +301,8 @@ function renderDiversityCard() {
   const done = dims.filter(d => d.done).length;
   const tone = done >= 4 ? 'good' : done >= 2 ? 'mid' : 'low';
   el.className = `div-card ${tone}`;
+  const meta = document.getElementById('div-meta');
+  if (meta) meta.textContent = `${done}/${dims.length}`;
   el.innerHTML = `
     <div class="div-head">
       <span class="div-title">🌈 今日多元化</span>
@@ -303,6 +324,8 @@ function renderDiversityCard() {
 function renderAppShortcuts() {
   const el = document.getElementById('appShortcuts');
   if (!el || typeof APP_SHORTCUTS === 'undefined') return;
+  const meta = document.getElementById('apps-meta');
+  if (meta) meta.textContent = `${APP_SHORTCUTS.length} 个`;
   el.innerHTML = APP_SHORTCUTS.map(a => `
     <button class="app-shortcut" onclick="launchApp('${escAttr(a.id)}')" title="${escAttr(a.label)}">
       <span class="as-emoji">${escapeHtml(a.emoji)}</span>
@@ -1379,6 +1402,13 @@ function renderFeaturedDeals() {
 
 function renderDeals() {
   renderFeaturedDeals();
+  // 把数量回填到分组头
+  const today = new Date().toISOString().slice(0,10);
+  const fdList = (typeof FEATURED_DEALS !== 'undefined' ? FEATURED_DEALS : []).filter(d => !d.expiresAt || d.expiresAt >= today);
+  const fdMeta = document.getElementById('featured-meta');
+  if (fdMeta) fdMeta.textContent = `${fdList.length} 条`;
+  const chMeta = document.getElementById('channels-meta');
+  if (chMeta) chMeta.textContent = `${(typeof DEALS !== 'undefined' ? DEALS.length : 0)} 个渠道`;
   const tabs = document.getElementById('dealTabs');
   const grid = document.getElementById('dealGrid');
   if (!tabs || !grid) return;
@@ -1408,7 +1438,7 @@ function renderDeals() {
     </div>`;
   }).join('');
 }
-function setDealFilter(id) { dealFilter = id; renderDeals(); }
+function setDealFilter(id) { dealFilter = id; renderDeals(); restoreSecStates(); }
 
 function openAddDealModal() {
   document.getElementById('addDealModal').classList.add('show');
@@ -1482,6 +1512,8 @@ function renderHabitsCard() {
     return b.def - a.def;
   });
   const doneCount = rows.filter(r => r.p.done).length;
+  const meta = document.getElementById('hab-meta');
+  if (meta) meta.textContent = `${doneCount}/${habits.length} 达成`;
   el.innerHTML = `
     <div class="hc-head">
       <span class="hc-title">📿 我的习惯</span>
