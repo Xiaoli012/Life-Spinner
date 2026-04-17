@@ -115,10 +115,42 @@ function startQuickAction() {
   _qaTimerEnd = Date.now() + a.minutes * 60000;
   document.getElementById('qaTEmoji').textContent = a.emoji;
   document.getElementById('qaTLabel').textContent = a.label;
+  _renderQaResources(a);
   document.getElementById('qaTimerOverlay').classList.add('show');
   _tickQaTimer();
   if (_qaTimerHandle) clearInterval(_qaTimerHandle);
   _qaTimerHandle = setInterval(_tickQaTimer, 1000);
+}
+
+// 倒计时弹窗里的「一键打开工具」资源条
+function _resourcesForCurrent(cur) {
+  if (!cur) return [];
+  // 1) 名字匹配到具体活动 → 用活动级 resources（含活动 override）
+  if (typeof ACT_BY_NAME !== 'undefined' && cur.label && ACT_BY_NAME[cur.label]) {
+    const list = (typeof getActivityResources === 'function') ? getActivityResources(ACT_BY_NAME[cur.label]) : [];
+    if (list && list.length) return list;
+  }
+  // 2) sourceData 上有 cat（心愿单等）
+  const cat1 = cur.sourceData?.cat;
+  if (cat1 && CATEGORY_RESOURCES?.[cat1]) return CATEGORY_RESOURCES[cat1];
+  // 3) type 直接当作 cat（QuickAction 池：reading/cooking/reflect/sports/...）
+  if (cur.type && CATEGORY_RESOURCES?.[cur.type]) return CATEGORY_RESOURCES[cur.type];
+  return [];
+}
+
+function _renderQaResources(cur) {
+  const el = document.getElementById('qaTRes');
+  if (!el) return;
+  const list = _resourcesForCurrent(cur).slice(0, 4);
+  if (!list.length) { el.innerHTML = ''; return; }
+  const chips = list.map(r => {
+    const flow = !r.url;
+    const label = `${escapeHtml(r.emoji||'')} ${escapeHtml(r.name||'')}`;
+    return flow
+      ? `<span class="qa-t-res-chip flow" title="${escAttr(r.desc||'')}">${label}</span>`
+      : `<a class="qa-t-res-chip" href="${escAttr(r.url)}" target="_blank" rel="noopener" title="${escAttr(r.desc||'')}">${label}</a>`;
+  }).join('');
+  el.innerHTML = `<div class="qa-t-res-h">🚀 一键打开</div><div class="qa-t-res-chips">${chips}</div>`;
 }
 
 function _tickQaTimer() {
@@ -202,6 +234,7 @@ function _restoreQaOverlay() {
     <div class="qa-t-label" id="qaTLabel">…</div>
     <div class="qa-t-clock" id="qaTClock">00:00</div>
     <div class="qa-t-hint">把手机放下，做完再回来</div>
+    <div class="qa-t-res" id="qaTRes"></div>
     <div class="qa-t-actions">
       <button class="btn-primary" onclick="completeQuickAction()">✅ 做完了</button>
       <button class="btn-ghost" onclick="cancelQuickAction()">取消</button>
