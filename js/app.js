@@ -54,7 +54,6 @@ function renderDashboard() {
   renderTodayItems();
   renderQuickActionCard();
   renderAppShortcuts();
-  renderPillarCards();
 }
 
 // ==================== "现在就来一个" ====================
@@ -80,6 +79,38 @@ function renderQuickActionCard() {
   const a = _qaCurrent;
   const srcLabel = QA_SOURCE_LABEL[a.source] || '';
   const srcCls = a.source && a.source !== 'static' ? a.source : '';
+
+  // 灵感行（复用 pillar 逻辑）
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(),0,0)) / 86400000);
+  const eat = pickDailyEat(dayOfYear);
+  const play = pickDailyPlay(dayOfYear);
+  const learnItem = LEARNING_POOL[dayOfYear % LEARNING_POOL.length];
+  window._dailyInspire = {eat, play, learnItem};
+
+  const eatRow = eat ? `<div class="qi-row" onclick="openDailyEat()">
+    <span class="qi-tag">🍽️ 今晚吃</span>
+    <span class="qi-name">${escapeHtml(eat.name)}</span>
+    <span class="qi-meta">${escapeHtml(_shortLoc(eat.addr))}${eat.cost?' · '+escapeHtml(eat.cost):''}</span>
+    <span class="qi-go">›</span>
+  </div>` : '';
+
+  const playName = play ? play.name : '';
+  const playLoc  = play ? (play.info?.loc || _shortLoc(play.addr || play.info?.addr)) : '';
+  const playCost = play ? (play.info?.cost || play.cost) : '';
+  const playRow  = play ? `<div class="qi-row" onclick="openDailyPlay()">
+    <span class="qi-tag">🎯 今天玩</span>
+    <span class="qi-name">${escapeHtml(playName)}</span>
+    <span class="qi-meta">${escapeHtml(playLoc||'')}${playCost?' · '+escapeHtml(playCost):''}</span>
+    <span class="qi-go">›</span>
+  </div>` : '';
+
+  const learnRow = `<div class="qi-row" onclick="quickLog('${escAttr(learnItem.type)}','${escAttr(learnItem.name)}')">
+    <span class="qi-tag">📚 学一点</span>
+    <span class="qi-name">${escapeHtml(learnItem.name)}</span>
+    <span class="qi-meta">${escapeHtml(learnItem.desc||'')}</span>
+    <span class="qi-go">✓</span>
+  </div>`;
+
   el.innerHTML = `
     <div class="qa-head">
       <span class="qa-tag">📵 别刷了，来一个</span>
@@ -98,7 +129,44 @@ function renderQuickActionCard() {
       <button class="qa-fb" onclick="reshuffleQuickAction('medium')">10-30 分钟</button>
       <button class="qa-fb" onclick="reshuffleQuickAction('long')">>30 分钟</button>
     </div>
+    <div class="qi-divider">
+      <span>今日灵感</span>
+      <button class="qi-reshuffle" onclick="reshuffleInspireInCard()" title="换一组">🎲</button>
+    </div>
+    <div class="qi-rows" id="qiRows">${eatRow}${playRow}${learnRow}</div>
   `;
+}
+
+function reshuffleInspireInCard() {
+  const offset = Math.floor(Math.random() * 9999);
+  const eat  = (function(){ const p = _venuePool(FOOD_VENUE_KEYS); return p.length? p[(offset*13)%p.length]:null; })();
+  const play = (function(){ const p = _venuePool(PLAY_VENUE_KEYS); return p.length? p[(offset*7)%p.length] : ACTIVITIES[(offset*3)%ACTIVITIES.length]; })();
+  const learnItem = LEARNING_POOL[(offset*5) % LEARNING_POOL.length];
+  window._dailyInspire = {eat, play, learnItem};
+  const rows = document.getElementById('qiRows');
+  if (!rows) { renderQuickActionCard(); return; }
+  const eatRow = eat ? `<div class="qi-row" onclick="openDailyEat()">
+    <span class="qi-tag">🍽️ 今晚吃</span>
+    <span class="qi-name">${escapeHtml(eat.name)}</span>
+    <span class="qi-meta">${escapeHtml(_shortLoc(eat.addr))}${eat.cost?' · '+escapeHtml(eat.cost):''}</span>
+    <span class="qi-go">›</span>
+  </div>` : '';
+  const playName = play ? play.name : '';
+  const playLoc  = play ? (play.info?.loc || _shortLoc(play.addr || play.info?.addr)) : '';
+  const playCost = play ? (play.info?.cost || play.cost) : '';
+  const playRow  = play ? `<div class="qi-row" onclick="openDailyPlay()">
+    <span class="qi-tag">🎯 今天玩</span>
+    <span class="qi-name">${escapeHtml(playName)}</span>
+    <span class="qi-meta">${escapeHtml(playLoc||'')}${playCost?' · '+escapeHtml(playCost):''}</span>
+    <span class="qi-go">›</span>
+  </div>` : '';
+  const learnRow = `<div class="qi-row" onclick="quickLog('${escAttr(learnItem.type)}','${escAttr(learnItem.name)}')">
+    <span class="qi-tag">📚 学一点</span>
+    <span class="qi-name">${escapeHtml(learnItem.name)}</span>
+    <span class="qi-meta">${escapeHtml(learnItem.desc||'')}</span>
+    <span class="qi-go">✓</span>
+  </div>`;
+  rows.innerHTML = eatRow + playRow + learnRow;
 }
 
 function reshuffleQuickAction(filter) {
@@ -2319,7 +2387,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // 导出所有全局函数（便于 HTML 内 onclick 调用）
 Object.assign(window, {
   showPage, toggleSec,
-  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, openDimDetail, quickLog, toggleReminder, openTodayDetail, closeTodayDetail, tdBellToggle, tdStartNow,
+  renderDashboard, renderQuoteCard, reshuffleQuote, renderAppShortcuts, launchApp, renderPillarCards, openPillarMeaning, openDailyEat, openDailyPlay, reshuffleInspire, reshuffleInspireInCard, openDimDetail, quickLog, toggleReminder, openTodayDetail, closeTodayDetail, tdBellToggle, tdStartNow,
   renderQuickActionCard, reshuffleQuickAction, startQuickAction, completeQuickAction, cancelQuickAction, chainNextAction, finishQuickActionChain,
   renderDiversityCard,
   renderSentinelSettings, toggleSentinel, toggleSentinelHour, toggleDiversityNudge, setDiversityHour, testSentinelNudge,
